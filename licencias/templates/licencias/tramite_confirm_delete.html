@@ -1,0 +1,17 @@
+{% extends "licencias/base.html" %}
+
+{% block title %}Eliminar trámite | SEGEY Licencias{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Eliminar trámite</h1>
+</div>
+<section class="surface-elevated stack">
+    <p class="lead">Confirme la eliminación del trámite con folio <strong>{{ object.folio }}</strong>. Esta acción es irreversible y retirará la información del historial.</p>
+    <form method="post" class="form-actions" style="justify-content: flex-start;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn--danger btn--md">Eliminar definitivamente</button>
+        <a class="btn btn--secondary btn--md" href="{% url 'licencias:tramite-list' %}">Cancelar</a>
+    </form>
+</section>
+{% endblock %}

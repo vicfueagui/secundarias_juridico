@@ -1,0 +1,47 @@
+{% extends "licencias/base.html" %}
+
+{% block title %}KPIs{% endblock %}
+
+{% block content %}
+<h1>KPIs Operativos</h1>
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <span class="kpi-value">{{ total_tramites }}</span>
+        <span class="kpi-label">Trámites totales</span>
+    </div>
+    <div class="kpi-card">
+        <span class="kpi-value">{{ abiertos }}</span>
+        <span class="kpi-label">Abiertos</span>
+    </div>
+    <div class="kpi-card">
+        <span class="kpi-value">{{ cerrados }}</span>
+        <span class="kpi-label">Cerrados</span>
+    </div>
+    <div class="kpi-card">
+        <span class="kpi-value">{{ edad_promedio|floatformat:1 }} días</span>
+        <span class="kpi-label">Edad promedio abiertos</span>
+    </div>
+</div>
+
+<section>
+    <h2>Top sindicatos</h2>
+    <ul>
+        {% for item in top_sindicatos %}
+        <li>{{ item.label }}: {{ item.value }}</li>
+        {% empty %}
+        <li>No hay datos suficientes.</li>
+        {% endfor %}
+    </ul>
+</section>
+
+<section>
+    <h2>Trámites por etapa</h2>
+    <ul>
+        {% for item in serie_por_etapa %}
+        <li>{{ item.label }}: {{ item.value }}</li>
+        {% empty %}
+        <li>Sin datos.</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endblock %}

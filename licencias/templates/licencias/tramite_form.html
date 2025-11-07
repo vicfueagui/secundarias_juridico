@@ -1,0 +1,118 @@
+{% extends "licencias/base.html" %}
+{% load form_tags %}
+
+{% block title %}{% if form.instance.pk %}Editar{% else %}Nuevo{% endif %} trámite{% endblock %}
+
+{% block content %}
+<div class="tramite-form-container">
+    <h1>{% if form.instance.pk %}Editar{% else %}Nuevo{% endif %} trámite</h1>
+
+    <form method="post" class="tramite-form" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="form-alert" role="alert">
+            {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="tab-layout">
+            <div class="tab-nav" role="tablist">
+                {% for key, section in form.sections.items %}
+                    <button
+                        type="button"
+                        id="{{ key }}-tab"
+                        class="tab-link{% if forloop.first %} is-active{% endif %}"
+                        data-tab-target="{{ key }}"
+                        role="tab"
+                        aria-controls="{{ key }}-panel"
+                        {% if forloop.first %}aria-selected="true"{% else %}aria-selected="false"{% endif %}
+                    >
+                        {{ section.title }}
+                    </button>
+                {% endfor %}
+            </div>
+            <div class="tab-panels">
+                {% for key, section in form.sections.items %}
+                    <section
+                        class="tab-panel{% if forloop.first %} is-active{% endif %}"
+                        id="{{ key }}-panel"
+                        data-tab-panel="{{ key }}"
+                        role="tabpanel"
+                        aria-labelledby="{{ key }}-tab"
+                        {% if not forloop.first %}hidden{% endif %}
+                    >
+                        <h2 class="section-title">{{ section.title }}</h2>
+                        {% if section.fields %}
+                            <div class="form-grid">
+                                {% for field_name in section.fields %}
+                                    {% with field=form|field:field_name %}
+                                        {% if field %}
+                                            {% include "licencias/partials/form_field.html" with field=field field_name=field_name %}
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if section.subsections %}
+                            {% for subsection in section.subsections %}
+                                <div class="form-subsection">
+                                    <h3 class="subsection-title">{{ subsection.subtitle }}</h3>
+                                    <div class="form-grid">
+                                        {% for field_name in subsection.fields %}
+                                            {% with field=form|field:field_name %}
+                                                {% if field %}
+                                                    {% include "licencias/partials/form_field.html" with field=field field_name=field_name %}
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </section>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Guardar trámite</button>
+            <a href="{% url 'licencias:tramite-list' %}" class="btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<div
+    class="modal"
+    id="diagnostico-modal"
+    hidden
+    role="dialog"
+    aria-modal="true"
+    data-api-list="{% url 'licencias_api:diagnostico-list' %}"
+>
+    <div class="modal-overlay" data-modal-close></div>
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3 class="modal-title" data-modal-title>Agregar diagnóstico</h3>
+            <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+        </div>
+        <form class="modal-body" id="diagnostico-form">
+            <input type="hidden" name="diagnosticoId" value="">
+            <div class="modal-field">
+                <label for="diagnostico-nombre">Nombre del diagnóstico</label>
+                <input type="text" id="diagnostico-nombre" name="nombre" required maxlength="255">
+            </div>
+            <div class="modal-field">
+                <label for="diagnostico-descripcion">Descripción (opcional)</label>
+                <textarea id="diagnostico-descripcion" name="descripcion" rows="3"></textarea>
+            </div>
+            <div class="modal-message" data-modal-message role="alert"></div>
+            <div class="modal-actions">
+                <button type="submit" class="btn-primary">Guardar</button>
+                <button type="button" class="btn-secondary" data-modal-close>Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

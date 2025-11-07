@@ -1,0 +1,23 @@
+<section class="import-result">
+    <h2>Resultado de importación</h2>
+    <p>Total filas: {{ resultado.resumen.total }}</p>
+    <p>Importadas: {{ resultado.resumen.cargados }}</p>
+    <p>Con errores: {{ resultado.resumen.errores }}</p>
+
+    {% if resultado.errores %}
+    <h3>Errores detectados</h3>
+    <table class="table">
+        <thead>
+            <tr><th>Fila</th><th>Errores</th></tr>
+        </thead>
+        <tbody>
+            {% for fila in resultado.errores %}
+            <tr>
+                <td>{{ fila.indice }}</td>
+                <td>{{ fila.errores|join:", " }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</section>

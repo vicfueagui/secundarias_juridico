@@ -1,0 +1,157 @@
+[
+  {
+    "model": "licencias.etapa",
+    "pk": 1,
+    "fields": {
+      "nombre": "Ingreso",
+      "descripcion": "Recepción y registro inicial del trámite",
+      "esta_activo": true,
+      "orden": 1,
+      "es_final": false,
+      "creado_en": "2024-01-01T00:00:00Z",
+      "actualizado_en": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "licencias.etapa",
+    "pk": 2,
+    "fields": {
+      "nombre": "Integración",
+      "descripcion": "Integración de expediente y validaciones previas",
+      "esta_activo": true,
+      "orden": 2,
+      "es_final": false,
+      "creado_en": "2024-01-01T00:00:00Z",
+      "actualizado_en": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "licencias.etapa",
+    "pk": 3,
+    "fields": {
+      "nombre": "Visto Bueno",
+      "descripcion": "Revisión y autorización de Subsecretaría",
+      "esta_activo": true,
+      "orden": 3,
+      "es_final": false,
+      "creado_en": "2024-01-01T00:00:00Z",
+      "actualizado_en": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "licencias.etapa",
+    "pk": 4,
+    "fields": {
+      "nombre": "Resolución",
+      "descripcion": "Emisión de la resolución",
+      "esta_activo": true,
+      "orden": 4,
+      "es_final": false,
+      "creado_en": "2024-01-01T00:00:00Z",
+      "actualizado_en": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "licencias.etapa",
+    "pk": 5,
+    "fields": {
+      "nombre": "Notificación",
+      "descripcion": "Comunicación a sindicato y trabajador",
+      "esta_activo": true,
+      "orden": 5,
+      "es_final": false,
+      "creado_en": "2024-01-01T00:00:00Z",
+      "actualizado_en": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "licencias.etapa",
+    "pk": 6,
+    "fields": {
+      "nombre": "Cierre",
+      "descripcion": "Control final del trámite",
+      "esta_activo": true,
+      "orden": 6,
+      "es_final": true,
+      "creado_en": "2024-01-01T00:00:00Z",
+      "actualizado_en": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "licencias.subsistema",
+    "pk": 1,
+    "fields": {
+      "nombre": "Federal",
+      "descripcion": "Subsistema federal",
+      "esta_activo": true,
+      "creado_en": "2024-01-01T00:00:00Z",
+      "actualizado_en": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "licencias.subsistema",
+    "pk": 2,
+    "fields": {
+      "nombre": "Estatal",
+      "descripcion": "Subsistema estatal",
+      "esta_activo": true,
+      "creado_en": "2024-01-01T00:00:00Z",
+      "actualizado_en": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "licencias.resultado",
+    "pk": 1,
+    "fields": {
+      "nombre": "Procedente",
+      "descripcion": "Trámite autorizado",
+      "esta_activo": true,
+      "creado_en": "2024-01-01T00:00:00Z",
+      "actualizado_en": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "licencias.resultado",
+    "pk": 2,
+    "fields": {
+      "nombre": "Improcedente",
+      "descripcion": "Trámite rechazado",
+      "esta_activo": true,
+      "creado_en": "2024-01-01T00:00:00Z",
+      "actualizado_en": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "licencias.area",
+    "pk": 1,
+    "fields": {
+      "nombre": "Jurídico Secundarias",
+      "descripcion": "Área responsable del nivel",
+      "esta_activo": true,
+      "creado_en": "2024-01-01T00:00:00Z",
+      "actualizado_en": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "licencias.area",
+    "pk": 2,
+    "fields": {
+      "nombre": "Recursos Humanos",
+      "descripcion": "Recursos Humanos SAF",
+      "esta_activo": true,
+      "creado_en": "2024-01-01T00:00:00Z",
+      "actualizado_en": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "licencias.tipotramite",
+    "pk": 1,
+    "fields": {
+      "nombre": "Licencia 754",
+      "descripcion": "Licencia de artículo 754",
+      "esta_activo": true,
+      "creado_en": "2024-01-01T00:00:00Z",
+      "actualizado_en": "2024-01-01T00:00:00Z"
+    }
+  }
+]

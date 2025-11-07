@@ -1,0 +1,22 @@
+{% extends "licencias/base.html" %}
+
+{% block title %}Importar CSV{% endblock %}
+
+{% block content %}
+<h1>Importar trámites desde CSV</h1>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="form-field">
+        {{ form.archivo.label_tag }} {{ form.archivo }}
+    </div>
+    <div class="form-field">
+        {{ form.crear_catalogos }} {{ form.crear_catalogos.label_tag }}
+    </div>
+    <button type="submit">Procesar archivo</button>
+</form>
+
+{% if resultado %}
+    {% include "licencias/import_result.html" with resultado=resultado %}
+{% endif %}
+{% endblock %}

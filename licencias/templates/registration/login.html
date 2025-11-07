@@ -1,0 +1,45 @@
+{% load static %}
+{% load form_tags %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Iniciar Sesión - Control de licencias niveles educativos  2025-2030</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+</head>
+<body class="auth-layout">
+    <div class="auth-card">
+        <div class="auth-brand">
+            <img src="{% static 'img/segey-logo.png' %}" alt="SEGEY Secretaría de Educación">
+            <h1>Sistema de Seguimiento de Trámites</h1>
+            <p>Acceso seguro para personal autorizado</p>
+        </div>
+
+        {% if form.errors %}
+        <div class="auth-error" role="alert">
+            Credenciales no válidas. Verifique usuario y contraseña.
+        </div>
+        {% endif %}
+
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            <div class="form-field">
+                <label for="{{ form.username.id_for_label }}">Usuario</label>
+                {{ form.username|add_class:"form-input" }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.password.id_for_label }}">Contraseña</label>
+                {{ form.password|add_class:"form-input" }}
+            </div>
+            <div class="auth-actions">
+                <button type="submit" class="btn btn--primary btn--md">Ingresar</button>
+                <a class="btn btn--ghost btn--sm" href="https://www.educacion.yucatan.gob.mx/" target="_blank" rel="noopener">Portal SEGEY</a>
+            </div>
+            <input type="hidden" name="next" value="{{ next }}">
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,108 @@
+{% extends "licencias/base.html" %}
+{% load form_tags %}
+
+{% block title %}{{ tramite.folio }} | CEJEI Licencias{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">{{ tramite.folio }}</h1>
+    <div class="chip-group">
+        <span class="badge badge--gold">{{ tramite.tipo_tramite }}</span>
+        <span class="badge badge--neutral">{{ tramite.subsistema }}</span>
+        <span class="chip">Estado: {{ tramite.estado_actual }}</span>
+    </div>
+</div>
+
+<div class="stack-lg">
+    <section class="surface-elevated stack">
+        <h2 class="section-title">Resumen del trámite</h2>
+        <div class="data-grid">
+            <div class="data-item">
+                <span class="data-label">Trabajador</span>
+                <span class="data-value">{{ tramite.trabajador_nombre }}</span>
+            </div>
+            <div class="data-item">
+                <span class="data-label">Responsable</span>
+                <span class="data-value">{{ tramite.user_responsable|default:"Sin asignar" }}</span>
+            </div>
+            <div class="data-item">
+                <span class="data-label">Folio de origen</span>
+                <span class="data-value">{{ tramite.oficio_origen_num|default:"Sin registro" }}</span>
+            </div>
+            <div class="data-item">
+                <span class="data-label">Última actualización</span>
+                <span class="data-value">{{ tramite.updated_at|date:"d/m/Y H:i" }}</span>
+            </div>
+        </div>
+        {% if tramite.observaciones %}
+        <p class="lead">{{ tramite.observaciones }}</p>
+        {% endif %}
+    </section>
+
+    <section class="surface-elevated stack-sm">
+        <h2 class="section-title">Fechas clave</h2>
+        <ul class="simple-list">
+            <li><strong>Nivel educativo:</strong> {{ tramite.fecha_recepcion_nivel|date:"d/m/Y"|default:"Sin registro" }}</li>
+            <li><strong>Subsecretaría:</strong> {{ tramite.fecha_recepcion_subsecretaria|date:"d/m/Y"|default:"Sin registro" }}</li>
+            <li><strong>Recursos Humanos:</strong> {{ tramite.fecha_recepcion_rh|date:"d/m/Y"|default:"Sin registro" }}</li>
+        </ul>
+    </section>
+
+    <section class="surface-elevated stack-sm">
+        <h2 class="section-title">Oficios vinculados</h2>
+        <ul class="simple-list">
+            {% for oficio in tramite.oficios.all %}
+            <li><strong>{{ oficio.get_tipo_display }}:</strong> {{ oficio.numero|default:"Sin número" }} · {{ oficio.fecha|date:"d/m/Y"|default:"Sin fecha" }}</li>
+            {% empty %}
+            <li>Sin oficios registrados.</li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <section class="surface-elevated stack-sm">
+        <h2 class="section-title">Notificaciones</h2>
+        <ul class="simple-list">
+            {% for notif in tramite.notificaciones.all %}
+            <li><strong>{{ notif.get_destinatario_display }}:</strong> {{ notif.numero_oficio|default:"Sin número" }} · {{ notif.fecha|date:"d/m/Y"|default:"Sin fecha" }}</li>
+            {% empty %}
+            <li>Sin notificaciones registradas.</li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <section class="surface-elevated stack-sm">
+        <h2 class="section-title">Historial de etapas</h2>
+        <ul class="simple-list">
+            {% for mov in tramite.movimientos.all %}
+            <li>{{ mov.fecha|date:"d/m/Y H:i" }} · {{ mov.etapa_anterior }} → {{ mov.etapa_nueva }} ({{ mov.usuario }})</li>
+            {% empty %}
+            <li>No hay movimientos registrados.</li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <section class="surface-elevated stack">
+        <h2 class="section-title">Actualizar etapa</h2>
+        <form
+            class="stack"
+            hx-post="{% url 'licencias:tramite-cambiar-etapa' tramite.pk %}"
+            hx-target="#mensaje-etapa"
+            hx-swap="outerHTML"
+            method="post">
+            {% csrf_token %}
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+                <label class="form-field">
+                    <span>Etapa nueva</span>
+                    {{ movimiento_form.etapa_nueva|add_class:"form-input" }}
+                </label>
+                <label class="form-field">
+                    <span>Comentario</span>
+                    {{ movimiento_form.comentario|add_class:"form-input" }}
+                </label>
+            </div>
+            <button type="submit" class="btn btn--primary btn--md" data-testid="actualizar-etapa">Actualizar etapa</button>
+        </form>
+        <div id="mensaje-etapa"></div>
+    </section>
+</div>
+{% endblock %}

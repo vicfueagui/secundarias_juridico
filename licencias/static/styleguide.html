@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Styleguide – Sistema de Seguimiento de Trámites</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <header class="sg-navbar">
+        <div class="sg-navbar__inner">
+            <a class="sg-navbar__brand" href="#">
+                <img src="img/segey-logo.png" alt="SEGEY Secretaría de Educación">
+                <span>Sistema de Seguimiento de Trámites</span>
+            </a>
+            <nav class="sg-navbar__nav" aria-label="Menu principal">
+                <a class="sg-navbar__link" href="#colores">Tokens</a>
+                <a class="sg-navbar__link" href="#tipografia">Tipografía</a>
+                <a class="sg-navbar__link" href="#componentes">Componentes</a>
+            </nav>
+            <label class="sg-search">
+                <svg class="sg-search__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M11.5 5.5a6 6 0 1 1 0 12 6 6 0 0 1 0-12Zm6.75 10.75 4.25 4.25" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                <span class="visually-hidden">Buscar en el styleguide</span>
+                <input class="sg-search__input" type="search" placeholder="Buscar componentes">
+            </label>
+        </div>
+    </header>
+    <main class="container stack-lg">
+        <section id="colores" class="stack">
+            <h2 class="text-uppercase" style="font-family: var(--font-display); color: var(--brand-600);">Paleta institucional</h2>
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+                <article class="surface-elevated stack-sm">
+                    <div style="height: 64px; border-radius: var(--radius-md); background: var(--brand-600);"></div>
+                    <strong>Brand 600</strong>
+                    <span class="text-muted">#701432</span>
+                </article>
+                <article class="surface-elevated stack-sm">
+                    <div style="height: 64px; border-radius: var(--radius-md); background: var(--brand-700);"></div>
+                    <strong>Brand 700</strong>
+                    <span class="text-muted">#5B0F28</span>
+                </article>
+                <article class="surface-elevated stack-sm">
+                    <div style="height: 64px; border-radius: var(--radius-md); background: var(--accent-500);"></div>
+                    <strong>Accent 500</strong>
+                    <span class="text-muted">#AC764C</span>
+                </article>
+                <article class="surface-elevated stack-sm">
+                    <div style="height: 64px; border-radius: var(--radius-md); background: var(--gold-500);"></div>
+                    <strong>Gold 500</strong>
+                    <span class="text-muted">#D6B74D</span>
+                </article>
+                <article class="surface-elevated stack-sm">
+                    <div style="height: 64px; border-radius: var(--radius-md); background: var(--info-500);"></div>
+                    <strong>Info 500</strong>
+                    <span class="text-muted">#5792B1</span>
+                </article>
+                <article class="surface-elevated stack-sm">
+                    <div style="height: 64px; border-radius: var(--radius-md); background: var(--neutral-900);"></div>
+                    <strong>Neutral 900</strong>
+                    <span class="text-muted">#2F2F2F</span>
+                </article>
+                <article class="surface-elevated stack-sm">
+                    <div style="height: 64px; border-radius: var(--radius-md); background: var(--neutral-400);"></div>
+                    <strong>Neutral 400</strong>
+                    <span class="text-muted">#CACBCE</span>
+                </article>
+                <article class="surface-elevated stack-sm">
+                    <div style="height: 64px; border-radius: var(--radius-md); background: var(--neutral-100); border: 1px solid var(--neutral-200);"></div>
+                    <strong>Neutral 100</strong>
+                    <span class="text-muted">#F7F8F9</span>
+                </article>
+            </div>
+        </section>
+
+        <section id="tipografia" class="stack">
+            <h2 style="font-family: var(--font-display); color: var(--brand-600);">Jerarquía tipográfica</h2>
+            <article class="surface-elevated stack">
+                <div>
+                    <h1 style="font-family: var(--font-display); font-size: var(--fs-h1); line-height: var(--lh-h1);">H1 · Seguimiento de trámites educativos</h1>
+                    <p class="text-muted">Montserrat 700 · 32/40 – Se usa en la cabecera principal de cada vista.</p>
+                </div>
+                <div>
+                    <h2 style="font-family: var(--font-display); font-size: var(--fs-h2); line-height: var(--lh-h2);">H2 · Prórrogas activas</h2>
+                    <p class="text-muted">Montserrat 600 · 24/32 – Encabezados de secciones dentro del módulo.</p>
+                </div>
+                <div>
+                    <h3 style="font-family: var(--font-display); font-size: var(--fs-h3); line-height: var(--lh-h3);">H3 · Datos del solicitante</h3>
+                    <p class="text-muted">Montserrat 600 · 20/28 – Subtítulos, tarjetas y listados.</p>
+                </div>
+                <p>Texto del cuerpo en Source Sans 3 400 · 16/24 con contraste mínimo AA. Los microtextos como ayudas y metadatos usan Source Sans 3 400 · 14/20.</p>
+            </article>
+        </section>
+
+        <section id="componentes" class="stack-lg">
+            <h2 style="font-family: var(--font-display); color: var(--brand-600);">Componentes</h2>
+
+            <article class="surface-elevated stack">
+                <h3>Botones</h3>
+                <div class="align-center">
+                    <button class="btn btn--primary btn--sm">Primario SM</button>
+                    <button class="btn btn--primary btn--md">Primario MD</button>
+                    <button class="btn btn--primary btn--lg">Primario LG</button>
+                    <button class="btn btn--secondary btn--md">Secundario</button>
+                    <button class="btn btn--ghost btn--md">Texto/Ghost</button>
+                    <button class="btn btn--danger btn--md">Peligro</button>
+                    <button class="btn btn--primary btn--md" disabled>Desactivado</button>
+                </div>
+            </article>
+
+            <article class="surface-elevated stack">
+                <h3>Tarjeta de noticia</h3>
+                <div class="card" style="max-width: 360px;">
+                    <img class="card__image" src="https://images.unsplash.com/photo-1529070538774-1843cb3265df?auto=format&fit=crop&w=900&q=80" alt="">
+                    <div class="card__body">
+                        <div class="card__meta">
+                            <span class="badge badge--gold">Convocatoria</span>
+                            <span>8 marzo 2025</span>
+                        </div>
+                        <h4 class="card__title">Nueva convocatoria para licencias docentes prolongadas</h4>
+                        <p>Consulta los requisitos actualizados para la solicitud de prórrogas y licencias especiales en el ciclo 2025-2026.</p>
+                        <div class="card__actions">
+                            <a href="#">Leer más</a>
+                            <button class="btn btn--ghost btn--sm">Compartir</button>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="surface-elevated stack">
+                <h3>Lista lateral de publicaciones</h3>
+                <aside class="post-list" style="max-width: 320px;">
+                    <div class="post-list__item">
+                        <div class="badge badge--gold">Convocatoria</div>
+                        <a class="post-list__title" href="#">Calendario de valoraciones médicas 2025</a>
+                        <div class="post-list__meta">
+                            <span>Publicado 12/02/2025</span>
+                            <span>SEGEY</span>
+                        </div>
+                    </div>
+                    <div class="post-list__item">
+                        <div class="badge badge--neutral">Cartel</div>
+                        <a class="post-list__title" href="#">Actualización de lineamientos para prórrogas</a>
+                        <div class="post-list__meta">
+                            <span>08/02/2025</span>
+                            <span>Departamento Jurídico</span>
+                        </div>
+                    </div>
+                    <div class="post-list__item">
+                        <div class="badge badge--gold">Aviso</div>
+                        <a class="post-list__title" href="#">Notificación de oficios pendientes</a>
+                        <div class="post-list__meta">
+                            <span>05/02/2025</span>
+                            <span>Dirección de Personal</span>
+                        </div>
+                    </div>
+                </aside>
+            </article>
+
+            <article class="surface-elevated stack">
+                <h3>Formulario</h3>
+                <form class="stack">
+                    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+                        <label class="form-field">
+                            <span>Nombre del trabajador</span>
+                            <input class="input" type="text" placeholder="Ej. María Chan" required>
+                        </label>
+                        <label class="form-field">
+                            <span>Tipo de trámite</span>
+                            <select class="input input--select">
+                                <option>Selecciona</option>
+                                <option>Licencia 754</option>
+                                <option>70 BIS</option>
+                            </select>
+                        </label>
+                        <label class="form-field">
+                            <span>Fecha de recepción</span>
+                            <input class="input" type="date">
+                        </label>
+                        <label class="form-field">
+                            <span>Observaciones</span>
+                            <textarea class="input" rows="3" placeholder="Notas adicionales"></textarea>
+                            <span class="help-text">Máximo 500 caracteres.</span>
+                        </label>
+                    </div>
+                    <div class="chip-group">
+                        <span class="chip">Dictamen pendiente</span>
+                        <span class="chip">Prioridad alta</span>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn--primary btn--md">Guardar</button>
+                        <button type="button" class="btn btn--secondary btn--md">Cancelar</button>
+                    </div>
+                </form>
+            </article>
+
+            <article class="surface-elevated stack">
+                <h3>Paginación</h3>
+                <nav class="pagination" aria-label="Paginación de trámites">
+                    <button class="pagination__button" type="button" aria-label="Anterior">
+                        &larr;
+                    </button>
+                    <button class="pagination__page pagination__page--current" type="button" aria-current="page">1</button>
+                    <button class="pagination__page" type="button">2</button>
+                    <button class="pagination__page" type="button">3</button>
+                    <button class="pagination__page" type="button">4</button>
+                    <button class="pagination__button" type="button" aria-label="Siguiente">
+                        &rarr;
+                    </button>
+                </nav>
+            </article>
+
+            <article class="surface-elevated stack">
+                <h3>Alertas</h3>
+                <div class="stack">
+                    <div class="alert alert--info">
+                        <svg class="alert__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.6"/>
+                            <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                            <circle cx="12" cy="16" r="1.2" fill="currentColor"/>
+                        </svg>
+                        <div class="alert__content">
+                            <p class="alert__title">Información</p>
+                            <p>Los oficios deben registrarse dentro de las primeras 24 horas hábiles.</p>
+                        </div>
+                    </div>
+                    <div class="alert alert--success">
+                        <svg class="alert__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.6"/>
+                            <path d="M8 12.5 10.8 15l5.4-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <div class="alert__content">
+                            <p class="alert__title">Éxito</p>
+                            <p>El trámite se guardó correctamente y se asignó a la mesa jurídica.</p>
+                        </div>
+                    </div>
+                    <div class="alert alert--warning">
+                        <svg class="alert__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.6"/>
+                            <path d="M12 7v6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                            <circle cx="12" cy="16" r="1.2" fill="currentColor"/>
+                        </svg>
+                        <div class="alert__content">
+                            <p class="alert__title">Advertencia</p>
+                            <p>Faltan documentos en la sección de prórrogas. Verifica antes de enviar.</p>
+                        </div>
+                    </div>
+                    <div class="alert alert--danger">
+                        <svg class="alert__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.6"/>
+                            <path d="M9 9l6 6m0-6-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                        </svg>
+                        <div class="alert__content">
+                            <p class="alert__title">Error</p>
+                            <p>No fue posible generar el dictamen. Intenta nuevamente o contacta soporte.</p>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="surface-elevated stack">
+                <h3>Tabla de trámites</h3>
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Folio</th>
+                                <th>Trabajador</th>
+                                <th>Tipo</th>
+                                <th>Subsistema</th>
+                                <th>Estado</th>
+                                <th>Actualizado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>SEC-LIC-2025-0001</td>
+                                <td>María Chan</td>
+                                <td>Licencia 754</td>
+                                <td>Estatal</td>
+                                <td><span class="chip">En dictamen</span></td>
+                                <td>12/02/2025</td>
+                                <td class="table-actions">
+                                    <a href="#">Ver</a>
+                                    <a href="#">Editar</a>
+                                    <a href="#">Eliminar</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>SEC-LIC-2025-0002</td>
+                                <td>Carlos Pool</td>
+                                <td>Cambio de actividad</td>
+                                <td>Federal</td>
+                                <td><span class="chip">Revisión</span></td>
+                                <td>11/02/2025</td>
+                                <td class="table-actions">
+                                    <a href="#">Ver</a>
+                                    <a href="#">Editar</a>
+                                    <a href="#">Eliminar</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+        </section>
+    </main>
+    <footer>
+        <small>Styleguide institucional · SEGEY 2025</small>
+    </footer>
+</body>
+</html>

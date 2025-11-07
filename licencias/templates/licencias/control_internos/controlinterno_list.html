@@ -1,0 +1,132 @@
+{% extends "licencias/base.html" %}
+{% load form_tags %}
+
+{% block title %}Control de Internos | SEGEY Licencias{% endblock %}
+
+{% block content %}
+<section class="module-shell">
+    <div class="module-shell__header">
+        <div>
+            <p class="module-shell__eyebrow">Jurídico · Secundarias</p>
+            <h1 class="module-shell__title">Listado de Internos</h1>
+            <p class="module-shell__lead">Consulta y da seguimiento a memorándums, estatus y acciones asociadas a cada centro de trabajo.</p>
+        </div>
+        {% if perms.licencias.add_controlinterno %}
+        <div class="module-shell__actions">
+            <a class="btn btn--primary btn--lg" href="{% url 'licencias:controlinterno-create' %}">
+                Registrar control
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <section class="filters module-panel">
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Filtrar información</h2>
+            <p class="module-panel__subtitle">Refina la búsqueda por año, estatus, asesor o palabras clave.</p>
+        </div>
+        <form method="get">
+            <div class="filter-grid">
+                {% for field in filter.form.visible_fields %}
+                <div class="filter-field">
+                    <label>{{ field.label }} {{ field }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="module-panel__footer">
+                <button type="submit" class="btn btn--primary btn--sm">Aplicar filtros</button>
+                <a href="{% url 'licencias:controlinterno-list' %}" class="btn btn--ghost btn--sm">Limpiar</a>
+            </div>
+        </form>
+    </section>
+
+    <div class="module-table-card">
+        <div class="module-table-card__header">
+            <h2 class="module-table-card__title">Listado de internos</h2>
+            <p class="module-table-card__meta">
+                {% if page_obj %}
+                Mostrando {{ page_obj.start_index }} – {{ page_obj.end_index }} de {{ page_obj.paginator.count }} registros.
+                {% else %}
+                Total de registros: {{ controles|length }}
+                {% endif %}
+            </p>
+        </div>
+        <table class="table table--interactive">
+            <thead>
+                <tr>
+                    <th>Memorándum</th>
+                    <th>Fecha memorándum</th>
+                    <th>Año</th>
+                    <th>Asunto</th>
+                    <th>CCT</th>
+                    <th>Sistema</th>
+                    <th>Modalidad</th>
+                    <th>Fecha contestación</th>
+                    <th>Oficio contestación</th>
+                    <th>Asesor</th>
+                    <th>Estatus</th>
+                    <th>Creado</th>
+                    <th>Actualizado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for control in controles %}
+                <tr>
+                    <td>
+                        <span class="table__primary">{{ control.memorandum }}</span>
+                        <span class="table__secondary">Interno · {{ control.numero_interno }}</span>
+                    </td>
+                    <td>{{ control.fecha_memorandum|date:"d/m/Y"|default:"-" }}</td>
+                    <td>{{ control.anio }}</td>
+                    <td>{{ control.asunto }}</td>
+                    <td>
+                        <span class="table__primary">{{ control.cct.cct }}</span>
+                        <span class="table__secondary">{{ control.cct_nombre }}</span>
+                    </td>
+                    <td>{{ control.sostenimiento_c_subcontrol|sistema_display|default:"-" }}</td>
+                    <td>{{ control.tiponivelsub_c_servicion3|default:"-" }}</td>
+                    <td>{{ control.fecha_contestacion|date:"d/m/Y"|default:"-" }}</td>
+                    <td>{{ control.numero_oficio_contestacion|default:"-" }}</td>
+                    <td>{{ control.asesor|default:"-" }}</td>
+                    <td>
+                        {% if control.estatus %}
+                        <span class="status-chip status-chip--{{ control.estatus|slugify }}">{{ control.estatus }}</span>
+                        {% else %}
+                        <span class="status-chip status-chip--default">Sin estatus</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ control.creado_en|date:"d/m/Y H:i" }}</td>
+                    <td>{{ control.actualizado_en|date:"d/m/Y H:i" }}</td>
+                    <td class="table-actions">
+                        <a class="table-actions__link" href="{% url 'licencias:controlinterno-detail' control.pk %}">Ver</a>
+                        {% if perms.licencias.change_controlinterno %}
+                        <a class="table-actions__link" href="{% url 'licencias:controlinterno-update' control.pk %}">Editar</a>
+                        {% endif %}
+                        {% if perms.licencias.delete_controlinterno %}
+                        <a class="table-actions__link table-actions__link--danger" href="{% url 'licencias:controlinterno-delete' control.pk %}">Eliminar</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="14" class="table__empty">No hay internos registrados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if is_paginated %}
+        <div class="pagination pagination--inset">
+            {% if page_obj.has_previous %}
+            <a class="pagination__button" href="?{% if request.GET %}{{ request.GET.urlencode }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Página anterior">&larr;</a>
+            {% endif %}
+            <span class="pagination__page pagination__page--current">Página {{ page_obj.number }} de {{ paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+            <a class="pagination__button" href="?{% if request.GET %}{{ request.GET.urlencode }}&amp;{% endif %}page={{ page_obj.next_page_number }}" aria-label="Página siguiente">&rarr;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

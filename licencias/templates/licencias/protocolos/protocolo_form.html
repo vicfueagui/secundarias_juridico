@@ -1,0 +1,238 @@
+{% extends "licencias/base.html" %}
+
+{% block title %}{% if form.instance.pk %}Editar{% else %}Registrar{% endif %} protocolo | SEGEY Licencias{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">{% if form.instance.pk %}Editar{% else %}Registrar{% endif %} protocolo</h1>
+    <p class="lead">Selecciona el CCT correspondiente y captura la información del caso para dar seguimiento al protocolo.</p>
+</div>
+
+<div class="tramite-form-container">
+    <form
+        method="post"
+        class="tramite-form"
+        data-control-interno-form
+        data-lookup-url="{{ cct_lookup_url }}"
+        data-cct-api="{{ cct_api_url }}"
+        data-cct-can-create="{{ perms.licencias.add_cctsecundaria|yesno:'true,false' }}"
+        data-cct-can-edit="{{ perms.licencias.change_cctsecundaria|yesno:'true,false' }}"
+        data-cct-can-delete="{{ perms.licencias.delete_cctsecundaria|yesno:'true,false' }}"
+    >
+        {% csrf_token %}
+        {{ form.numero_registro }}
+        {{ form.cct }}
+        <input type="hidden" id="id_tiponivelsub_c_servicion3">
+        <input type="hidden" id="id_sostenimiento_c_subcontrol">
+        {% if form.non_field_errors %}
+        <div class="form-alert" role="alert">
+            {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if form.numero_registro.errors %}
+        <div class="form-alert" role="alert">
+            {% for error in form.numero_registro.errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if form.cct.errors %}
+        <div class="form-alert" role="alert">
+            {% for error in form.cct.errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="form-grid">
+            <div class="form-field form-field--full">
+                <label for="{{ form.cct_codigo.id_for_label }}">{{ form.cct_codigo.label }}</label>
+                {{ form.cct_codigo }}
+                <div class="cct-suggestions surface-subtle" data-cct-suggestions hidden></div>
+                <datalist id="cct-options">
+                    {% for cct in cct_catalogo %}
+                    <option value="{{ cct.cct }}" data-nombre="{{ cct.nombre }}" data-servicio="{{ cct.servicio }}" data-asesor="{{ cct.asesor }}" data-sostenimiento="{{ cct.sostenimiento }}">{{ cct.cct }} · {{ cct.nombre }}</option>
+                    {% endfor %}
+                </datalist>
+                {% if form.cct_codigo.help_text %}
+                <span class="help-text">{{ form.cct_codigo.help_text }}</span>
+                {% endif %}
+                {% for error in form.cct_codigo.errors %}
+                <span class="error-text">{{ error }}</span>
+                {% endfor %}
+                <div class="field-actions">
+                    <button type="button" class="btn btn--secondary btn--sm" data-cct-action="search">Buscar</button>
+                    {% if perms.licencias.add_cctsecundaria %}
+                    <button type="button" class="btn btn--ghost btn--sm" data-cct-action="create">Nuevo</button>
+                    {% endif %}
+                    {% if perms.licencias.change_cctsecundaria %}
+                    <button type="button" class="btn btn--ghost btn--sm" data-cct-action="edit">Editar</button>
+                    {% endif %}
+                    {% if perms.licencias.delete_cctsecundaria %}
+                    <button type="button" class="btn btn--danger btn--sm" data-cct-action="delete">Eliminar</button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label for="id_cct_nombre">{{ form.escuela.label }}</label>
+                {{ form.escuela }}
+                {% for error in form.escuela.errors %}
+                <span class="error-text">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.anio.id_for_label }}">{{ form.anio.label }}</label>
+                {{ form.anio }}
+                {% for error in form.anio.errors %}
+                <span class="error-text">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.fecha_inicio.id_for_label }}">{{ form.fecha_inicio.label }}</label>
+                {{ form.fecha_inicio }}
+                {% for error in form.fecha_inicio.errors %}
+                <span class="error-text">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.iniciales.id_for_label }}">{{ form.iniciales.label }}</label>
+                {{ form.iniciales }}
+                {% for error in form.iniciales.errors %}
+                <span class="error-text">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.nombre_nna.id_for_label }}">{{ form.nombre_nna.label }}</label>
+                {{ form.nombre_nna }}
+                {% for error in form.nombre_nna.errors %}
+                <span class="error-text">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.sexo.id_for_label }}">{{ form.sexo.label }}</label>
+                {{ form.sexo }}
+                {% for error in form.sexo.errors %}
+                <span class="error-text">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-field">
+                <label for="id_asesor">{{ form.asesor_juridico.label }}</label>
+                {{ form.asesor_juridico }}
+                {% for error in form.asesor_juridico.errors %}
+                <span class="error-text">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-field form-field--full">
+                <label for="{{ form.tipo_violencia.id_for_label }}">{{ form.tipo_violencia.label }}</label>
+                {{ form.tipo_violencia }}
+                <datalist id="tipo-violencia-options">
+                    {% for opcion in form.TIPO_VIOLENCIA_SUGERIDAS %}
+                    <option value="{{ opcion }}"></option>
+                    {% endfor %}
+                </datalist>
+                {% for error in form.tipo_violencia.errors %}
+                <span class="error-text">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-field form-field--full">
+                <label for="{{ form.descripcion.id_for_label }}">{{ form.descripcion.label }}</label>
+                {{ form.descripcion }}
+                {% for error in form.descripcion.errors %}
+                <span class="error-text">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-field form-field--full">
+                <label for="{{ form.comentarios.id_for_label }}">{{ form.comentarios.label }}</label>
+                {{ form.comentarios }}
+                {% for error in form.comentarios.errors %}
+                <span class="error-text">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.estatus.id_for_label }}">{{ form.estatus.label }}</label>
+                {{ form.estatus }}
+                {% for error in form.estatus.errors %}
+                <span class="error-text">{{ error }}</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn--primary btn--md">Guardar protocolo</button>
+            <a class="btn btn--secondary btn--md" href="{% url 'licencias:protocolo-list' %}">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<div
+    class="modal"
+    id="cct-modal"
+    hidden
+    role="dialog"
+    aria-modal="true"
+>
+    <div class="modal-overlay" data-modal-close></div>
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3 class="modal-title" data-modal-title>Registrar CCT</h3>
+            <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body modal-body--stack">
+            <section class="modal-section">
+                <label for="cct-search">Buscar en el catálogo</label>
+                <input type="search" id="cct-search" placeholder="Escribe CCT, nombre o municipio" data-cct-search>
+                <p class="modal-hint" data-cct-hint>Escribe al menos un carácter para ver resultados del catálogo.</p>
+                <div class="modal-results" data-cct-results></div>
+            </section>
+            <form id="cct-form" class="modal-form">
+                <div class="modal-field">
+                    <label for="cct-codigo">CCT</label>
+                    <input type="text" id="cct-codigo" name="cct" required maxlength="12">
+                </div>
+                <div class="modal-field">
+                    <label for="cct-nombre">Nombre</label>
+                    <input type="text" id="cct-nombre" name="nombre" required maxlength="255">
+                </div>
+                <div class="modal-field">
+                    <label for="cct-servicio">Modalidad</label>
+                    <input type="text" id="cct-servicio" name="servicio" maxlength="255">
+                </div>
+                <div class="modal-field">
+                    <label for="cct-sostenimiento">Sistema</label>
+                    <input type="text" id="cct-sostenimiento" name="sostenimiento" maxlength="255">
+                </div>
+                <div class="modal-field">
+                    <label for="cct-asesor">Asesor</label>
+                    <input type="text" id="cct-asesor" name="asesor" maxlength="255">
+                </div>
+                <div class="modal-field">
+                    <label for="cct-municipio">Municipio</label>
+                    <input type="text" id="cct-municipio" name="municipio" maxlength="255">
+                </div>
+                <div class="modal-field">
+                    <label for="cct-turno">Turno</label>
+                    <input type="text" id="cct-turno" name="turno" maxlength="255">
+                </div>
+                <div class="modal-message" data-modal-message role="alert"></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn--primary btn--md" data-cct-save>Guardar</button>
+                    <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
