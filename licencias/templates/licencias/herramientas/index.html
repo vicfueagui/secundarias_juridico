@@ -1,0 +1,26 @@
+{% extends "licencias/base.html" %}
+
+{% block title %}Herramientas{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <span class="chip">Herramientas</span>
+        <h1 class="page-title">Centro de herramientas</h1>
+        <p>Accede a los módulos auxiliares para agilizar cálculos y reportes operativos.</p>
+    </div>
+</div>
+
+<div class="card-grid">
+    {% for tool in tools %}
+    <article class="card tool-card">
+        <div class="card__body">
+            <span class="chip chip--secondary">{{ tool.badge }}</span>
+            <h2 class="section-title">{{ tool.title }}</h2>
+            <p>{{ tool.description }}</p>
+            <a class="btn btn--primary" href="{{ tool.url }}">Abrir</a>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+{% endblock %}

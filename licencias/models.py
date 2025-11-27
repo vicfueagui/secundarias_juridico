@@ -677,6 +677,341 @@ class ControlInternoStatusHistory(models.Model):
         return f"{self.control} · {self.estatus_anterior or '—'} → {self.estatus_nuevo}"
 
 
+class TipoProceso(CatalogoBase):
+    """Catálogo de tipos de proceso que integran un caso interno."""
+
+    es_documento = models.BooleanField(
+        default=False,
+        help_text="Indica si generalmente genera o adjunta documento.",
+    )
+
+    class Meta(CatalogoBase.Meta):
+        verbose_name = "Tipo de proceso"
+        verbose_name_plural = "Tipos de proceso"
+
+
+class AreaProceso(CatalogoBase):
+    """Catálogo de áreas o dependencias involucradas en los casos."""
+
+    siglas = models.CharField(max_length=50, blank=True)
+
+    class Meta(CatalogoBase.Meta):
+        verbose_name = "Área de proceso"
+        verbose_name_plural = "Áreas de proceso"
+
+
+class EstatusCaso(CatalogoBase):
+    """Catálogo de estatus aplicables a un caso interno."""
+
+    orden = models.PositiveIntegerField(default=1)
+
+    class Meta(CatalogoBase.Meta):
+        ordering = ("orden", "nombre")
+        verbose_name = "Estatus de caso"
+        verbose_name_plural = "Estatus de caso"
+
+
+class EstatusProceso(CatalogoBase):
+    """Catálogo de estatus aplicables a cada proceso del expediente."""
+
+    orden = models.PositiveIntegerField(default=1)
+
+    class Meta(CatalogoBase.Meta):
+        ordering = ("orden", "nombre")
+        verbose_name = "Estatus de proceso"
+        verbose_name_plural = "Estatus de proceso"
+
+
+class CasoInterno(models.Model):
+    """Expediente que agrupa todos los procesos relacionados con un asunto."""
+
+    cct = models.ForeignKey(
+        CCTSecundaria,
+        on_delete=models.PROTECT,
+        related_name="casos_internos",
+        verbose_name="CCT principal",
+    )
+    cct_nombre = models.CharField(max_length=255, verbose_name="Nombre del CCT")
+    cct_sistema = models.CharField(max_length=255, blank=True, verbose_name="Sistema")
+    cct_modalidad = models.CharField(max_length=255, blank=True, verbose_name="Modalidad")
+    asesor_cct = models.CharField(max_length=255, blank=True, verbose_name="Asesor asignado")
+    descripcion_breve = models.CharField(max_length=255, verbose_name="Descripción breve")
+    fecha_apertura = models.DateField(verbose_name="Fecha de apertura")
+    estatus = models.ForeignKey(
+        EstatusCaso,
+        on_delete=models.PROTECT,
+        related_name="casos",
+        verbose_name="Estatus",
+    )
+    tipo_inicial = models.ForeignKey(
+        TipoProceso,
+        on_delete=models.PROTECT,
+        related_name="casos_iniciados_como",
+        verbose_name="Tipo inicial",
+    )
+    folio_inicial = models.CharField(max_length=150, blank=True, verbose_name="Folio inicial")
+    area_origen_inicial = models.ForeignKey(
+        AreaProceso,
+        on_delete=models.PROTECT,
+        related_name="casos_origen",
+        verbose_name="Área de origen",
+    )
+    fecha_oficio_inicial = models.DateField(blank=True, null=True, verbose_name="Fecha oficio inicial")
+    asunto_inicial = models.CharField(max_length=255, blank=True, verbose_name="Asunto inicial")
+    observaciones_iniciales = models.TextField(blank=True, verbose_name="Observaciones iniciales")
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="casos_creados",
+        verbose_name="Registrado por",
+        blank=True,
+        null=True,
+    )
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ("-fecha_apertura", "-fecha_registro")
+        indexes = [
+            models.Index(fields=("cct",)),
+            models.Index(fields=("estatus",)),
+            models.Index(fields=("fecha_apertura",)),
+        ]
+        verbose_name = "Caso interno"
+        verbose_name_plural = "Casos internos"
+
+    def __str__(self) -> str:
+        return f"{self.cct_id} · {self.descripcion_breve}"
+
+    def clean(self) -> None:
+        if self.cct:
+            self.cct_nombre = self.cct.nombre
+            self.cct_sistema = normalise_sistema(self.cct.sostenimiento)
+            self.cct_modalidad = self.cct.servicio or ""
+            if not self.asesor_cct:
+                self.asesor_cct = self.cct.asesor
+        self.cct_sistema = normalise_sistema(self.cct_sistema)
+
+
+class ProcesoInterno(models.Model):
+    """Proceso, memorándum u oficio que forma parte del caso."""
+
+    caso = models.ForeignKey(
+        CasoInterno,
+        on_delete=models.CASCADE,
+        related_name="procesos",
+        verbose_name="Caso",
+    )
+    tipo_proceso = models.ForeignKey(
+        TipoProceso,
+        on_delete=models.PROTECT,
+        related_name="procesos",
+        verbose_name="Tipo de proceso",
+    )
+    folio = models.CharField(max_length=150, verbose_name="Folio de oficio")
+    fecha_oficio = models.DateField(verbose_name="Fecha del oficio")
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+    asunto = models.CharField(max_length=255, verbose_name="Asunto")
+    observaciones = models.TextField(blank=True, verbose_name="Observaciones")
+    estatus = models.ForeignKey(
+        EstatusProceso,
+        on_delete=models.PROTECT,
+        related_name="procesos",
+        verbose_name="Estatus",
+    )
+    cct = models.ForeignKey(
+        CCTSecundaria,
+        on_delete=models.PROTECT,
+        related_name="procesos_internos",
+        blank=True,
+        null=True,
+        verbose_name="CCT",
+    )
+    cct_nombre = models.CharField(max_length=255, blank=True, verbose_name="Nombre CCT")
+    cct_sistema = models.CharField(max_length=255, blank=True, verbose_name="Sistema")
+    cct_modalidad = models.CharField(max_length=255, blank=True, verbose_name="Modalidad")
+    asesor_cct = models.CharField(max_length=255, blank=True, verbose_name="Asesor")
+    area_origen = models.ForeignKey(
+        AreaProceso,
+        on_delete=models.PROTECT,
+        related_name="procesos_origen",
+        verbose_name="Área de origen",
+    )
+    area_destino = models.ForeignKey(
+        AreaProceso,
+        on_delete=models.PROTECT,
+        related_name="procesos_destino",
+        verbose_name="Área de destino",
+    )
+    asesor_responsable = models.CharField(max_length=255, blank=True, verbose_name="Asesor responsable")
+    proceso_padre = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        related_name="subprocesos",
+        blank=True,
+        null=True,
+        verbose_name="Proceso padre",
+    )
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="procesos_creados",
+        verbose_name="Registrado por",
+    )
+    actualizado_en = models.DateTimeField(auto_now=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ("-fecha_oficio", "-fecha_registro")
+        indexes = [
+            models.Index(fields=("folio",)),
+            models.Index(fields=("caso",)),
+            models.Index(fields=("cct",)),
+            models.Index(fields=("tipo_proceso",)),
+            models.Index(fields=("estatus",)),
+        ]
+        verbose_name = "Proceso interno"
+        verbose_name_plural = "Procesos internos"
+
+    def __str__(self) -> str:
+        return f"{self.tipo_proceso.nombre} · {self.folio}"
+
+    def clean(self) -> None:
+        if self.cct:
+            self.cct_nombre = self.cct.nombre
+            self.cct_modalidad = self.cct.servicio or ""
+            self.cct_sistema = normalise_sistema(self.cct.sostenimiento)
+            if not self.asesor_cct:
+                self.asesor_cct = self.cct.asesor or ""
+        elif self.caso and self.caso.cct:
+            self.cct = self.caso.cct
+            self.cct_nombre = self.caso.cct_nombre
+            self.cct_modalidad = self.caso.cct_modalidad
+            self.cct_sistema = self.caso.cct_sistema
+            if not self.asesor_cct:
+                self.asesor_cct = self.caso.asesor_cct
+        self.cct_sistema = normalise_sistema(self.cct_sistema)
+
+
+class HistorialEstatusCaso(models.Model):
+    """Bitácora de cambios de estatus en casos internos."""
+
+    caso = models.ForeignKey(
+        CasoInterno,
+        on_delete=models.CASCADE,
+        related_name="historial_estatus",
+        verbose_name="Caso",
+    )
+    estatus_anterior = models.ForeignKey(
+        EstatusCaso,
+        on_delete=models.SET_NULL,
+        related_name="+",
+        blank=True,
+        null=True,
+        verbose_name="Estatus anterior",
+    )
+    estatus_nuevo = models.ForeignKey(
+        EstatusCaso,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name="Estatus nuevo",
+    )
+    fecha_cambio = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de cambio")
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="cambios_estatus_casos",
+        blank=True,
+        null=True,
+        verbose_name="Registrado por",
+    )
+    comentario = models.TextField(blank=True, verbose_name="Comentario")
+
+    class Meta:
+        ordering = ("-fecha_cambio",)
+        verbose_name = "Historial estatus de caso"
+        verbose_name_plural = "Historial estatus de casos"
+
+    def __str__(self) -> str:
+        return f"{self.caso} · {self.estatus_anterior or '—'} → {self.estatus_nuevo}"
+
+
+class HistorialEstatusProceso(models.Model):
+    """Bitácora de cambios de estatus para procesos internos."""
+
+    proceso = models.ForeignKey(
+        ProcesoInterno,
+        on_delete=models.CASCADE,
+        related_name="historial_estatus",
+        verbose_name="Proceso",
+    )
+    estatus_anterior = models.ForeignKey(
+        EstatusProceso,
+        on_delete=models.SET_NULL,
+        related_name="+",
+        blank=True,
+        null=True,
+        verbose_name="Estatus anterior",
+    )
+    estatus_nuevo = models.ForeignKey(
+        EstatusProceso,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name="Estatus nuevo",
+    )
+    fecha_cambio = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de cambio")
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="cambios_estatus_procesos",
+        blank=True,
+        null=True,
+        verbose_name="Registrado por",
+    )
+    comentario = models.TextField(blank=True, verbose_name="Comentario")
+
+    class Meta:
+        ordering = ("-fecha_cambio",)
+        verbose_name = "Historial estatus de proceso"
+        verbose_name_plural = "Historial estatus de procesos"
+
+    def __str__(self) -> str:
+        return f"{self.proceso} · {self.estatus_anterior or '—'} → {self.estatus_nuevo}"
+
+
+class DocumentoCaso(models.Model):
+    """Documentos adjuntos a procesos del caso."""
+
+    proceso = models.ForeignKey(
+        ProcesoInterno,
+        on_delete=models.CASCADE,
+        related_name="documentos",
+        verbose_name="Proceso",
+    )
+    tipo_documento = models.CharField(max_length=150, verbose_name="Tipo de documento")
+    archivo = models.FileField(upload_to="casos_internos/documentos/")
+    descripcion = models.CharField(max_length=255, blank=True)
+    fecha_subida = models.DateTimeField(auto_now_add=True)
+    subido_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="documentos_casos",
+        blank=True,
+        null=True,
+    )
+
+    class Meta:
+        ordering = ("-fecha_subida",)
+        verbose_name = "Documento de caso"
+        verbose_name_plural = "Documentos de caso"
+
+    def __str__(self) -> str:
+        return f"{self.tipo_documento} · {self.proceso}"
+
+
 class RelacionProtocolo(models.Model):
     """Registro de relación de protocolos para secundarias."""
 
@@ -702,7 +1037,7 @@ class RelacionProtocolo(models.Model):
         related_name="protocolos",
         verbose_name="CCT",
     )
-    fecha_inicio = models.DateField(verbose_name="Fecha de inicio")
+    fecha_inicio = models.DateField(blank=True, null=True, verbose_name="Fecha de inicio")
     iniciales = models.CharField(
         max_length=50,
         verbose_name="Iniciales del NNA",

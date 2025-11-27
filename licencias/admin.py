@@ -260,3 +260,109 @@ class RelacionProtocoloAdmin(admin.ModelAdmin):
         "tipo_violencia",
     )
     autocomplete_fields = ("cct",)
+
+
+@admin.register(models.TipoProceso)
+class TipoProcesoAdmin(admin.ModelAdmin):
+    list_display = ("nombre", "es_documento", "esta_activo", "actualizado_en")
+    list_filter = ("es_documento", "esta_activo")
+    search_fields = ("nombre", "descripcion")
+    list_editable = ("es_documento", "esta_activo")
+
+
+@admin.register(models.AreaProceso)
+class AreaProcesoAdmin(admin.ModelAdmin):
+    list_display = ("nombre", "siglas", "esta_activo", "actualizado_en")
+    list_filter = ("esta_activo",)
+    search_fields = ("nombre", "siglas")
+    list_editable = ("esta_activo",)
+
+
+@admin.register(models.EstatusCaso)
+class EstatusCasoAdmin(admin.ModelAdmin):
+    list_display = ("nombre", "orden", "esta_activo")
+    list_editable = ("orden", "esta_activo")
+    search_fields = ("nombre",)
+    ordering = ("orden",)
+
+
+@admin.register(models.EstatusProceso)
+class EstatusProcesoAdmin(admin.ModelAdmin):
+    list_display = ("nombre", "orden", "esta_activo")
+    list_editable = ("orden", "esta_activo")
+    search_fields = ("nombre",)
+    ordering = ("orden",)
+
+
+@admin.register(models.CasoInterno)
+class CasoInternoAdmin(admin.ModelAdmin):
+    date_hierarchy = "fecha_apertura"
+    list_display = (
+        "cct",
+        "descripcion_breve",
+        "tipo_inicial",
+        "folio_inicial",
+        "estatus",
+        "fecha_apertura",
+        "creado_por",
+    )
+    list_filter = (
+        "estatus",
+        "tipo_inicial",
+        "area_origen_inicial",
+        ("fecha_apertura", admin.DateFieldListFilter),
+    )
+    search_fields = (
+        "descripcion_breve",
+        "folio_inicial",
+        "cct__cct",
+        "cct_nombre",
+    )
+    autocomplete_fields = ("cct", "estatus", "tipo_inicial", "area_origen_inicial")
+    readonly_fields = ("fecha_registro", "actualizado_en")
+
+
+@admin.register(models.ProcesoInterno)
+class ProcesoInternoAdmin(admin.ModelAdmin):
+    date_hierarchy = "fecha_oficio"
+    list_display = (
+        "caso",
+        "tipo_proceso",
+        "folio",
+        "estatus",
+        "area_origen",
+        "area_destino",
+        "fecha_oficio",
+    )
+    list_filter = (
+        "tipo_proceso",
+        "estatus",
+        "area_origen",
+        "area_destino",
+        ("fecha_oficio", admin.DateFieldListFilter),
+    )
+    search_fields = (
+        "folio",
+        "asunto",
+        "caso__descripcion_breve",
+        "caso__cct__cct",
+        "cct_nombre",
+    )
+    autocomplete_fields = (
+        "caso",
+        "tipo_proceso",
+        "estatus",
+        "area_origen",
+        "area_destino",
+        "cct",
+        "proceso_padre",
+    )
+    readonly_fields = ("fecha_registro", "actualizado_en")
+
+
+@admin.register(models.DocumentoCaso)
+class DocumentoCasoAdmin(admin.ModelAdmin):
+    date_hierarchy = "fecha_subida"
+    list_display = ("proceso", "tipo_documento", "descripcion", "fecha_subida", "subido_por")
+    search_fields = ("tipo_documento", "descripcion", "proceso__folio", "proceso__caso__descripcion_breve")
+    autocomplete_fields = ("proceso",)

@@ -5,6 +5,8 @@
     initTabs();
     initDiagnosticoCrud();
     initControlInternoForm();
+    initCasoInternoForm();
+    initProcesoInternoForm();
   });
 
   function initTabs() {
@@ -313,6 +315,334 @@
     return trimmed.toUpperCase() === "FEDERAL TRANSFERIDO" ? "FEDERAL" : trimmed;
   };
 
+  function setupCCTForm(options) {
+    const {
+      form,
+      lookupUrl = "",
+      apiBase = "",
+      cctInput,
+      hiddenCctInput,
+      nombreInput,
+      servicioInput,
+      sistemaInput,
+      asesorInput,
+      datalist,
+      suggestionsContainer,
+      modalId = "cct-modal",
+      canCreate = false,
+      canEdit = false,
+      canDelete = false,
+    } = options;
+    if (!form || !cctInput || !hiddenCctInput || !nombreInput || !servicioInput || !datalist) {
+      return;
+    }
+
+    const normalize = (value) => (value || "").trim().toUpperCase();
+    const SUGGESTION_MIN_LENGTH = 3;
+    const LOOKUP_MIN_LENGTH = 10;
+    const SUGGESTION_DEBOUNCE = 200;
+    let suggestionTimer = null;
+    let suggestionAbortController = null;
+
+    const upsertOption = (item) => {
+      if (!item || !item.cct) {
+        return;
+      }
+      const code = normalize(item.cct);
+      const sistemaNormalizado = normaliseSistema(item.sostenimiento);
+      item.sostenimiento = sistemaNormalizado;
+      const existing = Array.from(datalist.options).find(
+        (opt) => normalize(opt.value || opt.text) === code,
+      );
+      const label = `${code} · ${item.nombre || ""}`.trim();
+      if (existing) {
+        existing.value = code;
+        existing.textContent = label;
+        existing.dataset.nombre = item.nombre || "";
+        existing.dataset.servicio = item.servicio || "";
+        existing.dataset.asesor = item.asesor || "";
+        existing.dataset.sostenimiento = sistemaNormalizado;
+        existing.setAttribute("data-nombre", item.nombre || "");
+        existing.setAttribute("data-servicio", item.servicio || "");
+        existing.setAttribute("data-asesor", item.asesor || "");
+        existing.setAttribute("data-sostenimiento", sistemaNormalizado);
+      } else {
+        const option = document.createElement("option");
+        option.value = code;
+        option.textContent = label;
+        option.dataset.nombre = item.nombre || "";
+        option.dataset.servicio = item.servicio || "";
+        option.dataset.asesor = item.asesor || "";
+        option.dataset.sostenimiento = sistemaNormalizado;
+        option.setAttribute("data-nombre", item.nombre || "");
+        option.setAttribute("data-servicio", item.servicio || "");
+        option.setAttribute("data-asesor", item.asesor || "");
+        option.setAttribute("data-sostenimiento", sistemaNormalizado);
+        datalist.appendChild(option);
+      }
+    };
+
+    const updateFromOption = (codigo) => {
+      const option = Array.from(datalist.options).find(
+        (opt) => normalize(opt.value || opt.text) === codigo,
+      );
+      if (!option) {
+        return false;
+      }
+      nombreInput.value =
+        option.dataset?.nombre || option.getAttribute("data-nombre") || "";
+      servicioInput.value =
+        option.dataset?.servicio || option.getAttribute("data-servicio") || "";
+      const sistemaDato =
+        option.dataset?.sostenimiento ||
+        option.getAttribute("data-sostenimiento") ||
+        "";
+      if (sistemaInput) {
+        sistemaInput.value = normaliseSistema(sistemaDato);
+      }
+      if (asesorInput) {
+        asesorInput.value =
+          option.dataset?.asesor || option.getAttribute("data-asesor") || "";
+      }
+      hiddenCctInput.value = codigo;
+      return true;
+    };
+
+    const fetchAndUpdate = async (codigo) => {
+      if (!lookupUrl) {
+        return null;
+      }
+      try {
+        const response = await fetch(`${lookupUrl}?cct=${encodeURIComponent(codigo)}`, {
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
+        if (!response.ok) {
+          if (response.status === 404) {
+            return null;
+          }
+          throw new Error("No fue posible consultar la información del CCT.");
+        }
+        const data = await response.json();
+        if (!data.found) {
+          return null;
+        }
+        const item = {
+          cct: data.cct || codigo,
+          nombre: data.c_nombre || "",
+          sostenimiento: normaliseSistema(data.sostenimiento_c_subcontrol),
+          servicio: data.tiponivelsub_c_servicion3 || "",
+          asesor: data.asesor || "",
+        };
+        nombreInput.value = item.nombre;
+        if (sistemaInput) {
+          sistemaInput.value = item.sostenimiento;
+        }
+        servicioInput.value = item.servicio;
+        if (asesorInput) {
+          asesorInput.value = item.asesor;
+        }
+        hiddenCctInput.value = item.cct;
+        return item;
+      } catch (error) {
+        console.warn(error);
+        return null;
+      }
+    };
+
+    const hideSuggestions = () => {
+      if (!suggestionsContainer) {
+        return;
+      }
+      suggestionsContainer.innerHTML = "";
+      suggestionsContainer.hidden = true;
+    };
+
+    const renderSuggestions = (items) => {
+      if (!suggestionsContainer) {
+        return;
+      }
+      suggestionsContainer.innerHTML = "";
+      if (!items.length) {
+        suggestionsContainer.hidden = true;
+        return;
+      }
+      const list = document.createElement("ul");
+      list.className = "cct-suggestion-list";
+      items.forEach((item) => {
+        const entry = document.createElement("li");
+        entry.className = "cct-suggestion-item";
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn btn--ghost btn--sm";
+        button.textContent = `${item.cct} · ${item.nombre || ""}`.trim();
+        button.addEventListener("mousedown", (event) => {
+          event.preventDefault();
+          applySuggestion(item);
+        });
+        entry.appendChild(button);
+        list.appendChild(entry);
+      });
+      suggestionsContainer.appendChild(list);
+      suggestionsContainer.hidden = false;
+    };
+
+    const applySuggestion = (item) => {
+      if (!item) {
+        return;
+      }
+      const code = normalize(item.cct);
+      cctInput.value = code;
+      hiddenCctInput.value = code;
+      nombreInput.value = item.nombre || "";
+      if (sistemaInput) {
+        sistemaInput.value = item.sostenimiento || "";
+      }
+      servicioInput.value = item.servicio || "";
+      if (asesorInput) {
+        asesorInput.value = item.asesor || "";
+      }
+      upsertOption(item);
+      hideSuggestions();
+      void fetchAndUpdate(code);
+    };
+
+    const fetchSuggestions = async (term) => {
+      if (!suggestionsContainer || !apiBase) {
+        return;
+      }
+      if (suggestionAbortController) {
+        suggestionAbortController.abort();
+      }
+      suggestionAbortController = new AbortController();
+      try {
+        const url = new URL(apiBase, window.location.origin);
+        url.searchParams.set("search", term);
+        url.searchParams.set("ordering", "cct");
+        url.searchParams.set("page_size", "7");
+        const response = await fetch(url, {
+          headers: { Accept: "application/json" },
+          signal: suggestionAbortController.signal,
+        });
+        if (!response.ok) {
+          throw new Error("No fue posible obtener sugerencias.");
+        }
+        const data = await response.json();
+        const items = Array.isArray(data?.results)
+          ? data.results
+          : Array.isArray(data)
+            ? data
+            : [];
+        items.forEach((entry) => {
+          entry.sostenimiento = normaliseSistema(entry.sostenimiento);
+        });
+        renderSuggestions(items);
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.warn(error);
+        }
+        hideSuggestions();
+      } finally {
+        suggestionAbortController = null;
+      }
+    };
+
+    const scheduleSuggestions = (term) => {
+      if (!suggestionsContainer) {
+        return;
+      }
+      if (suggestionTimer) {
+        window.clearTimeout(suggestionTimer);
+      }
+      suggestionTimer = window.setTimeout(() => {
+        fetchSuggestions(term);
+      }, SUGGESTION_DEBOUNCE);
+    };
+
+    const handleChange = async () => {
+      hideSuggestions();
+      const codigo = normalize(cctInput.value);
+      if (!codigo) {
+        hiddenCctInput.value = "";
+        nombreInput.value = "";
+        servicioInput.value = "";
+        if (sistemaInput) {
+          sistemaInput.value = "";
+        }
+        if (asesorInput) {
+          asesorInput.value = "";
+        }
+        return;
+      }
+      if (updateFromOption(codigo)) {
+        hiddenCctInput.value = codigo;
+        if (lookupUrl) {
+          void fetchAndUpdate(codigo);
+        }
+        return;
+      }
+      const fetched = await fetchAndUpdate(codigo);
+      if (fetched) {
+        upsertOption(fetched);
+        hiddenCctInput.value = normalize(fetched.cct);
+      } else {
+        hiddenCctInput.value = "";
+      }
+    };
+
+    cctInput.addEventListener("change", handleChange);
+    cctInput.addEventListener("blur", () => window.setTimeout(() => hideSuggestions(), 150));
+    cctInput.addEventListener("input", (event) => {
+      const value = normalize(event.target.value);
+      if (!value) {
+        hiddenCctInput.value = "";
+        nombreInput.value = "";
+        servicioInput.value = "";
+        if (sistemaInput) {
+          sistemaInput.value = "";
+        }
+        if (asesorInput) {
+          asesorInput.value = "";
+        }
+        hideSuggestions();
+        return;
+      }
+      if (value.length >= SUGGESTION_MIN_LENGTH) {
+        scheduleSuggestions(value);
+      } else {
+        hideSuggestions();
+      }
+    });
+    cctInput.addEventListener("focus", () => {
+      const value = normalize(cctInput.value);
+      if (value && value.length >= SUGGESTION_MIN_LENGTH) {
+        scheduleSuggestions(value);
+      }
+    });
+
+    if (normalize(cctInput.value)) {
+      void handleChange();
+    }
+    initCCTCrud({
+      form,
+      modalId,
+      apiBase,
+      datalist,
+      cctInput,
+      hiddenCctInput,
+      nombreInput,
+      servicioInput,
+      asesorInput,
+      normalize,
+      updateFromOption,
+      fetchAndUpdate,
+      upsertOption,
+      canCreate,
+      canEdit,
+      canDelete,
+      lookupMinLength: LOOKUP_MIN_LENGTH,
+    });
+  }
+
   function initControlInternoForm() {
     const form = document.querySelector("[data-control-interno-form]");
     if (!form) {
@@ -323,7 +653,7 @@
     const cctInput = form.querySelector("#id_cct_codigo");
     const hiddenCctInput = form.querySelector("#id_cct");
     const nombreInput = form.querySelector("#id_cct_nombre");
-    const sostenimientoInput = form.querySelector("#id_sostenimiento_c_subcontrol");
+    const sistemaInput = form.querySelector("#id_sostenimiento_c_subcontrol");
     const servicioInput = form.querySelector("#id_tiponivelsub_c_servicion3");
     const asesorInput = form.querySelector("#id_asesor");
     const anioInput = form.querySelector("#id_anio");
@@ -333,16 +663,9 @@
     const estatusButtons = form.querySelectorAll("[data-estatus-value]");
     const datalist = document.getElementById("cct-options");
     const suggestionsContainer = form.querySelector("[data-cct-suggestions]");
-
     if (!cctInput || !hiddenCctInput || !nombreInput || !servicioInput || !datalist) {
       return;
     }
-
-    const SUGGESTION_MIN_LENGTH = 3;
-    const LOOKUP_MIN_LENGTH = 10;
-    const SUGGESTION_DEBOUNCE = 200;
-    let suggestionTimer = null;
-    let suggestionAbortController = null;
 
     const resolveCurrentYear = () => {
       const raw = anioInput?.value?.trim?.() || "";
@@ -410,7 +733,7 @@
               try {
                 oficioInput.setSelectionRange(start, end);
               } catch (error) {
-                // ignore selection errors in unsupported browsers
+                // ignore selection errors
               }
             }, 0);
           }
@@ -433,300 +756,70 @@
       });
     }
 
-    const normalize = (value) => (value || "").trim().toUpperCase();
-
-    const upsertOption = (item) => {
-      if (!item || !item.cct) {
-        return;
-      }
-      const code = normalize(item.cct);
-      const sistema = normaliseSistema(item.sostenimiento);
-      item.sostenimiento = sistema;
-      const existing = Array.from(datalist.options).find(
-        (opt) => normalize(opt.value || opt.text) === code
-      );
-      const label = `${code} · ${item.nombre || ""}`.trim();
-      if (existing) {
-        existing.value = code;
-        existing.textContent = label;
-        existing.dataset.nombre = item.nombre || "";
-        existing.dataset.servicio = item.servicio || "";
-        existing.dataset.asesor = item.asesor || "";
-        existing.dataset.sostenimiento = sistema;
-        existing.setAttribute("data-nombre", item.nombre || "");
-        existing.setAttribute("data-servicio", item.servicio || "");
-        existing.setAttribute("data-asesor", item.asesor || "");
-        existing.setAttribute("data-sostenimiento", sistema);
-      } else {
-        const option = document.createElement("option");
-        option.value = code;
-        option.textContent = label;
-        option.dataset.nombre = item.nombre || "";
-        option.dataset.servicio = item.servicio || "";
-        option.dataset.asesor = item.asesor || "";
-        option.dataset.sostenimiento = sistema;
-        option.setAttribute("data-nombre", item.nombre || "");
-        option.setAttribute("data-servicio", item.servicio || "");
-        option.setAttribute("data-asesor", item.asesor || "");
-        option.setAttribute("data-sostenimiento", sistema);
-        datalist.appendChild(option);
-      }
-    };
-
-    const updateFromOption = (codigo) => {
-      const option = Array.from(datalist.options).find(
-        (opt) => normalize(opt.value || opt.text) === codigo
-      );
-      if (!option) {
-        return false;
-      }
-      nombreInput.value =
-        option.dataset?.nombre || option.getAttribute("data-nombre") || "";
-      servicioInput.value =
-        option.dataset?.servicio || option.getAttribute("data-servicio") || "";
-      const sistemaDato =
-        option.dataset?.sostenimiento || option.getAttribute("data-sostenimiento") || "";
-      if (sostenimientoInput) {
-        sostenimientoInput.value = normaliseSistema(sistemaDato);
-      }
-      if (asesorInput) {
-        asesorInput.value =
-          option.dataset?.asesor || option.getAttribute("data-asesor") || "";
-      }
-      hiddenCctInput.value = codigo;
-      return true;
-    };
-
-    const fetchAndUpdate = async (codigo) => {
-      if (!lookupUrl) {
-        return null;
-      }
-      try {
-        const response = await fetch(`${lookupUrl}?cct=${encodeURIComponent(codigo)}`, {
-          headers: { "X-Requested-With": "XMLHttpRequest" },
-        });
-        if (!response.ok) {
-          if (response.status === 404) {
-            return null;
-          }
-          throw new Error("No fue posible consultar la información del CCT.");
-        }
-        const data = await response.json();
-        if (!data.found) {
-          return null;
-        }
-        const item = {
-          cct: data.cct || codigo,
-          nombre: data.c_nombre || "",
-          sostenimiento: normaliseSistema(data.sostenimiento_c_subcontrol),
-          servicio: data.tiponivelsub_c_servicion3 || "",
-          asesor: data.asesor || "",
-        };
-        nombreInput.value = item.nombre;
-        if (sostenimientoInput) {
-          sostenimientoInput.value = item.sostenimiento;
-        }
-        servicioInput.value = item.servicio;
-        if (asesorInput) {
-          asesorInput.value = item.asesor;
-        }
-        hiddenCctInput.value = item.cct;
-        return item;
-      } catch (error) {
-        console.warn(error);
-        return null;
-      }
-    };
-
-    const clearCctFields = () => {
-      hiddenCctInput.value = "";
-      nombreInput.value = "";
-      if (sostenimientoInput) {
-        sostenimientoInput.value = "";
-      }
-      servicioInput.value = "";
-      if (asesorInput) {
-        asesorInput.value = "";
-      }
-    };
-
-    const applySuggestion = (item) => {
-      if (!item) {
-        return;
-      }
-      const code = normalize(item.cct);
-      cctInput.value = code;
-      hiddenCctInput.value = code;
-      nombreInput.value = item.nombre || "";
-      if (sostenimientoInput) {
-        sostenimientoInput.value = item.sostenimiento || "";
-      }
-      servicioInput.value = item.servicio || "";
-      if (asesorInput) {
-        asesorInput.value = item.asesor || "";
-      }
-      upsertOption(item);
-      hideSuggestions();
-      void fetchAndUpdate(code);
-    };
-
-    const hideSuggestions = () => {
-      if (!suggestionsContainer) {
-        return;
-      }
-      suggestionsContainer.innerHTML = "";
-      suggestionsContainer.hidden = true;
-    };
-
-    const renderSuggestions = (items) => {
-      if (!suggestionsContainer) {
-        return;
-      }
-      suggestionsContainer.innerHTML = "";
-      if (!items.length) {
-        suggestionsContainer.hidden = true;
-        return;
-      }
-      const list = document.createElement("ul");
-      list.className = "cct-suggestion-list";
-      items.forEach((item) => {
-        const entry = document.createElement("li");
-        entry.className = "cct-suggestion-item";
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "btn btn--ghost btn--sm";
-        button.textContent = `${item.cct} · ${item.nombre || ""}`.trim();
-        button.addEventListener("mousedown", (event) => {
-          event.preventDefault();
-          applySuggestion(item);
-        });
-        entry.appendChild(button);
-        list.appendChild(entry);
-      });
-      suggestionsContainer.appendChild(list);
-      suggestionsContainer.hidden = false;
-    };
-
-    const fetchSuggestions = async (term) => {
-      if (!suggestionsContainer || !apiBase) {
-        return;
-      }
-      if (suggestionAbortController) {
-        suggestionAbortController.abort();
-      }
-      suggestionAbortController = new AbortController();
-      try {
-        const url = new URL(apiBase, window.location.origin);
-        url.searchParams.set("search", term);
-        url.searchParams.set("ordering", "cct");
-        url.searchParams.set("page_size", "7");
-        const response = await fetch(url, {
-          headers: { Accept: "application/json" },
-          signal: suggestionAbortController.signal,
-        });
-        if (!response.ok) {
-          throw new Error("No fue posible obtener sugerencias.");
-        }
-        const data = await response.json();
-        const items = Array.isArray(data?.results)
-          ? data.results
-          : Array.isArray(data)
-            ? data
-            : [];
-        items.forEach((entry) => {
-          entry.sostenimiento = normaliseSistema(entry.sostenimiento);
-        });
-        renderSuggestions(items);
-      } catch (error) {
-        if (error.name !== "AbortError") {
-          console.warn(error);
-        }
-        hideSuggestions();
-      } finally {
-        suggestionAbortController = null;
-      }
-    };
-
-    const scheduleSuggestions = (term) => {
-      if (!suggestionsContainer) {
-        return;
-      }
-      if (suggestionTimer) {
-        window.clearTimeout(suggestionTimer);
-      }
-      suggestionTimer = window.setTimeout(() => {
-        void fetchSuggestions(term);
-      }, SUGGESTION_DEBOUNCE);
-    };
-
-    const handleChange = () => {
-      const codigo = normalize(cctInput.value);
-      cctInput.value = codigo;
-      if (!codigo) {
-        hideSuggestions();
-        clearCctFields();
-        return;
-      }
-
-      if (codigo.length >= SUGGESTION_MIN_LENGTH) {
-        scheduleSuggestions(codigo);
-      } else {
-        hideSuggestions();
-      }
-
-      if (codigo.length < LOOKUP_MIN_LENGTH) {
-        clearCctFields();
-        return;
-      }
-
-      if (updateFromOption(codigo)) {
-        hideSuggestions();
-        return;
-      }
-      clearCctFields();
-      void fetchAndUpdate(codigo).then((data) => {
-        if (data) {
-          hideSuggestions();
-          upsertOption(data);
-        } else {
-          clearCctFields();
-        }
-      });
-    };
-
-    cctInput.addEventListener("input", handleChange);
-    cctInput.addEventListener("change", handleChange);
-    cctInput.addEventListener("blur", () => {
-      window.setTimeout(() => hideSuggestions(), 150);
-    });
-    cctInput.addEventListener("focus", () => {
-      const value = normalize(cctInput.value);
-      if (value && value.length >= SUGGESTION_MIN_LENGTH) {
-        scheduleSuggestions(value);
-      }
-    });
-
-    if (normalize(cctInput.value)) {
-      handleChange();
-    }
-    initCCTCrud({
+    setupCCTForm({
       form,
-      modalId: "cct-modal",
+      lookupUrl,
       apiBase,
-      datalist,
       cctInput,
       hiddenCctInput,
       nombreInput,
       servicioInput,
+      sistemaInput,
       asesorInput,
-      normalize,
-      updateFromOption,
-      fetchAndUpdate,
-      upsertOption,
+      datalist,
+      suggestionsContainer,
+      modalId: "cct-modal",
       canCreate: form.dataset.cctCanCreate === "true",
       canEdit: form.dataset.cctCanEdit === "true",
       canDelete: form.dataset.cctCanDelete === "true",
-      lookupMinLength: LOOKUP_MIN_LENGTH,
+    });
+  }
+
+  function initCasoInternoForm() {
+    const form = document.querySelector("[data-caso-interno-form]");
+    if (!form) {
+      return;
+    }
+    setupCCTForm({
+      form,
+      lookupUrl: form.dataset.lookupUrl || "",
+      apiBase: form.dataset.cctApi || "",
+      cctInput: form.querySelector("#id_cct_codigo"),
+      hiddenCctInput: form.querySelector("#id_cct"),
+      nombreInput: form.querySelector("#id_cct_nombre"),
+      servicioInput: form.querySelector("#id_cct_modalidad"),
+      sistemaInput: form.querySelector("#id_cct_sistema"),
+      asesorInput: form.querySelector("#id_asesor_cct"),
+      datalist: document.getElementById("cct-options"),
+      suggestionsContainer: form.querySelector("[data-cct-suggestions]"),
+      modalId: "cct-modal",
+      canCreate: form.dataset.cctCanCreate === "true",
+      canEdit: form.dataset.cctCanEdit === "true",
+      canDelete: form.dataset.cctCanDelete === "true",
+    });
+  }
+
+  function initProcesoInternoForm() {
+    const form = document.querySelector("[data-proceso-interno-form]");
+    if (!form) {
+      return;
+    }
+    setupCCTForm({
+      form,
+      lookupUrl: form.dataset.lookupUrl || "",
+      apiBase: form.dataset.cctApi || "",
+      cctInput: form.querySelector("#id_cct_codigo"),
+      hiddenCctInput: form.querySelector("#id_cct"),
+      nombreInput: form.querySelector("#id_cct_nombre"),
+      servicioInput: form.querySelector("#id_cct_modalidad"),
+      sistemaInput: form.querySelector("#id_cct_sistema"),
+      asesorInput: form.querySelector("#id_asesor_cct"),
+      datalist: document.getElementById("cct-options"),
+      suggestionsContainer: form.querySelector("[data-cct-suggestions]"),
+      modalId: "cct-modal",
+      canCreate: form.dataset.cctCanCreate === "true",
+      canEdit: form.dataset.cctCanEdit === "true",
+      canDelete: form.dataset.cctCanDelete === "true",
     });
   }
 

@@ -1,0 +1,25 @@
+{% extends "licencias/base.html" %}
+
+{% block title %}Eliminar caso {{ object.descripcion_breve }} | SEGEY Licencias{% endblock %}
+
+{% block content %}
+<section class="module-shell module-shell--form">
+    <div class="module-shell__header">
+        <div>
+            <p class="module-shell__eyebrow">Confirmación</p>
+            <h1 class="module-shell__title">Eliminar caso</h1>
+            <p class="module-shell__lead">Esta acción no puede deshacerse y eliminará todos los procesos asociados.</p>
+        </div>
+    </div>
+    <div class="module-panel">
+        <p>¿Deseas eliminar el caso <strong>{{ object.descripcion_breve }}</strong> del CCT {{ object.cct_id }}?</p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-actions" style="margin-top: 1.5rem;">
+                <button type="submit" class="btn btn--danger btn--md">Sí, eliminar</button>
+                <a class="btn btn--secondary btn--md" href="{% url 'licencias:casointerno-detail' object.pk %}">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

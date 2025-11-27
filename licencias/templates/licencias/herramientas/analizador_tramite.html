@@ -1,0 +1,456 @@
+{% extends "licencias/base.html" %}
+{% load static %}
+
+{% block title %}Herramienta de aprobación{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <span class="chip">Asistente de cálculo</span>
+        <h1 class="page-title">Analizador de requisitos del trámite</h1>
+        <p>Compara automáticamente los dos criterios clave: 15 años de servicio y el número de días de licencias médicas posteriores a la fecha de ingreso, tal como exigen los acuerdos presidenciales, el Artículo 70 Bis y las CGT.</p>
+    </div>
+</div>
+
+<section class="card tool-highlights">
+    <div class="card__body">
+        <div class="tool-highlights__content">
+            <h2 class="section-title">Prioriza la herramienta</h2>
+            <p>Captura primero los datos del trámite y registra las licencias médicas para obtener el dictamen automático. La normatividad y los extractos del manual ahora están disponibles solo cuando los necesites.</p>
+        </div>
+        <div class="tool-highlights__actions">
+            <button type="button" class="btn btn--ghost btn--sm" data-open-collapsible="#normatividad-card">Ver normatividad clave</button>
+            <button type="button" class="btn btn--ghost btn--sm" data-open-collapsible="#manual-card">Ver extracto del manual</button>
+        </div>
+    </div>
+</section>
+
+<div id="eligibility-tool" data-min-years="{{ minimum_years }}">
+    <section class="card">
+        <div class="card__body">
+            <h2 class="section-title">Datos del trámite</h2>
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="fecha-ingreso">Fecha de ingreso</label>
+                    <input id="fecha-ingreso" name="fecha_ingreso" type="date" class="form-input" required>
+                    <p class="help-text">Solo se contarán las licencias ocurridas en fechas iguales o posteriores.</p>
+                </div>
+                <div class="form-field">
+                    <label for="fecha-analisis">Fecha de análisis</label>
+                    <input id="fecha-analisis" name="fecha_analisis" type="date" class="form-input" value="{{ today|date:'Y-m-d' }}" required>
+                    <p class="help-text">Generalmente corresponde a la fecha en que se dictamina el trámite.</p>
+                </div>
+                <div class="form-field">
+                    <label for="regimen-licencia">Régimen de seguridad social</label>
+                    <select id="regimen-licencia" class="form-input">
+                        {% for choice in regimen_choices %}
+                        <option value="{{ choice.value }}" data-required-days="{{ choice.days }}">{{ choice.label }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="help-text">Determina si se necesitan 60 o 90 días efectivos de licencia.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card__body">
+            <div class="tool-header">
+                <div>
+                    <h2 class="section-title">Licencias médicas</h2>
+                    <p>Captura cada intervalo como aparece en el expediente. La herramienta suma los días válidos y solo cuenta los posteriores al día y mes de la fecha de ingreso, siguiendo las indicaciones del área de Recursos Humanos.</p>
+                </div>
+                <button type="button" class="btn btn--ghost btn--sm" id="limpiar-licencias">Limpiar lista</button>
+            </div>
+
+            <div class="days-progress" aria-live="polite">
+                <div>
+                    <p class="days-progress__label">Avance acumulado</p>
+                    <p class="days-progress__value" data-valid-days-indicator>0 / {{ regimen_choices.0.days }} días válidos</p>
+                </div>
+                <p class="days-progress__remaining" data-remaining-days>Captura la fecha de ingreso para calcular los días restantes.</p>
+            </div>
+
+            <form id="licencia-form" class="form-grid" novalidate>
+                <div class="form-field">
+                    <label for="licencia-inicio">Fecha de inicio</label>
+                    <input id="licencia-inicio" name="fecha_inicio" type="date" class="form-input" required>
+                </div>
+                <div class="form-field">
+                    <label for="licencia-fin">Fecha de término</label>
+                    <input id="licencia-fin" name="fecha_fin" type="date" class="form-input" required>
+                </div>
+                <div class="form-field">
+                    <label for="licencia-dias">Días transcurridos</label>
+                    <input id="licencia-dias" name="dias_transcurridos" type="number" class="form-input" readonly value="0">
+                    <p class="help-text">Cálculo inclusivo (se cuenta tanto la fecha inicial como la final).</p>
+                </div>
+                <div class="form-field">
+                    <label>&nbsp;</label>
+                    <div class="form-actions-inline">
+                        <button type="submit" class="btn btn--primary" id="guardar-licencia">Agregar licencia</button>
+                        <button type="button" class="btn btn--ghost" id="cancelar-edicion" hidden>Cancelar edición</button>
+                    </div>
+                </div>
+            </form>
+            <div id="licencia-feedback" class="form-alert" hidden role="alert"></div>
+
+            <div class="table-wrapper" aria-live="polite">
+                <table class="table" aria-label="Licencias médicas registradas">
+                    <thead>
+                        <tr>
+                            <th scope="col">Periodo</th>
+                            <th scope="col">Días</th>
+                            <th scope="col">Estatus</th>
+                            <th scope="col">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="licencias-tbody">
+                        <tr class="table__empty">
+                            <td colspan="4">Agrega la primera licencia para iniciar los cálculos.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card__body">
+            <h2 class="section-title">Resultado del análisis</h2>
+            <div class="requirement-grid" id="requisitos-resumen">
+                <article class="requirement-card" data-requirement="years">
+                    <header>
+                        <h3>Tiempo de servicio</h3>
+                        <p>Requisito mínimo: {{ minimum_years }} años desde la fecha de ingreso.</p>
+                    </header>
+                    <p class="requirement-status">
+                        <span class="badge" data-status-pill>Sin calcular</span>
+                        <span class="requirement-text" data-status-text>Captura las fechas para validar este criterio.</span>
+                    </p>
+                </article>
+                <article class="requirement-card" data-requirement="licenses">
+                    <header>
+                        <h3>Días de licencia</h3>
+                        <p>Solo cuentan los días posteriores a la fecha de ingreso.</p>
+                    </header>
+                    <p class="requirement-status">
+                        <span class="badge" data-status-pill>Sin calcular</span>
+                        <span class="requirement-text" data-status-text>Registra al menos un periodo para obtener el total.</span>
+                    </p>
+                    <p class="total-dias" data-total-dias>Total válido: 0 días</p>
+                    <p class="required-days" data-required-days>Meta actual: {{ regimen_choices.0.days }} días requeridos</p>
+                </article>
+            </div>
+
+            <div id="resultado-final" class="alert alert--warning" role="status">
+                Completa la información para conocer si el trámite es aprobado o no aprobado.
+            </div>
+        </div>
+    </section>
+
+    <section class="card collapsible-card" id="normatividad-card" data-collapsible data-collapsible-default="closed">
+        <div class="card__body">
+            <div class="collapsible-card__header">
+                <h2 class="section-title">Normatividad que respalda el cálculo</h2>
+                <button type="button" class="btn btn--ghost btn--sm" data-collapsible-toggle data-label-show="Mostrar detalles" data-label-hide="Ocultar detalles">Mostrar detalles</button>
+            </div>
+            <div class="collapsible-card__content" data-collapsible-content hidden>
+                <p class="collapsible-card__hint">Consulta el marco normativo y abre los modales para revisar requisitos, documentación y flujo del trámite.</p>
+                <div class="norm-grid">
+                    <article>
+                        <h3 class="subsection-title">Ámbito federal</h3>
+                        <ul class="norm-list">
+                            <li>
+                                <span>Licencia por Acuerdo Presidencial 754</span>
+                                <button type="button" class="btn btn--ghost btn--sm" data-norm-template="norm-detail-754" data-norm-title="Licencia por Acuerdo Presidencial 754">Ver detalle</button>
+                            </li>
+                            <li>
+                                <span>Licencia por Acuerdo Presidencial 529</span>
+                                <button type="button" class="btn btn--ghost btn--sm" data-norm-template="norm-detail-529" data-norm-title="Licencia por Acuerdo Presidencial 529">Ver detalle</button>
+                            </li>
+                            <li><span>Ley del ISSSTE y su Reglamento.</span></li>
+                            <li><span>Reglamento para la Dictaminación en Materia de Riesgos del Trabajo e Invalidez del ISSSTE.</span></li>
+                            <li><span>Reglamento de Condiciones Generales de Trabajo del personal de la SEP.</span></li>
+                        </ul>
+                    </article>
+                    <article>
+                        <h3 class="subsection-title">Ámbito estatal</h3>
+                        <ul class="norm-list">
+                            <li>
+                                <span>Artículo 70 Bis de las Condiciones Generales de Trabajo (SEGEY)</span>
+                                <button type="button" class="btn btn--ghost btn--sm" data-norm-template="norm-detail-70bis" data-norm-title="Artículo 70 Bis (IMSS)">Ver detalle</button>
+                            </li>
+                            <li><span>Ley de Seguridad Social de los Trabajadores del Estado de Yucatán.</span></li>
+                            <li><span>Condiciones Generales de Trabajo de la Secretaría de Educación del Gobierno del Estado.</span></li>
+                        </ul>
+                    </article>
+                    <article>
+                        <h3 class="subsection-title">Criterios operativos</h3>
+                        <ul>
+                            <li>Los días médicos se contabilizan desde el día y mes de la fecha de ingreso, sin importar el año.</li>
+                            <li>Si un periodo atraviesa el aniversario, solo suma la parte posterior al día/mes permitido.</li>
+                            <li>El régimen seleccionado determina la meta: 60 días (ISSSTE) o 90 días (IMSS / Art. 70 Bis).</li>
+                        </ul>
+                    </article>
+                </div>
+
+                <div class="norm-detail-grid">
+                    <article class="norm-card">
+                        <h3>Acuerdo Presidencial 754</h3>
+                        <p>Licencia y prórroga de 6 meses para docentes con 15 años de servicio y constancia médica original del ISSSTE.</p>
+                        <div class="norm-card__actions">
+                            <button type="button" class="btn btn--primary btn--sm" data-norm-template="norm-detail-754" data-norm-title="Licencia por Acuerdo Presidencial 754">Revisar requisitos</button>
+                        </div>
+                    </article>
+                    <article class="norm-card">
+                        <h3>Acuerdo Presidencial 529</h3>
+                        <p>Docentes y PAAE con más de 6 meses de antigüedad pueden solicitar 6 + 6 meses con constancia 529.</p>
+                        <div class="norm-card__actions">
+                            <button type="button" class="btn btn--primary btn--sm" data-norm-template="norm-detail-529" data-norm-title="Licencia por Acuerdo Presidencial 529">Revisar requisitos</button>
+                        </div>
+                    </article>
+                    <article class="norm-card">
+                        <h3>Artículo 70 Bis</h3>
+                        <p>Docentes estatales con 15 años y 90 días de licencias IMSS con goce íntegro acreditan este beneficio.</p>
+                        <div class="norm-card__actions">
+                            <button type="button" class="btn btn--primary btn--sm" data-norm-template="norm-detail-70bis" data-norm-title="Artículo 70 Bis (IMSS)">Ver detalle IMSS</button>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card collapsible-card" id="manual-card" data-collapsible data-collapsible-default="closed">
+        <div class="card__body">
+            <div class="collapsible-card__header">
+                <h2 class="section-title">Licencias y cambios de actividad / función</h2>
+                <button type="button" class="btn btn--ghost btn--sm" data-collapsible-toggle data-label-show="Mostrar detalles" data-label-hide="Ocultar detalles">Mostrar detalles</button>
+            </div>
+            <div class="collapsible-card__content" data-collapsible-content hidden>
+                <p class="collapsible-card__hint">Cada tarjeta abre un modal con requisitos, documentación y el flujo completo según el manual vigente.</p>
+                <div class="reference-grid">
+                    <article class="reference-card">
+                        <h3 class="subsection-title">Cambio de actividad estatal</h3>
+                        <p>Docentes y PAAE por riesgo de trabajo, 6 meses + prórrogas mientras persista la lesión.</p>
+                        <div class="reference-card__actions">
+                            <button type="button" class="btn btn--primary btn--sm" data-norm-template="norm-detail-ca-estatal" data-norm-title="Cambio de actividad estatal">Ver procedimiento</button>
+                        </div>
+                    </article>
+                    <article class="reference-card">
+                        <h3 class="subsection-title">Cambio de actividad federal</h3>
+                        <p>Docentes y PAAE vía ISSSTE (RT-09). Duración 6 meses con prórrogas determinadas por la DAF.</p>
+                        <div class="reference-card__actions">
+                            <button type="button" class="btn btn--primary btn--sm" data-norm-template="norm-detail-ca-federal" data-norm-title="Cambio de actividad federal">Ver procedimiento</button>
+                        </div>
+                    </article>
+                    <article class="reference-card">
+                        <h3 class="subsection-title">Cambio de función estatal</h3>
+                        <p>Docentes y PAAE por enfermedades generales. 6 meses y prórrogas sujetas al dictamen del O´Horán.</p>
+                        <div class="reference-card__actions">
+                            <button type="button" class="btn btn--primary btn--sm" data-norm-template="norm-detail-cf-estatal" data-norm-title="Cambio de función estatal">Ver requisitos</button>
+                        </div>
+                    </article>
+                    <article class="reference-card">
+                        <h3 class="subsection-title">Cambio de función federal</h3>
+                        <p>Docentes y PAAE con constancia médica ISSSTE (firmas completas) y ficha técnica de nuevas funciones.</p>
+                        <div class="reference-card__actions">
+                            <button type="button" class="btn btn--primary btn--sm" data-norm-template="norm-detail-cf-federal" data-norm-title="Cambio de función federal">Ver requisitos</button>
+                        </div>
+                    </article>
+                    <article class="reference-card reference-card--accent">
+                        <h3 class="subsection-title">Prórrogas</h3>
+                        <p>Las prórrogas se gestionan por el nivel educativo ante la DAF con copia a SEB dentro de 4 días hábiles.</p>
+                        <div class="reference-card__actions">
+                            <button type="button" class="btn btn--ghost btn--sm" data-norm-template="norm-detail-prorrogas" data-norm-title="Prórrogas">Pasos para prórroga</button>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="modal" id="normatividad-modal" hidden>
+    <div class="modal-overlay" data-modal-close></div>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="normatividad-modal-title">
+        <header class="modal-header">
+            <h3 class="modal-title" id="normatividad-modal-title" data-modal-title>Detalle normativo</h3>
+            <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+        </header>
+        <div class="modal-body modal-body--stack" data-modal-body></div>
+        <footer class="modal-actions">
+            <button type="button" class="btn btn--ghost" data-modal-close>Cerrar</button>
+        </footer>
+    </div>
+</div>
+
+<template id="norm-detail-754" data-norm-detail>
+    <section class="modal-section">
+        <h4>Licencia por Acuerdo Presidencial 754</h4>
+        <p><strong>Personal con derecho:</strong> Docentes</p>
+        <p><strong>Duración:</strong> 6 meses iniciales + 6 meses de prórroga (solo una vez).</p>
+        <h5>Requisitos principales</h5>
+        <ul>
+            <li>Antigüedad mínima de 15 años continuos.</li>
+            <li>Constancia médica original del ISSSTE (firmas de médico tratante y director, con sello de la clínica).</li>
+            <li>Agotar 60 días de licencias médicas posteriores a la fecha de ingreso.</li>
+        </ul>
+        <h5>Especificaciones del expediente</h5>
+        <ul>
+            <li>La constancia médica debe ser original y contener ambas firmas y sello.</li>
+            <li>Los 60 días se contabilizan solo a partir del día/mes de ingreso a la Secretaría.</li>
+        </ul>
+        <h5>Tramitación</h5>
+        <ol>
+            <li><strong>Dirección del nivel educativo</strong>: recibe la solicitud, valida documentos, integra expediente (ficha técnica + constancia + licencias) y lo envía a la SEB dentro de 2 días hábiles.</li>
+            <li><strong>Subsecretaría de Educación Básica</strong>: recibe el expediente y emite oficio de visto bueno para enviarlo a la DAF en máximo 2 días hábiles.</li>
+            <li><strong>Dirección de Administración y Finanzas</strong>: determina la procedencia y emite el dictamen en máximo 3 días hábiles.</li>
+            <li><strong>Dirección del nivel educativo</strong>: notifica al trabajador y al sindicato (copiando a la SEB) dentro del plazo establecido.</li>
+        </ol>
+    </section>
+</template>
+
+<template id="norm-detail-529" data-norm-detail>
+    <section class="modal-section">
+        <h4>Licencia por Acuerdo Presidencial 529</h4>
+        <p><strong>Personal con derecho:</strong> Docentes y Personal de Apoyo y Asistencia a la Educación (PAAE).</p>
+        <p><strong>Duración:</strong> 6 meses iniciales + 6 meses de prórroga (una sola ocasión).</p>
+        <h5>Requisitos</h5>
+        <ul>
+            <li>Antigüedad mayor a 6 meses.</li>
+            <li>Constancia médica original por Acuerdo 529 con firmas del médico tratante y del Director del Hospital del ISSSTE, además del sello.</li>
+            <li>Expediente integrado con ficha técnica y constancias médicas verificadas por el nivel educativo.</li>
+        </ul>
+        <p>La tramitación sigue el mismo flujo que el Acuerdo 754 (Nivel educativo → SEB → DAF), respetando los plazos de 2 + 2 + 3 días hábiles.</p>
+    </section>
+</template>
+
+<template id="norm-detail-70bis" data-norm-detail>
+    <section class="modal-section">
+        <h4>Artículo 70 Bis / IMSS</h4>
+        <p><strong>Personal con derecho:</strong> Docentes estatales.</p>
+        <p><strong>Duración:</strong> Hasta 5 meses (sin prórroga).</p>
+        <h5>Requisitos</h5>
+        <ul>
+            <li>Antigüedad mayor a 15 años de servicio.</li>
+            <li>Constancias de enfermedad expedidas por el IMSS que acrediten 90 días de licencias médicas con goce íntegro.</li>
+            <li>Constancia médica del O´Horán que confirme la continuidad del padecimiento.</li>
+        </ul>
+        <h5>Documentos que exige la DAF / Recursos Humanos</h5>
+        <ul>
+            <li>Constancia de enfermedad por 90 días contados desde la fecha de ingreso.</li>
+            <li>Resumen médico/clínico vigente (máx. 1 mes de extemporaneidad) con diagnóstico, firma, cédula y sello del hospital.</li>
+            <li>Copia simple del expediente médico (2 años hacia atrás) con notas, recetas y respaldos.</li>
+            <li>Copia simple y legible del INE.</li>
+        </ul>
+    </section>
+</template>
+
+<template id="norm-detail-ca-estatal" data-norm-detail>
+    <section class="modal-section">
+        <h4>Cambio de actividad estatal / Riesgo de trabajo</h4>
+        <p><strong>Personal con derecho:</strong> Docentes y PAAE.</p>
+        <p><strong>Duración:</strong> 6 meses.</p>
+        <p><strong>Prórroga:</strong> Indefinida mientras persista la lesión, determinada por la DAF y la valoración del O´Horán (se solicita igual que el trámite inicial).</p>
+        <h5>Documentación requerida</h5>
+        <ul>
+            <li>Copia simple y legible del formato ST-7 dictaminado por el IMSS como accidente de trabajo (certificado por el nivel educativo).</li>
+            <li>Copia simple del expediente médico (si se tiene).</li>
+            <li>Ficha técnica con las nuevas funciones que realizará la persona trabajadora.</li>
+        </ul>
+        <h5>Flujo del trámite</h5>
+        <ol>
+            <li><strong>Dirección del nivel educativo:</strong> recibe solicitud, valida requisitos, integra el expediente (ficha técnica + ST-7) y lo remite a la SEB dentro de 2 días hábiles.</li>
+            <li><strong>Subsecretaría de Educación Básica:</strong> recibe y envía el expediente a la DAF en máximo 2 días hábiles.</li>
+            <li><strong>Dirección de Administración y Finanzas:</strong> analiza procedencia, gestiona cita en el O´Horán y comunica fecha y hora al nivel educativo.</li>
+            <li><strong>Dirección del nivel educativo:</strong> informa a trabajador y sindicato de la cita inmediatamente.</li>
+            <li><strong>Dirección de Administración y Finanzas:</strong> emite dictamen en un plazo de 3 días hábiles posteriores.</li>
+            <li><strong>Dirección del nivel educativo:</strong> notifica dictamen a trabajador y sindicato dentro de 4 días hábiles, copiando a la SEB.</li>
+        </ol>
+    </section>
+</template>
+
+<template id="norm-detail-ca-federal" data-norm-detail>
+    <section class="modal-section">
+        <h4>Cambio de actividad federal / Riesgo de trabajo</h4>
+        <p><strong>Personal con derecho:</strong> Docentes y PAAE.</p>
+        <p><strong>Duración:</strong> 6 meses.</p>
+        <p><strong>Prórroga:</strong> Indefinida mientras persista la lesión (determinada por la DAF). La prórroga se solicita como la inicial e incluye la solicitud de pago de suplente.</p>
+        <h5>Documentación requerida</h5>
+        <ul>
+            <li>Copia simple y legible del formato RT-09 emitido por el ISSSTE (certificado por el nivel educativo).</li>
+            <li>Ficha técnica con las nuevas funciones que realizará el trabajador.</li>
+        </ul>
+        <h5>Flujo del trámite</h5>
+        <ol>
+            <li><strong>Dirección del nivel educativo:</strong> recibe y valida documentos, integra expediente (ficha técnica + RT-09) y lo remite a la SEB en 2 días hábiles.</li>
+            <li><strong>Subsecretaría de Educación Básica:</strong> remite a la DAF en un máximo de 2 días hábiles.</li>
+            <li><strong>Dirección de Administración y Finanzas:</strong> determina la procedencia y emite dictamen en 3 días hábiles.</li>
+            <li><strong>Dirección del nivel educativo:</strong> notifica al trabajador y al sindicato (4 días hábiles) con copia a la SEB.</li>
+        </ol>
+    </section>
+</template>
+
+<template id="norm-detail-cf-estatal" data-norm-detail>
+    <section class="modal-section">
+        <h4>Cambio de función estatal / Enfermedades generales</h4>
+        <p><strong>Personal con derecho:</strong> Docentes y PAAE.</p>
+        <p><strong>Duración:</strong> 6 meses.</p>
+        <p><strong>Prórroga:</strong> Indefinida mientras persista el padecimiento (dictamen DAF y actualización del O´Horán).</p>
+        <h5>Documentación requerida</h5>
+        <ul>
+            <li>Resumen médico y/o clínico original vigente (máximo 1 mes de extemporaneidad), con diagnóstico, firma, cédula profesional y sello.</li>
+            <li>Copia simple del expediente médico (notas, prescripciones, recetas) con 2 años de antigüedad hacia atrás.</li>
+            <li>Copia simple y legible del INE.</li>
+            <li>Ficha técnica con las nuevas funciones, asegurando que no perjudiquen la salud.</li>
+        </ul>
+        <h5>Flujo del trámite</h5>
+        <ol>
+            <li><strong>Dirección del nivel educativo:</strong> recibe solicitud, valida requisitos, integra expediente (ficha técnica + resumen + expediente médico + INE) y remite a la SEB en 2 días hábiles.</li>
+            <li><strong>Subsecretaría de Educación Básica:</strong> envía a la DAF en un plazo máximo de 2 días.</li>
+            <li><strong>Dirección de Administración y Finanzas:</strong> analiza procedencia, gestiona cita en el O´Horán y comunica fecha y hora.</li>
+            <li><strong>Dirección del nivel educativo:</strong> informa inmediatamente al trabajador y al sindicato sobre la cita.</li>
+            <li><strong>Dirección de Administración y Finanzas:</strong> emite dictamen en 3 días hábiles.</li>
+            <li><strong>Dirección del nivel educativo:</strong> notifica el dictamen al trabajador y sindicato en 4 días hábiles, copiando a la SEB.</li>
+        </ol>
+    </section>
+</template>
+
+<template id="norm-detail-cf-federal" data-norm-detail>
+    <section class="modal-section">
+        <h4>Cambio de función federal / Enfermedades generales</h4>
+        <p><strong>Personal con derecho:</strong> Docentes y PAAE.</p>
+        <p><strong>Duración:</strong> 6 meses.</p>
+        <p><strong>Prórroga:</strong> Indefinida mientras persista el padecimiento.</p>
+        <h5>Documentación requerida</h5>
+        <ul>
+            <li>Certificado o constancia médica original emitida por el ISSSTE que incluya: nombre del trabajador, diagnóstico, categoría/puesto/función, firmas del médico tratante, coordinador y director del hospital, además del sello.</li>
+            <li>Ficha técnica con las nuevas funciones propuestas que no pongan en riesgo la salud.</li>
+        </ul>
+        <h5>Flujo del trámite</h5>
+        <ol>
+            <li><strong>Dirección del nivel educativo:</strong> recibe solicitud, valida requisitos, integra expediente (ficha técnica + constancia médica) y lo remite a la SEB en 2 días hábiles.</li>
+            <li><strong>Subsecretaría de Educación Básica:</strong> envía a la DAF dentro de los siguientes 2 días hábiles.</li>
+            <li><strong>Dirección de Administración y Finanzas:</strong> determina procedencia y emite dictamen dirigido al nivel educativo (con copia a la SEB) en 3 días hábiles.</li>
+            <li><strong>Dirección del nivel educativo:</strong> notifica al trabajador y sindicato en un plazo de 4 días hábiles.</li>
+        </ol>
+    </section>
+</template>
+
+<template id="norm-detail-prorrogas" data-norm-detail>
+    <section class="modal-section">
+        <h4>Prórrogas de licencias y cambios</h4>
+        <ul>
+            <li>El nivel educativo gestiona las prórrogas ante la Dirección de Administración y Finanzas, con copia de conocimiento a la SEB.</li>
+            <li>Se dispone de 4 días hábiles desde la recepción del oficio del sindicato o escrito del trabajador para remitir el expediente completo.</li>
+            <li>El expediente debe incluir la ficha técnica actualizada y la documentación que respalde la prórroga.</li>
+            <li>El oficio se dirige a la DAF y a la Subdirección de Organización y Administración de Personal, notificando simultáneamente a la Subsecretaría.</li>
+        </ul>
+        <p>Las prórrogas siguen el mismo flujo del trámite inicial y deben mantener la trazabilidad de plazos entre nivel educativo, SEB y DAF.</p>
+    </section>
+</template>
+
+<script type="module" src="{% static 'js/analizador-tramites.js' %}"></script>
+{% endblock %}

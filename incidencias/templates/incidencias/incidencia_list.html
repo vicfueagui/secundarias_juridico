@@ -1,0 +1,54 @@
+{% extends "licencias/base.html" %}
+
+{% block title %}Reporteador de incidencias{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <span class="chip">Herramienta · Reporteador</span>
+        <h1 class="page-title">Relación de licencias médicas</h1>
+        <p>Consulta, edita o genera el reporte membretado de las incidencias capturadas.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn--primary" href="{% url 'incidencias:incidencia-create' %}">Nueva incidencia</a>
+    </div>
+</div>
+
+<section class="card">
+    <div class="card__body">
+        {% if incidencias %}
+        <div class="table-scroll">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>No.</th>
+                        <th>Nombre</th>
+                        <th>C.C.T</th>
+                        <th>Días</th>
+                        <th>Periodo</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for incidencia in incidencias %}
+                    <tr>
+                        <td>{{ incidencia.numero }}</td>
+                        <td>{{ incidencia.nombre_completo }}</td>
+                        <td>{{ incidencia.cct }}</td>
+                        <td>{{ incidencia.dias }}</td>
+                        <td>{{ incidencia.fecha_del|date:"d/m/Y" }} - {{ incidencia.fecha_al|date:"d/m/Y" }}</td>
+                        <td class="table-actions">
+                            <a class="btn btn--ghost btn--sm" href="{% url 'incidencias:incidencia-reporte-editar' incidencia.pk %}">Editar reporte</a>
+                            <a class="btn btn--ghost btn--sm" href="{% url 'incidencias:incidencia-reporte-pdf' incidencia.pk %}" target="_blank" rel="noopener">PDF</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="empty-state">Aún no hay incidencias capturadas.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

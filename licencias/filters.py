@@ -98,3 +98,64 @@ class ControlInternoFilter(django_filters.FilterSet):
             | Q(cct__cct__icontains=value)
         )
         return queryset.filter(query)
+
+
+class CasoInternoFilter(django_filters.FilterSet):
+    buscar = django_filters.CharFilter(
+        method="filter_buscar",
+        label="Buscar (CCT, folio, descripción)",
+    )
+    fecha_apertura = django_filters.DateFromToRangeFilter(label="Rango fecha apertura")
+
+    class Meta:
+        model = models.CasoInterno
+        fields = {
+            "cct": ["exact"],
+            "estatus": ["exact"],
+            "tipo_inicial": ["exact"],
+            "area_origen_inicial": ["exact"],
+        }
+
+    def filter_buscar(self, queryset, _name, value):
+        if not value:
+            return queryset
+        return queryset.filter(
+            Q(descripcion_breve__icontains=value)
+            | Q(folio_inicial__icontains=value)
+            | Q(cct_nombre__icontains=value)
+            | Q(cct__cct__icontains=value)
+        )
+
+
+class ProcesoInternoFilter(django_filters.FilterSet):
+    buscar = django_filters.CharFilter(
+        method="filter_buscar",
+        label="Buscar (folio, asunto, CCT)",
+    )
+    fecha_oficio = django_filters.DateFromToRangeFilter(label="Rango fecha oficio")
+    asesor_responsable = django_filters.CharFilter(
+        field_name="asesor_responsable",
+        lookup_expr="icontains",
+        label="Asesor responsable",
+    )
+
+    class Meta:
+        model = models.ProcesoInterno
+        fields = {
+            "caso": ["exact"],
+            "tipo_proceso": ["exact"],
+            "estatus": ["exact"],
+            "area_origen": ["exact"],
+            "area_destino": ["exact"],
+            "cct": ["exact"],
+        }
+
+    def filter_buscar(self, queryset, _name, value):
+        if not value:
+            return queryset
+        return queryset.filter(
+            Q(folio__icontains=value)
+            | Q(asunto__icontains=value)
+            | Q(cct_nombre__icontains=value)
+            | Q(cct__cct__icontains=value)
+        )

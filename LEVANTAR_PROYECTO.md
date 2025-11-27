@@ -72,6 +72,7 @@ python manage.py runserver
 **O en una sola línea:**
 ```bash
 source .venv/bin/activate && python manage.py runserver
+python manage.py runserver 0.0.0.0:8000
 ```
 
 ---
@@ -183,9 +184,18 @@ source .venv/bin/activate && python manage.py createsuperuser
 ### Estructura del Proyecto
 - **Configuración:** `cejei_licencias/`
 - **App principal:** `licencias/`
+- **App de incidencias:** `incidencias/` (captura y reporte de licencias médicas)
 - **Templates:** `licencias/templates/`
 - **Archivos estáticos:** `licencias/static/`
 - **Migraciones:** `licencias/migrations/`
+- **Reporteador PDF:** `herramientas/incidencias/` (usa WeasyPrint para exportar)
+
+### Herramienta de incidencias (reporteador)
+1. **Migraciones:** `python manage.py migrate incidencias` después de instalar dependencias.
+2. **Plantilla base:** configura logo, título y cuerpo en el admin (`Plantillas de reporte de incidencias`).
+3. **Captura:** navega a `Herramientas → Relación de licencias médicas` para registrar incidencias.
+4. **Edición:** cada incidencia permite editar el cuerpo del reporte antes de descargar el PDF.
+5. **Exportar:** el botón "Generar PDF" usa WeasyPrint; si faltan librerías del sistema (Pango, cairo), instálalas según la [documentación oficial](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation).
 
 ---
 

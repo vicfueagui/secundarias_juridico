@@ -12,7 +12,29 @@ SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY", "django-insecure-sec-licencias-demo"
 )
 DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() in {"1", "true", "yes"}
-ALLOWED_HOSTS: list[str] = os.environ.get("DJANGO_ALLOWED_HOSTS", "*").split(",")
+# Dominios permitidos
+ALLOWED_HOSTS = [
+    '.ngrok-free.app',  # Cubre cualquier subdominio generado por ngrok
+    'ngrok-free.app',
+    '127.0.0.1',
+    'localhost',
+    '192.168.184.58',
+    'admins-macbook-pro.local',
+]
+
+# Configuración para CSRF
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.ngrok-free.app',
+    'http://192.168.184.58:8000',
+    'http://admins-macbook-pro.local:8000',
+]
+
+# Configuración CORS si usas API REST
+CORS_ALLOWED_ORIGINS = [
+    'https://*.ngrok-free.app',
+    'http://192.168.184.58:8000',
+    'http://admins-macbook-pro.local:8000',
+]
 
 # Aplicaciones
 INSTALLED_APPS = [
@@ -27,6 +49,7 @@ INSTALLED_APPS = [
     "django_filters",
     "simple_history",
     "licencias",
+    "incidencias",
 ]
 
 # Middleware

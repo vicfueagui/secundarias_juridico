@@ -347,6 +347,108 @@ class ImportCSVForm(forms.Form):
     archivo = forms.FileField(help_text="Selecciona el archivo CSV exportado de Excel.")
 
 
+class CCTReferenceFormMixin(forms.ModelForm):
+    """Mixin para incorporar el patrón de captura de CCT."""
+
+    cct_codigo = forms.CharField(
+        label="CCT",
+        max_length=12,
+        help_text="Escribe la clave del centro de trabajo para autocompletar la información.",
+    )
+    cct_field_name = "cct"
+    cct_nombre_field = "cct_nombre"
+    cct_sistema_field = "cct_sistema"
+    cct_modalidad_field = "cct_modalidad"
+    cct_asesor_field = "asesor_cct"
+    require_cct_codigo = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        cct_field = self.fields.get(self.cct_field_name)
+        if not cct_field:
+            raise ValueError("El formulario debe definir un campo CCT para usar CCTReferenceFormMixin.")
+        cct_field.queryset = models.CCTSecundaria.objects.order_by("cct")
+        cct_field.widget = forms.HiddenInput()
+        cct_field.required = False
+
+        cct_code_field = self.fields["cct_codigo"]
+        cct_code_field.required = self.require_cct_codigo
+        cct_code_field.widget.attrs.setdefault("list", "cct-options")
+        cct_code_field.widget.attrs.setdefault("placeholder", "Ej. 31EES0001H")
+        cct_code_field.widget.attrs.setdefault("autocomplete", "off")
+
+        if self.instance and getattr(self.instance, "cct_id", None):
+            cct_code_field.initial = self.instance.cct_id
+        self._configure_cct_display_field(self.cct_nombre_field, "Se llenará con el nombre del CCT.")
+        self._configure_cct_display_field(self.cct_sistema_field, "Sistema derivado del CCT.", label_override="Sistema")
+        self._configure_cct_display_field(self.cct_modalidad_field, "Modalidad derivada del CCT.", label_override="Modalidad")
+        self._configure_cct_display_field(self.cct_asesor_field, "Asesor responsable según el catálogo.", label_override="Asesor", readonly=False)
+
+    def _configure_cct_display_field(self, field_name, placeholder, *, label_override=None, readonly=True):
+        if not field_name:
+            return
+        field = self.fields.get(field_name)
+        if not field:
+            return
+        field.required = False
+        if readonly:
+            field.widget.attrs.setdefault("readonly", "readonly")
+        field.widget.attrs.setdefault("placeholder", placeholder)
+        if label_override:
+            field.label = label_override
+
+    def get_default_cct(self) -> models.CCTSecundaria | None:
+        """Permite que formularios hijos definan un CCT por defecto."""
+        return None
+
+    def clean_cct_codigo(self) -> str:
+        codigo = (self.cleaned_data.get("cct_codigo") or "").strip().upper()
+        if not codigo:
+            default_cct = self.get_default_cct()
+            if default_cct:
+                self.cleaned_data[self.cct_field_name] = default_cct
+                self.instance.cct = default_cct
+                self._apply_cct_data(default_cct)
+                return ""
+            if self.require_cct_codigo:
+                raise forms.ValidationError("Debes proporcionar un CCT válido.")
+            return ""
+        try:
+            cct_obj = models.CCTSecundaria.objects.get(cct__iexact=codigo)
+        except models.CCTSecundaria.DoesNotExist as exc:
+            raise forms.ValidationError("No se encontró el CCT en el catálogo.") from exc
+        self.cleaned_data[self.cct_field_name] = cct_obj
+        self.instance.cct = cct_obj
+        self._apply_cct_data(cct_obj)
+        return codigo
+
+    def _apply_cct_data(self, cct_obj: models.CCTSecundaria) -> None:
+        if self.cct_nombre_field and self.cct_nombre_field in self.cleaned_data:
+            self.cleaned_data[self.cct_nombre_field] = cct_obj.nombre
+        if self.cct_sistema_field and self.cct_sistema_field in self.cleaned_data:
+            self.cleaned_data[self.cct_sistema_field] = normalise_sistema(cct_obj.sostenimiento)
+        if self.cct_modalidad_field and self.cct_modalidad_field in self.cleaned_data:
+            self.cleaned_data[self.cct_modalidad_field] = cct_obj.servicio or ""
+        if self.cct_asesor_field and self.cct_asesor_field in self.cleaned_data and not self.cleaned_data.get(self.cct_asesor_field):
+            self.cleaned_data[self.cct_asesor_field] = cct_obj.asesor or ""
+
+    def clean(self):
+        cleaned = super().clean()
+        cct_obj = cleaned.get(self.cct_field_name) or getattr(self.instance, "cct", None)
+        if cct_obj:
+            self.instance.cct = cct_obj
+            if self.cct_nombre_field and self.cct_nombre_field in cleaned:
+                cleaned[self.cct_nombre_field] = cleaned.get(self.cct_nombre_field) or cct_obj.nombre
+            if self.cct_sistema_field and self.cct_sistema_field in cleaned:
+                cleaned[self.cct_sistema_field] = normalise_sistema(
+                    cleaned.get(self.cct_sistema_field) or cct_obj.sostenimiento
+                )
+            if self.cct_modalidad_field and self.cct_modalidad_field in cleaned:
+                cleaned[self.cct_modalidad_field] = cleaned.get(self.cct_modalidad_field) or (cct_obj.servicio or "")
+            if self.cct_asesor_field and self.cct_asesor_field in cleaned and not cleaned.get(self.cct_asesor_field):
+                cleaned[self.cct_asesor_field] = cct_obj.asesor or ""
+        return cleaned
+
 class RelacionProtocoloForm(forms.ModelForm):
     cct_codigo = forms.CharField(
         label="CCT",
@@ -419,6 +521,7 @@ class RelacionProtocoloForm(forms.ModelForm):
         self.fields["anio"].widget = forms.Select(choices=self._anio_choices())
         self.fields["anio"].widget.attrs.setdefault("aria-label", "Año del protocolo")
 
+        self.fields["fecha_inicio"].required = True
         self.fields["fecha_inicio"].widget.attrs.setdefault("aria-label", "Fecha de inicio")
         self.fields["iniciales"].widget.attrs.setdefault("placeholder", "Ej. A.B.C.D.")
         self.fields["nombre_nna"].widget.attrs.setdefault(
@@ -645,3 +748,204 @@ class ControlInternoForm(forms.ModelForm):
             cleaned["estatus"] = "NO ATENDIDO"
         self.instance.estatus = cleaned["estatus"]
         return cleaned
+
+
+class CasoInternoForm(CCTReferenceFormMixin):
+    area_destino_inicial = forms.ModelChoiceField(
+        queryset=models.AreaProceso.objects.order_by("nombre"),
+        required=False,
+        label="Área destino inicial",
+        help_text="Opcional: área a la que se envía el primer oficio."
+    )
+    estatus_proceso_inicial = forms.ModelChoiceField(
+        queryset=models.EstatusProceso.objects.order_by("orden", "nombre"),
+        required=False,
+        label="Estatus inicial del primer proceso",
+    )
+
+    class Meta:
+        model = models.CasoInterno
+        fields = (
+            "cct",
+            "cct_nombre",
+            "cct_sistema",
+            "cct_modalidad",
+            "asesor_cct",
+            "descripcion_breve",
+            "fecha_apertura",
+            "estatus",
+            "tipo_inicial",
+            "folio_inicial",
+            "fecha_oficio_inicial",
+            "asunto_inicial",
+            "observaciones_iniciales",
+            "area_origen_inicial",
+        )
+        widgets = {
+            "fecha_apertura": forms.DateInput(attrs={"type": "date"}),
+            "fecha_oficio_inicial": forms.DateInput(attrs={"type": "date"}),
+            "observaciones_iniciales": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["estatus"].queryset = models.EstatusCaso.objects.order_by("orden", "nombre")
+        self.fields["tipo_inicial"].queryset = models.TipoProceso.objects.order_by("nombre")
+        self.fields["area_origen_inicial"].queryset = models.AreaProceso.objects.order_by("nombre")
+        self.fields["area_destino_inicial"].queryset = models.AreaProceso.objects.order_by("nombre")
+        estatus_proceso_qs = models.EstatusProceso.objects.order_by("orden", "nombre")
+        self.fields["estatus_proceso_inicial"].queryset = estatus_proceso_qs
+        if estatus_proceso_qs.exists() and not self.initial.get("estatus_proceso_inicial"):
+            self.fields["estatus_proceso_inicial"].initial = estatus_proceso_qs.first()
+        self.fields["descripcion_breve"].widget.attrs.setdefault(
+            "placeholder", "Descripción corta del asunto o problema."
+        )
+        self.fields["asunto_inicial"].widget.attrs.setdefault(
+            "placeholder", "Asunto del primer oficio o proceso."
+        )
+        self.fields["folio_inicial"].widget.attrs.setdefault(
+            "placeholder", "Ej. SE/DES/JUR/123/2025"
+        )
+        for name, field in self.fields.items():
+            if name in {"cct", "cct_codigo"}:
+                continue
+            TramiteForm._append_css_class(field.widget, "form-input")
+        TramiteForm._append_css_class(self.fields["cct_codigo"].widget, "form-input")
+        self.order_fields(
+            [
+                "cct",
+                "cct_codigo",
+                "cct_nombre",
+                "cct_sistema",
+                "cct_modalidad",
+                "asesor_cct",
+                "descripcion_breve",
+                "fecha_apertura",
+                "estatus",
+                "tipo_inicial",
+                "area_origen_inicial",
+                "folio_inicial",
+                "fecha_oficio_inicial",
+                "asunto_inicial",
+                "observaciones_iniciales",
+                "area_destino_inicial",
+                "estatus_proceso_inicial",
+            ]
+        )
+
+    def get_initial_process_payload(self) -> dict[str, object] | None:
+        if not self.cleaned_data.get("tipo_inicial"):
+            return None
+        campos_control = (
+            self.cleaned_data.get("folio_inicial"),
+            self.cleaned_data.get("fecha_oficio_inicial"),
+            self.cleaned_data.get("asunto_inicial"),
+            self.cleaned_data.get("observaciones_iniciales"),
+        )
+        if not any(campos_control):
+            return None
+        return {
+            "tipo_proceso": self.cleaned_data["tipo_inicial"],
+            "folio": self.cleaned_data.get("folio_inicial") or "",
+            "fecha_oficio": self.cleaned_data.get("fecha_oficio_inicial")
+            or self.cleaned_data.get("fecha_apertura"),
+            "asunto": self.cleaned_data.get("asunto_inicial") or self.cleaned_data["descripcion_breve"],
+            "observaciones": self.cleaned_data.get("observaciones_iniciales") or "",
+            "estatus": self.cleaned_data.get("estatus_proceso_inicial"),
+            "area_origen": self.cleaned_data.get("area_origen_inicial"),
+            "area_destino": self.cleaned_data.get("area_destino_inicial")
+            or self.cleaned_data.get("area_origen_inicial"),
+        }
+
+
+class ProcesoInternoForm(CCTReferenceFormMixin):
+    require_cct_codigo = False
+
+    class Meta:
+        model = models.ProcesoInterno
+        fields = (
+            "caso",
+            "cct",
+            "cct_nombre",
+            "cct_sistema",
+            "cct_modalidad",
+            "asesor_cct",
+            "tipo_proceso",
+            "folio",
+            "fecha_oficio",
+            "asunto",
+            "observaciones",
+            "estatus",
+            "area_origen",
+            "area_destino",
+            "asesor_responsable",
+            "proceso_padre",
+        )
+        widgets = {
+            "caso": forms.HiddenInput(),
+            "fecha_oficio": forms.DateInput(attrs={"type": "date"}),
+            "observaciones": forms.Textarea(attrs={"rows": 3}),
+            "asunto": forms.Textarea(attrs={"rows": 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.caso = kwargs.pop("caso", None)
+        super().__init__(*args, **kwargs)
+        if self.caso is None:
+            self.caso = self.instance.caso
+        if self.caso:
+            self.fields["caso"].initial = self.caso.pk
+            self.instance.caso = self.caso
+            if not self.initial.get("cct_codigo") and not self.instance.pk and self.caso.cct_id:
+                self.fields["cct_codigo"].initial = self.caso.cct_id
+        self.fields["tipo_proceso"].queryset = models.TipoProceso.objects.order_by("nombre")
+        self.fields["estatus"].queryset = models.EstatusProceso.objects.order_by("orden", "nombre")
+        self.fields["area_origen"].queryset = models.AreaProceso.objects.order_by("nombre")
+        self.fields["area_destino"].queryset = models.AreaProceso.objects.order_by("nombre")
+        proceso_queryset = models.ProcesoInterno.objects.none()
+        if self.caso:
+            proceso_queryset = models.ProcesoInterno.objects.filter(caso=self.caso).exclude(pk=self.instance.pk).order_by("fecha_oficio")
+        self.fields["proceso_padre"].queryset = proceso_queryset
+        self.fields["proceso_padre"].required = False
+        self.fields["proceso_padre"].empty_label = "Sin proceso padre"
+        self.fields["asesor_responsable"].required = False
+        self.fields["asesor_responsable"].widget.attrs.setdefault("placeholder", "Opcional, nombre del asesor responsable.")
+        for name, field in self.fields.items():
+            if name in {"caso", "cct", "cct_codigo"}:
+                continue
+            TramiteForm._append_css_class(field.widget, "form-input")
+        TramiteForm._append_css_class(self.fields["cct_codigo"].widget, "form-input")
+        self.order_fields(
+            [
+                "caso",
+                "cct",
+                "cct_codigo",
+                "cct_nombre",
+                "cct_sistema",
+                "cct_modalidad",
+                "asesor_cct",
+                "tipo_proceso",
+                "folio",
+                "fecha_oficio",
+                "area_origen",
+                "area_destino",
+                "asesor_responsable",
+                "proceso_padre",
+                "estatus",
+                "asunto",
+                "observaciones",
+            ]
+        )
+
+    def get_default_cct(self):
+        if self.instance and self.instance.cct_id:
+            return self.instance.cct
+        if self.caso:
+            return self.caso.cct
+        return None
+
+    def clean_proceso_padre(self):
+        proceso = self.cleaned_data.get("proceso_padre")
+        if proceso and self.caso and proceso.caso_id != self.caso.pk:
+            raise forms.ValidationError("El proceso padre debe pertenecer al mismo caso.")
+        return proceso

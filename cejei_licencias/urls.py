@@ -16,6 +16,7 @@ urlpatterns = [
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("", include("licencias.urls", namespace="licencias")),
     path("api/", include("licencias.api_urls", namespace="licencias_api")),
+    path("herramientas/incidencias/", include("incidencias.urls", namespace="incidencias")),
 ]
 
 if settings.DEBUG:

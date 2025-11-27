@@ -1,0 +1,108 @@
+{% extends "licencias/base.html" %}
+
+{% block title %}Proceso {{ proceso.folio|default:proceso.tipo_proceso.nombre }} | SEGEY Licencias{% endblock %}
+
+{% block content %}
+<section class="module-shell module-shell--form">
+    <div class="module-shell__header">
+        <div class="module-shell__intro">
+            <p class="module-shell__eyebrow">Caso: {{ caso.descripcion_breve }}</p>
+            <div class="module-shell__headline-group">
+                <h1 class="module-shell__title">{{ proceso.tipo_proceso.nombre }} · {{ proceso.folio|default:"Sin folio" }}</h1>
+                <p class="module-shell__lead">Consulta el detalle del oficio, las áreas involucradas y el historial de estatus.</p>
+            </div>
+        </div>
+        <div class="module-shell__actions">
+            {% if perms.licencias.change_procesointerno %}
+            <a class="btn btn--primary btn--md" href="{% url 'licencias:procesointerno-update' proceso.pk %}">Editar proceso</a>
+            {% endif %}
+            <a class="btn btn--ghost btn--md" href="{% url 'licencias:casointerno-detail' caso.pk %}">Volver al caso</a>
+        </div>
+    </div>
+
+    <div class="tramite-form-container">
+        <div class="tramite-form">
+            <div class="data-grid">
+                <div class="data-item">
+                    <span class="data-label">Folio</span>
+                    <span class="data-value">{{ proceso.folio|default:"-" }}</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Fecha del oficio</span>
+                    <span class="data-value">{{ proceso.fecha_oficio|date:"d/m/Y" }}</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Áreas</span>
+                    <span class="data-value">{{ proceso.area_origen.nombre }} → {{ proceso.area_destino.nombre }}</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Asesor responsable</span>
+                    <span class="data-value">{{ proceso.asesor_responsable|default:"-" }}</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">CCT</span>
+                    <span class="data-value">{{ proceso.cct_id|default:caso.cct_id }} · {{ proceso.cct_nombre|default:caso.cct_nombre }}</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Estatus</span>
+                    <span class="data-value">
+                        {% if proceso.estatus %}
+                        <span class="status-chip status-chip--{{ proceso.estatus.nombre|slugify }}">{{ proceso.estatus.nombre }}</span>
+                        {% else %}
+                        <span class="status-chip status-chip--default">Sin estatus</span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+
+            {% if proceso.asunto %}
+            <section class="form-subsection">
+                <h2 class="section-title">Asunto</h2>
+                <p>{{ proceso.asunto }}</p>
+            </section>
+            {% endif %}
+            {% if proceso.observaciones %}
+            <section class="form-subsection">
+                <h2 class="section-title">Observaciones</h2>
+                <p>{{ proceso.observaciones }}</p>
+            </section>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="module-table-card">
+        <div class="module-table-card__header">
+            <h2 class="module-table-card__title">Historial de estatus del proceso</h2>
+            <p class="module-table-card__meta">Cada cambio queda asociado al usuario.</p>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Registrado por</th>
+                    <th>Estatus anterior</th>
+                    <th>Estatus nuevo</th>
+                    <th>Comentario</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cambio in historial_estatus %}
+                <tr>
+                    <td>{{ cambio.fecha_cambio|date:"d/m/Y H:i" }}</td>
+                    <td>{{ cambio.usuario|default:"-" }}</td>
+                    <td>{{ cambio.estatus_anterior.nombre|default:"(sin estatus)" }}</td>
+                    <td>
+                        <span class="status-chip status-chip--{{ cambio.estatus_nuevo.nombre|slugify }}">{{ cambio.estatus_nuevo.nombre }}</span>
+                    </td>
+                    <td>{{ cambio.comentario|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="table__empty">Sin cambios registrados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
