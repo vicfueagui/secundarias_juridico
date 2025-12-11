@@ -1,0 +1,26 @@
+{% extends "tramites/base.html" %}
+
+{% block title %}Eliminar estatus de trámite | SEGEY Trámites{% endblock %}
+
+{% block content %}
+<section class="module-shell module-shell--form">
+    <div class="module-shell__header">
+        <div class="module-shell__intro">
+            <p class="module-shell__eyebrow">Trámite del caso</p>
+            <div class="module-shell__headline-group">
+                <h1 class="module-shell__title">Eliminar cambio de estatus</h1>
+                <p class="module-shell__lead">Se revertirá el estatus del trámite al valor anterior.</p>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" class="tramite-form">
+        {% csrf_token %}
+        <p>¿Seguro que deseas eliminar el cambio de estatus a <strong>{{ estatus_tramite.estatus_nuevo }}</strong>?</p>
+        <div class="form-actions">
+            <button type="submit" class="btn btn--danger btn--md">Sí, eliminar</button>
+            <a class="btn btn--ghost btn--md" href="{% url 'tramites:tramite-caso-detail' estatus_tramite.tramite.caso_id estatus_tramite.tramite_id %}">Cancelar</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

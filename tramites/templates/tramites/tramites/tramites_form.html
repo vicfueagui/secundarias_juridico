@@ -1,0 +1,544 @@
+{% extends "tramites/base.html" %}
+
+{% block title %}{% if form.instance.pk %}Editar trámite{% else %}Registrar trámite{% endif %} | SEGEY Trámites{% endblock %}
+
+{% block content %}
+<section class="module-shell module-shell--form">
+    <div class="module-shell__header">
+        <div class="module-shell__intro">
+            <p class="module-shell__eyebrow">Dirección Jurídica · Secundarias</p>
+            <div class="module-shell__headline-group">
+                <h1 class="module-shell__title">{% if form.instance.pk %}Editar{% else %}Registrar{% endif %} trámite</h1>
+                <p class="module-shell__lead">Captura el CCT y describe el trámite jurídico que darás de alta.</p>
+            </div>
+        </div>
+        <div class="module-shell__actions">
+            <a class="btn btn--ghost btn--md" href="{% url 'tramites:casointerno-list' %}">Regresar al listado</a>
+        </div>
+    </div>
+
+    <div class="tramite-form-container">
+        <form
+            method="post"
+            class="tramite-form"
+            data-caso-interno-form
+            data-lookup-url="{{ cct_lookup_url }}"
+            data-cct-api="{{ cct_api_url }}"
+            data-cct-can-create="{{ perms.licencias.add_cctsecundaria|yesno:'true,false' }}"
+            data-cct-can-edit="{{ perms.licencias.change_cctsecundaria|yesno:'true,false' }}"
+            data-cct-can-delete="{{ perms.licencias.delete_cctsecundaria|yesno:'true,false' }}"
+        >
+            {% csrf_token %}
+            {{ form.cct }}
+            {% if form.non_field_errors %}
+            <div class="form-alert" role="alert">
+                {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <section class="form-subsection">
+                <h2 class="section-title">Centro de trabajo</h2>
+                <div class="form-grid">
+                    <div class="form-field form-field--full">
+                        <label for="{{ form.cct_codigo.id_for_label }}">{{ form.cct_codigo.label }}</label>
+                        {{ form.cct_codigo }}
+                        <div class="cct-suggestions surface-subtle" data-cct-suggestions hidden></div>
+                        <datalist id="cct-options">
+                            {% for cct in cct_catalogo %}
+                            <option value="{{ cct.cct }}" data-nombre="{{ cct.nombre }}" data-servicio="{{ cct.servicio }}" data-asesor="{{ cct.asesor }}" data-sostenimiento="{{ cct.sostenimiento }}">{{ cct.cct }} · {{ cct.nombre }}</option>
+                            {% endfor %}
+                        </datalist>
+                        {% if form.cct_codigo.help_text %}
+                        <span class="help-text">{{ form.cct_codigo.help_text }}</span>
+                        {% endif %}
+                        {% for error in form.cct_codigo.errors %}
+                        <span class="error-text">{{ error }}</span>
+                        {% endfor %}
+                        <div class="field-actions">
+                            <button type="button" class="btn btn--secondary btn--sm" data-cct-action="search">Buscar</button>
+                            {% if perms.licencias.add_cctsecundaria %}
+                            <button type="button" class="btn btn--ghost btn--sm" data-cct-action="create">Nuevo</button>
+                            {% endif %}
+                            {% if perms.licencias.change_cctsecundaria %}
+                            <button type="button" class="btn btn--ghost btn--sm" data-cct-action="edit">Editar</button>
+                            {% endif %}
+                            {% if perms.licencias.delete_cctsecundaria %}
+                            <button type="button" class="btn btn--danger btn--sm" data-cct-action="delete">Eliminar</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ form.cct_nombre.id_for_label }}">{{ form.cct_nombre.label }}</label>
+                        {{ form.cct_nombre }}
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ form.cct_modalidad.id_for_label }}">{{ form.cct_modalidad.label }}</label>
+                        {{ form.cct_modalidad }}
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ form.cct_sistema.id_for_label }}">{{ form.cct_sistema.label }}</label>
+                        {{ form.cct_sistema }}
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ form.asesor_cct.id_for_label }}">{{ form.asesor_cct.label }}</label>
+                        {{ form.asesor_cct }}
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-subsection">
+                <h2 class="section-title">Datos del trámite</h2>
+                <div class="form-grid">
+                    <div class="form-field form-field--full">
+                        <label for="{{ form.tipo_inicial.id_for_label }}">{{ form.tipo_inicial.label }}</label>
+                        {{ form.tipo_inicial }}
+                        <div class="field-actions">
+                            <button type="button" class="btn btn--ghost btn--sm" data-tipo-proceso-modal-open="">Agregar tipo</button>
+                            <button type="button" class="btn btn--ghost btn--sm" data-tipo-proceso-modal-edit="">Editar seleccionado</button>
+                            <button type="button" class="btn btn--danger btn--sm" data-tipo-proceso-modal-delete="">Eliminar seleccionado</button>
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ form.fecha_apertura.id_for_label }}">{{ form.fecha_apertura.label }}</label>
+                        {{ form.fecha_apertura }}
+                    </div>
+                    <div class="form-field form-field--full">
+                        <label for="{{ form.numero_oficio.id_for_label }}">{{ form.numero_oficio.label }}</label>
+                        {{ form.numero_oficio }}
+                        <p class="help-text">Opcional. Selecciona un prefijo del catálogo y edítalo si necesitas agregar caracteres adicionales.</p>
+                    </div>
+                    <div class="form-field form-field--full">
+                        <label for="prefijo-oficio-select">Prefijos sugeridos</label>
+                        <div class="field-actions">
+                            <select id="prefijo-oficio-select" data-prefijo-oficio-select="">
+                                <option value="">Selecciona un prefijo para usarlo o editarlo</option>
+                                {% for prefijo in prefijos_oficio %}
+                                <option value="{{ prefijo.id }}">{{ prefijo.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="field-actions">
+                                <button type="button" class="btn btn--ghost btn--sm" data-prefijo-oficio-modal-open="">Nuevo prefijo</button>
+                                <button type="button" class="btn btn--ghost btn--sm" data-prefijo-oficio-modal-edit="">Editar seleccionado</button>
+                                <button type="button" class="btn btn--danger btn--sm" data-prefijo-oficio-modal-delete="">Eliminar seleccionado</button>
+                            </div>
+                        </div>
+                        <p class="help-text">Al seleccionar un prefijo se colocará en el campo de número de oficio y podrás modificarlo.</p>
+                        <datalist id="prefijo-oficio-options">
+                            {% for prefijo in prefijos_oficio %}
+                            <option value="{{ prefijo.nombre }}"></option>
+                            {% endfor %}
+                        </datalist>
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ form.tipo_violencia.id_for_label }}">{{ form.tipo_violencia.label }}</label>
+                        {{ form.tipo_violencia }}
+                        <div class="field-actions">
+                            <button type="button" class="btn btn--ghost btn--sm" data-tipo-violencia-modal-open="">Nuevo</button>
+                            <button type="button" class="btn btn--ghost btn--sm" data-tipo-violencia-modal-edit="">Editar seleccionado</button>
+                            <button type="button" class="btn btn--danger btn--sm" data-tipo-violencia-modal-delete="">Eliminar seleccionado</button>
+                        </div>
+                        <p class="help-text">Opcional. Selecciona un tipo y si no existe, créalo desde aquí.</p>
+                    </div>
+                    <div class="form-field form-field--full">
+                        <label for="{{ form.asunto.id_for_label }}">{{ form.asunto.label }}</label>
+                        {{ form.asunto }}
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-subsection">
+                <h2 class="section-title">Solicitante y destinatario</h2>
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label for="{{ form.solicitante.id_for_label }}">{{ form.solicitante.label }}</label>
+                        {{ form.solicitante }}
+                        <div class="field-actions">
+                            <button type="button" class="btn btn--ghost btn--sm" data-solicitante-modal-open="">Nuevo</button>
+                            <button type="button" class="btn btn--ghost btn--sm" data-solicitante-modal-edit="">Editar seleccionado</button>
+                            <button type="button" class="btn btn--danger btn--sm" data-solicitante-modal-delete="">Eliminar seleccionado</button>
+                        </div>
+                        <p class="help-text">Opcional. Administra el catálogo con nombre y descripción.</p>
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ form.dirigido_a.id_for_label }}">{{ form.dirigido_a.label }}</label>
+                        {{ form.dirigido_a }}
+                        <div class="field-actions">
+                            <button type="button" class="btn btn--ghost btn--sm" data-destinatario-modal-open="">Nuevo</button>
+                            <button type="button" class="btn btn--ghost btn--sm" data-destinatario-modal-edit="">Editar seleccionado</button>
+                            <button type="button" class="btn btn--danger btn--sm" data-destinatario-modal-delete="">Eliminar seleccionado</button>
+                        </div>
+                        <p class="help-text">Opcional. Administra el catálogo con nombre y descripción.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-subsection">
+                <h2 class="section-title">Participantes</h2>
+                <div class="form-grid">
+                    <div class="form-field form-field--full card-participante">
+                        <h3 class="section-subtitle">Generador</h3>
+                        <p class="module-panel__subtitle">Puedes capturar solo nombre, iniciales o sexo según la información disponible.</p>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="{{ form.generador_nombre.id_for_label }}">{{ form.generador_nombre.label }}</label>
+                                {{ form.generador_nombre }}
+                            </div>
+                            <div class="form-field">
+                                <label for="{{ form.generador_iniciales.id_for_label }}">{{ form.generador_iniciales.label }}</label>
+                                {{ form.generador_iniciales }}
+                                <p class="help-text">Ej. A.B.C.D.</p>
+                            </div>
+                            <div class="form-field">
+                                <label for="{{ form.generador_sexo.id_for_label }}">{{ form.generador_sexo.label }}</label>
+                                {{ form.generador_sexo }}
+                                <p class="help-text">Mujer u Hombre (opcional).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-field form-field--full card-participante">
+                        <h3 class="section-subtitle">Receptor</h3>
+                        <p class="module-panel__subtitle">Datos libres; ninguno es obligatorio.</p>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="{{ form.receptor_nombre.id_for_label }}">{{ form.receptor_nombre.label }}</label>
+                                {{ form.receptor_nombre }}
+                            </div>
+                            <div class="form-field">
+                                <label for="{{ form.receptor_iniciales.id_for_label }}">{{ form.receptor_iniciales.label }}</label>
+                                {{ form.receptor_iniciales }}
+                                <p class="help-text">Ej. A.B.C.D.</p>
+                            </div>
+                            <div class="form-field">
+                                <label for="{{ form.receptor_sexo.id_for_label }}">{{ form.receptor_sexo.label }}</label>
+                                {{ form.receptor_sexo }}
+                                <p class="help-text">Mujer u Hombre (opcional).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-field form-field--full card-participante">
+                        <div class="form-field form-field--full">
+                            <h3 class="section-subtitle">Receptores adicionales</h3>
+                            <p class="module-panel__subtitle">Agrega uno o varios registros; cada dato es opcional.</p>
+                            <div class="field-actions">
+                                <button type="button" class="btn btn--ghost btn--sm" data-receptor-adicional-add>Agregar receptor</button>
+                            </div>
+                        </div>
+                        {{ form.receptores_adicionales }}
+                        <table class="table table--interactive" id="receptores-adicionales-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Iniciales NNA</th>
+                                    <th>Sexo</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody data-receptores-rows>
+                                <tr class="table__empty-row"><td colspan="4" class="table__empty">No hay receptores adicionales.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-subsection">
+                <h2 class="section-title">Observaciones y estatus del caso</h2>
+                <div class="form-grid">
+                    <div class="form-field form-field--full">
+                        <label for="{{ form.observaciones_iniciales.id_for_label }}">{{ form.observaciones_iniciales.label }}</label>
+                        {{ form.observaciones_iniciales }}
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ form.estatus.id_for_label }}">{{ form.estatus.label }}</label>
+                        {{ form.estatus }}
+                        <div class="field-actions">
+                            <button type="button" class="btn btn--ghost btn--sm" data-estatus-caso-modal-open="">Agregar estatus</button>
+                            <button type="button" class="btn btn--ghost btn--sm" data-estatus-caso-modal-edit="">Editar seleccionado</button>
+                            <button type="button" class="btn btn--danger btn--sm" data-estatus-caso-modal-delete="">Eliminar seleccionado</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn--primary btn--md">Guardar trámite</button>
+                <a class="btn btn--secondary btn--md" href="{% url 'tramites:casointerno-list' %}">Cancelar</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="modal" id="cct-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title" data-modal-title>Registrar CCT</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body modal-body--stack">
+                <section class="modal-section">
+                    <label for="cct-search">Buscar en el catálogo</label>
+                    <input type="search" id="cct-search" placeholder="Escribe CCT, nombre o municipio" data-cct-search>
+                    <p class="modal-hint" data-cct-hint>Escribe al menos un carácter para ver resultados del catálogo.</p>
+                    <div class="modal-results" data-cct-results></div>
+                </section>
+                <form id="cct-form" class="modal-form">
+                    <div class="modal-field">
+                        <label for="cct-codigo">CCT</label>
+                        <input type="text" id="cct-codigo" name="cct" required maxlength="12">
+                    </div>
+                    <div class="modal-field">
+                        <label for="cct-nombre">Nombre</label>
+                        <input type="text" id="cct-nombre" name="nombre" required maxlength="255">
+                    </div>
+                    <div class="modal-field">
+                        <label for="cct-servicio">Modalidad</label>
+                        <input type="text" id="cct-servicio" name="servicio" maxlength="255">
+                    </div>
+                    <div class="modal-field">
+                        <label for="cct-sostenimiento">Sistema</label>
+                        <input type="text" id="cct-sostenimiento" name="sostenimiento" maxlength="255">
+                    </div>
+                    <div class="modal-field">
+                        <label for="cct-asesor">Asesor</label>
+                        <input type="text" id="cct-asesor" name="asesor" maxlength="255">
+                    </div>
+                    <div class="modal-field">
+                        <label for="cct-municipio">Municipio</label>
+                        <input type="text" id="cct-municipio" name="municipio" maxlength="255">
+                    </div>
+                    <div class="modal-field">
+                        <label for="cct-turno">Turno</label>
+                        <input type="text" id="cct-turno" name="turno" maxlength="255">
+                    </div>
+                    <div class="modal-message" data-modal-message role="alert"></div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn--primary btn--md" data-cct-save>Guardar</button>
+                        <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="tipo-proceso-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title" data-modal-title>Agregar tipo de trámite</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="tipo-proceso-form" class="modal-form">
+                    <fieldset id="tipo-proceso-fields">
+                        <div class="modal-field">
+                            <label for="tipo-proceso-nombre">Nombre del tipo</label>
+                            <input type="text" id="tipo-proceso-nombre" name="nombre" required maxlength="255">
+                        </div>
+                        <div class="modal-field">
+                            <label for="tipo-proceso-descripcion">Descripción (opcional)</label>
+                            <textarea id="tipo-proceso-descripcion" name="descripcion" maxlength="500" rows="3"></textarea>
+                        </div>
+                        <div class="modal-field">
+                            <label>
+                                <input type="checkbox" id="tipo-proceso-es-documento" name="es_documento">
+                                Requiere documentos adicionales
+                            </label>
+                        </div>
+                    </fieldset>
+                    <div class="modal-message" data-modal-message role="alert"></div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn--primary btn--md" data-tipo-proceso-save>Guardar</button>
+                        <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="estatus-caso-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title" data-modal-title>Agregar estatus de caso</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="estatus-caso-form" class="modal-form">
+                    <fieldset id="estatus-caso-fields">
+                        <div class="modal-field">
+                            <label for="estatus-caso-nombre">Nombre del estatus</label>
+                            <input type="text" id="estatus-caso-nombre" name="nombre" required maxlength="255">
+                        </div>
+                        <div class="modal-field">
+                            <label for="estatus-caso-orden">Orden (número para ordenamiento)</label>
+                            <input type="number" id="estatus-caso-orden" name="orden" value="1" min="1">
+                        </div>
+                    </fieldset>
+                    <div class="modal-message" data-modal-message role="alert"></div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn--primary btn--md" data-estatus-caso-save>Guardar</button>
+                        <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="prefijo-oficio-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title" data-modal-title>Agregar prefijo de oficio</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="prefijo-oficio-form" class="modal-form">
+                    <fieldset id="prefijo-oficio-fields">
+                        <div class="modal-field">
+                            <label for="prefijo-oficio-nombre">Prefijo</label>
+                            <input type="text" id="prefijo-oficio-nombre" name="nombre" required maxlength="255" placeholder="Ej. SE/SEB/DES-EESP">
+                        </div>
+                        <div class="modal-field">
+                            <label for="prefijo-oficio-descripcion">Descripción (opcional)</label>
+                            <textarea id="prefijo-oficio-descripcion" name="descripcion" maxlength="500" rows="3" placeholder="Notas internas para identificar el prefijo."></textarea>
+                        </div>
+                    </fieldset>
+                    <div class="modal-message" data-modal-message role="alert"></div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn--primary btn--md" data-prefijo-oficio-save>Guardar</button>
+                        <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="tipo-violencia-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title" data-modal-title>Agregar tipo de violencia</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="tipo-violencia-form" class="modal-form">
+                    <fieldset id="tipo-violencia-fields">
+                        <div class="modal-field">
+                            <label for="tipo-violencia-nombre">Nombre</label>
+                            <input type="text" id="tipo-violencia-nombre" name="nombre" required maxlength="255" placeholder="Ej. Violencia laboral">
+                        </div>
+                        <div class="modal-field">
+                            <label for="tipo-violencia-descripcion">Descripción (opcional)</label>
+                            <textarea id="tipo-violencia-descripcion" name="descripcion" maxlength="500" rows="3" placeholder="Notas internas para identificar el tipo."></textarea>
+                        </div>
+                    </fieldset>
+                    <div class="modal-message" data-modal-message role="alert"></div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn--primary btn--md" data-tipo-violencia-save>Guardar</button>
+                        <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="solicitante-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title" data-modal-title>Agregar solicitante</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="solicitante-form" class="modal-form">
+                    <fieldset id="solicitante-fields">
+                        <div class="modal-field">
+                            <label for="solicitante-nombre">Nombre</label>
+                            <input type="text" id="solicitante-nombre" name="nombre" required maxlength="255" placeholder="Ej. Sindicato de Trabajadores">
+                        </div>
+                        <div class="modal-field">
+                            <label for="solicitante-descripcion">Descripción (opcional)</label>
+                            <textarea id="solicitante-descripcion" name="descripcion" maxlength="500" rows="3" placeholder="Notas internas para identificarlo."></textarea>
+                        </div>
+                    </fieldset>
+                    <div class="modal-message" data-modal-message role="alert"></div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn--primary btn--md" data-solicitante-save>Guardar</button>
+                        <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="destinatario-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title" data-modal-title>Agregar destinatario</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="destinatario-form" class="modal-form">
+                    <fieldset id="destinatario-fields">
+                        <div class="modal-field">
+                            <label for="destinatario-nombre">Nombre</label>
+                            <input type="text" id="destinatario-nombre" name="nombre" required maxlength="255" placeholder="Ej. Dirección Jurídica">
+                        </div>
+                        <div class="modal-field">
+                            <label for="destinatario-descripcion">Descripción (opcional)</label>
+                            <textarea id="destinatario-descripcion" name="descripcion" maxlength="500" rows="3" placeholder="Notas internas para identificarlo."></textarea>
+                        </div>
+                    </fieldset>
+                    <div class="modal-message" data-modal-message role="alert"></div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn--primary btn--md" data-destinatario-save>Guardar</button>
+                        <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="receptor-adicional-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title" data-modal-title>Agregar receptor adicional</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="receptor-adicional-form" class="modal-form">
+                    <fieldset id="receptor-adicional-fields">
+                        <div class="modal-field">
+                            <label for="receptor-adicional-nombre">Nombre</label>
+                            <input type="text" id="receptor-adicional-nombre" name="nombre" maxlength="255">
+                        </div>
+                        <div class="modal-field">
+                            <label for="receptor-adicional-iniciales">Iniciales del NNA (Ej. A.B.C.D.)</label>
+                            <input type="text" id="receptor-adicional-iniciales" name="iniciales" maxlength="50" placeholder="Ej. A.B.C.D.">
+                        </div>
+                        <div class="modal-field">
+                            <label for="receptor-adicional-sexo">Sexo del NNA</label>
+                            <select id="receptor-adicional-sexo" name="sexo">
+                                <option value="">---------</option>
+                                <option value="M">Mujer</option>
+                                <option value="H">Hombre</option>
+                            </select>
+                        </div>
+                    </fieldset>
+                    <div class="modal-message" data-modal-message role="alert"></div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn--primary btn--md" data-receptor-adicional-save>Guardar</button>
+                        <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

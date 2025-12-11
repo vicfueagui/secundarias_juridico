@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test de Selectores</title>
+</head>
+<body>
+    <h1>Test de Selectores para Prefijo CRUD</h1>
+    
+    <div class="form-field form-field--full">
+        <label for="prefijo-oficio-select-modal">Prefijos sugeridos</label>
+        <select id="prefijo-oficio-select-modal" data-prefijo-oficio-select>
+            <option value="">Selecciona un prefijo para usarlo o editarlo</option>
+            <option value="1">PREFIX1</option>
+            <option value="2">PREFIX2</option>
+        </select>
+        <div class="field-actions">
+            <button type="button" class="btn btn--ghost btn--sm" data-prefijo-oficio-modal-open="">Nuevo prefijo</button>
+            <button type="button" class="btn btn--ghost btn--sm" data-prefijo-oficio-modal-edit="">Editar seleccionado</button>
+            <button type="button" class="btn btn--danger btn--sm" data-prefijo-oficio-modal-delete="">Eliminar seleccionado</button>
+        </div>
+        <p class="help-text">Al seleccionar un prefijo se colocará en el campo de número de oficio y podrás modificarlo.</p>
+        <datalist id="prefijo-oficio-options">
+            <option value="PREFIX1"></option>
+            <option value="PREFIX2"></option>
+        </datalist>
+    </div>
+
+    <script>
+        console.log("=== TEST DE SELECTORES ===");
+        
+        // Test 1: Encontrar el select
+        const selectElement = document.querySelector("#prefijo-oficio-select-modal");
+        console.log("1. Select encontrado:", !!selectElement, "ID:", selectElement?.id);
+        
+        // Test 2: Encontrar el form-field
+        const fieldContainer = selectElement?.closest(".form-field");
+        console.log("2. Form-field encontrado:", !!fieldContainer, "Classes:", fieldContainer?.className);
+        
+        // Test 3: Encontrar el field-actions
+        const actionsContainer = fieldContainer?.querySelector(".field-actions");
+        console.log("3. Field-actions encontrado:", !!actionsContainer, "Classes:", actionsContainer?.className);
+        
+        // Test 4: Encontrar los botones
+        const openBtn = actionsContainer?.querySelector("[data-prefijo-oficio-modal-open]");
+        const editBtn = actionsContainer?.querySelector("[data-prefijo-oficio-modal-edit]");
+        const deleteBtn = actionsContainer?.querySelector("[data-prefijo-oficio-modal-delete]");
+        
+        console.log("4. Botones encontrados:");
+        console.log("   - Open:", !!openBtn, "Text:", openBtn?.textContent);
+        console.log("   - Edit:", !!editBtn, "Text:", editBtn?.textContent);
+        console.log("   - Delete:", !!deleteBtn, "Text:", deleteBtn?.textContent);
+        
+        // Test 5: Registrar listeners y probar
+        if (openBtn) {
+            openBtn.addEventListener("click", () => {
+                console.log("✅ CLICK DETECTADO en openBtn!");
+                alert("Botón 'Nuevo prefijo' fue presionado!");
+            });
+            console.log("5. Event listener registrado para openBtn");
+        } else {
+            console.log("5. ❌ NO SE PUDO registrar listener - openBtn no encontrado");
+        }
+        
+        // Test 6: Ver estructura HTML real
+        console.log("6. Estructura HTML del form-field:");
+        console.log(fieldContainer?.outerHTML);
+        
+        console.log("=== FIN DE TEST ===");
+    </script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simulación de CRUD Prefijos</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        .section { margin: 20px 0; padding: 20px; background: #f5f5f5; border-radius: 5px; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        button { padding: 8px 16px; margin: 5px; cursor: pointer; }
+        #logs { background: white; border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: auto; margin-top: 10px; font-size: 12px; }
+        .log-line { padding: 2px 0; border-bottom: 1px solid #eee; }
+        .log-error { color: red; }
+        .log-success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Simulación de Búsqueda de Elementos para CRUD Prefijos</h1>
+
+    <div class="section">
+        <h2>Estructura HTML (simulada)</h2>
+        <p>La siguiente estructura representa lo que debería existir en tramites_detail.html:</p>
+        
+        <!-- Estructura del formulario -->
+        <div class="form-field form-field--full">
+            <label for="prefijo-oficio-select-modal">Prefijos sugeridos</label>
+            <select id="prefijo-oficio-select-modal" data-prefijo-oficio-select>
+                <option value="">Selecciona un prefijo para usarlo o editarlo</option>
+                <option value="1">PREFIX1</option>
+                <option value="2">PREFIX2</option>
+            </select>
+            <div class="field-actions">
+                <button type="button" class="btn btn--ghost btn--sm" data-prefijo-oficio-modal-open="">Nuevo prefijo</button>
+                <button type="button" class="btn btn--ghost btn--sm" data-prefijo-oficio-modal-edit="">Editar seleccionado</button>
+                <button type="button" class="btn btn--danger btn--sm" data-prefijo-oficio-modal-delete="">Eliminar seleccionado</button>
+            </div>
+        </div>
+
+        <!-- Modal de Prefijo -->
+        <div class="modal" id="prefijo-oficio-modal" hidden>
+            <div class="modal-header">
+                <h3 data-modal-title>Agregar prefijo de oficio</h3>
+                <button type="button" data-modal-close>Cerrar</button>
+            </div>
+            <div class="modal-body">
+                <form id="prefijo-oficio-form">
+                    <fieldset id="prefijo-oficio-fields">
+                        <div>
+                            <label for="prefijo-oficio-nombre">Prefijo</label>
+                            <input type="text" id="prefijo-oficio-nombre" name="nombre" required>
+                        </div>
+                    </fieldset>
+                    <div data-modal-message></div>
+                    <button type="submit" data-prefijo-oficio-save>Guardar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Pruebas de Búsqueda</h2>
+        <button onclick="runTests()">Ejecutar Todas las Pruebas</button>
+        <button onclick="clearLogs()">Limpiar Logs</button>
+        
+        <h3>Resultados:</h3>
+        <div id="logs"></div>
+    </div>
+
+    <script>
+        const logsDiv = document.getElementById('logs');
+
+        function addLog(msg, success = true) {
+            const line = document.createElement('div');
+            line.className = 'log-line ' + (success ? 'log-success' : 'log-error');
+            line.textContent = `${success ? '✓' : '✗'} ${msg}`;
+            logsDiv.appendChild(line);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function clearLogs() {
+            logsDiv.innerHTML = '';
+        }
+
+        function runTests() {
+            clearLogs();
+            addLog('=== INICIANDO PRUEBAS ===', true);
+
+            // Test 1: Select
+            const selectElement = document.querySelector("#prefijo-oficio-select-modal");
+            addLog(`Select encontrado: ${!!selectElement}`, !!selectElement);
+
+            // Test 2: Form-field
+            const fieldContainer = selectElement?.closest(".form-field");
+            addLog(`Form-field encontrado: ${!!fieldContainer}`, !!fieldContainer);
+
+            // Test 3: Field-actions
+            const actionsContainer = fieldContainer?.querySelector(".field-actions");
+            addLog(`Field-actions encontrado: ${!!actionsContainer}`, !!actionsContainer);
+
+            // Test 4: Botones
+            const openBtn = actionsContainer?.querySelector("[data-prefijo-oficio-modal-open]");
+            const editBtn = actionsContainer?.querySelector("[data-prefijo-oficio-modal-edit]");
+            const deleteBtn = actionsContainer?.querySelector("[data-prefijo-oficio-modal-delete]");
+            
+            addLog(`Botón Nuevo prefijo encontrado: ${!!openBtn}`, !!openBtn);
+            addLog(`Botón Editar encontrado: ${!!editBtn}`, !!editBtn);
+            addLog(`Botón Eliminar encontrado: ${!!deleteBtn}`, !!deleteBtn);
+
+            // Test 5: Modal
+            const modal = document.getElementById("prefijo-oficio-modal");
+            addLog(`Modal prefijo-oficio-modal encontrada: ${!!modal}`, !!modal);
+
+            // Test 6: Form
+            const form = document.getElementById("prefijo-oficio-form");
+            addLog(`Form prefijo-oficio-form encontrado: ${!!form}`, !!form);
+
+            // Test 7: Fieldset
+            const fieldset = form?.querySelector("#prefijo-oficio-fields");
+            addLog(`Fieldset prefijo-oficio-fields encontrado: ${!!fieldset}`, !!fieldset);
+
+            // Test 8: Save button
+            const saveBtn = form?.querySelector("[data-prefijo-oficio-save]");
+            addLog(`Save button encontrado: ${!!saveBtn}`, !!saveBtn);
+
+            // Test 9: Modal message
+            const modalMessage = modal?.querySelector("[data-modal-message]");
+            addLog(`Modal message encontrado: ${!!modalMessage}`, !!modalMessage);
+
+            // Test 10: Event listener
+            if (openBtn) {
+                openBtn.addEventListener('click', () => {
+                    addLog('EVENT: Click en botón Nuevo prefijo DETECTADO', true);
+                    alert('¡Event listener funcionando!');
+                });
+                addLog(`Event listener registrado en openBtn`, true);
+            }
+
+            addLog('=== PRUEBAS COMPLETADAS ===', true);
+
+            // Resumen
+            const allSuccess = selectElement && fieldContainer && actionsContainer && openBtn && editBtn && deleteBtn && modal && form && fieldset;
+            addLog(`RESUMEN FINAL: ${allSuccess ? 'TODOS LOS ELEMENTOS ENCONTRADOS ✓' : 'ALGUNOS ELEMENTOS FALTANTES ✗'}`, allSuccess);
+        }
+
+        // Ejecutar pruebas al cargar
+        window.addEventListener('load', () => {
+            addLog('Página cargada, listo para pruebas', true);
+        });
+    </script>
+</body>
+</html>

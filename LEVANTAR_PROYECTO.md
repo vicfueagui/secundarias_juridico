@@ -1,6 +1,6 @@
 # Pasos para Levantar el Proyecto
 
-## Control de Licencias Niveles Educativos 2025-2030
+## Sistema de Trámites Jurídicos - Secundarias
 
 ## 🚀 Configuración Inicial (Primera vez)
 
@@ -79,9 +79,13 @@ python manage.py runserver 0.0.0.0:8000
 
 ### 4. Acceder al Sistema
 
+- **URL:** http://127.0.0.1:8000
+- **Usuario:** admin
+- **Contraseña:** admin123
+
 ### 5. Importar el catálogo de CCT (una sola vez)
 
-Antes de usar el módulo de Control de Internos asegúrate de cargar el archivo `cct_secundarias.csv`:
+Antes de usar el módulo de Trámites asegúrate de cargar el archivo `cct_secundarias.csv`:
 
 ```bash
 source .venv/bin/activate
@@ -91,10 +95,6 @@ python manage.py import_ccts --path "cct_secundarias.csv"
 > Si el archivo se encuentra en otra ruta, ajusta el parámetro `--path`.
 
 El CSV debe incluir los encabezados `CCT`, `c_nombre`, `ASESOR`, `sostenimiento_c_subcontrol` y `tiponivelsub_c_servicion3` (separados por comas y codificados en UTF-8).
-
-- **URL:** http://127.0.0.1:8000
-- **Usuario:** admin
-- **Contraseña:** admin123
 
 ---
 
@@ -147,19 +147,12 @@ source .venv/bin/activate && python manage.py migrate
 source .venv/bin/activate && python manage.py showmigrations
 ```
 
-### Poblar catálogos (si la BD está vacía)
+### Importar catálogo de CCT
 ```bash
-source .venv/bin/activate && python manage.py poblar_catalogos
+source .venv/bin/activate && python manage.py import_ccts --path "cct_secundarias.csv"
 ```
 
-### Importar CCT y Relación de Protocolos
-```bash
-source .venv/bin/activate && python manage.py import_protocolos_csv \
-  --cct-path "cct_secundarias.csv" \
-  --protocolos-path "CONTROL DE PROTOCOLO.csv"
-```
-
-> Ajusta las rutas si los archivos CSV se mueven a otra carpeta. El comando carga el catálogo de CCT y los registros históricos en una sola ejecución.
+> Ajusta la ruta si el archivo CSV se mueve a otra carpeta. El comando actualiza o crea los CCT requeridos por el módulo de trámites.
 
 ### Crear superusuario (si es necesario)
 ```bash
@@ -182,20 +175,12 @@ source .venv/bin/activate && python manage.py createsuperuser
 - **Puerto:** 5532 (configura `POSTGRES_PORT` en tu `.env`)
 
 ### Estructura del Proyecto
-- **Configuración:** `cejei_licencias/`
-- **App principal:** `licencias/`
-- **App de incidencias:** `incidencias/` (captura y reporte de licencias médicas)
-- **Templates:** `licencias/templates/`
-- **Archivos estáticos:** `licencias/static/`
-- **Migraciones:** `licencias/migrations/`
-- **Reporteador PDF:** `herramientas/incidencias/` (usa WeasyPrint para exportar)
-
-### Herramienta de incidencias (reporteador)
-1. **Migraciones:** `python manage.py migrate incidencias` después de instalar dependencias.
-2. **Plantilla base:** configura logo, título y cuerpo en el admin (`Plantillas de reporte de incidencias`).
-3. **Captura:** navega a `Herramientas → Relación de licencias médicas` para registrar incidencias.
-4. **Edición:** cada incidencia permite editar el cuerpo del reporte antes de descargar el PDF.
-5. **Exportar:** el botón "Generar PDF" usa WeasyPrint; si faltan librerías del sistema (Pango, cairo), instálalas según la [documentación oficial](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation).
+- **Configuración:** `asesores_especializados/`
+- **App principal:** `tramites/`
+- **Templates:** `tramites/templates/`
+- **Archivos estáticos:** `tramites/static/`
+- **Migraciones:** `tramites/migrations/`
+- **Comandos relevantes:** `import_ccts` para poblar el catálogo de CCT
 
 ---
 
@@ -250,45 +235,6 @@ source .venv/bin/activate && python manage.py check
 - El proyecto usa PostgreSQL en Docker en el puerto **5532** (no 5432)
 - Hay otros proyectos usando PostgreSQL en el puerto 5432
 - El entorno virtual está en `.venv/`
+- Los datos de CCT deben importarse una sola vez con `import_ccts`
 
 
-
-
-1. Detener y eliminar el contenedor existente (si existe)
-bash
-docker stop cejei_postgres_5532 || true && docker rm cejei_postgres_5532 || true
-2. Iniciar el contenedor de PostgreSQL
-bash
-cd /Users/admin/Documents/project_secu_juridi/docker
-docker compose up -d
-3. Verificar que el contenedor está en ejecución
-bash
-docker ps | grep cejei_postgres_5532
-4. Verificar la conexión a la base de datos
-bash
-PGPASSWORD=cejei psql -h 127.0.0.1 -p 5532 -U cejei -d cejei_licencias -c "SELECT 'Conexión exitosa' AS message;"
-5. Activar el entorno virtual y ejecutar las migraciones
-bash
-cd /Users/admin/Documents/project_secu_juridi
-source .venv/bin/activate
-python manage.py migrate
-6. Crear un superusuario (si es la primera vez)
-bash
-python manage.py createsuperuser
-7. Iniciar el servidor de desarrollo
-bash
-python manage.py runserver
-8. Acceder al sistema
-URL: http://127.0.0.1:8000
-Usuario: admin
-Contraseña: (la que hayas configurado al crear el superusuario)
-Notas adicionales:
-Asegúrate de que el archivo .env esté correctamente configurado con:
-POSTGRES_DB=cejei_licencias
-POSTGRES_USER=cejei
-POSTGRES_PASSWORD=cejei
-POSTGRES_HOST=127.0.0.1
-POSTGRES_PORT=5532
-Si necesitas importar los datos iniciales, ejecuta:
-bash
-python manage.py import_ccts --path "cct_secundarias.csv"

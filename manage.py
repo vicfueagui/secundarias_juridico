@@ -12,7 +12,7 @@ load_dotenv(BASE_DIR / ".env", override=False)
 
 def main() -> None:
     """Run administrative tasks."""
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cejei_licencias.settings")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "asesores_especializados.settings")
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:  # pragma: no cover - Django import guard

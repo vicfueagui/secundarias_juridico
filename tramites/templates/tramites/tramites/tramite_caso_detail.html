@@ -1,0 +1,173 @@
+{% extends "tramites/base.html" %}
+
+{% block title %}Trámite asociado | SEGEY Trámites{% endblock %}
+
+{% block content %}
+<section class="module-shell module-shell--form">
+    <div class="module-shell__header">
+        <div class="module-shell__intro">
+            <p class="module-shell__eyebrow">Trámite del caso</p>
+            <div class="module-shell__headline-group">
+                <h1 class="module-shell__title">{{ tramite.tipo.nombre }} · {{ tramite.fecha|date:"d/m/Y" }}</h1>
+                <p class="module-shell__lead">Consulta el detalle del trámite, su estatus actual y el historial de cambios.</p>
+            </div>
+        </div>
+        <div class="module-shell__actions">
+            {% if perms.licencias.change_tramitecaso %}
+            <a class="btn btn--primary btn--md" href="{% url 'tramites:tramite-caso-update' tramite.caso_id tramite.pk %}">Editar trámite</a>
+            {% endif %}
+            {% if perms.licencias.delete_tramitecaso %}
+            <a class="btn btn--danger btn--md" href="{% url 'tramites:tramite-caso-delete' tramite.caso_id tramite.pk %}">Eliminar</a>
+            {% endif %}
+            <a class="btn btn--ghost btn--md" href="{% url 'tramites:casointerno-detail' tramite.caso_id %}">Volver al caso</a>
+        </div>
+    </div>
+
+    <div class="tramite-form-container">
+        <div class="tramite-form">
+            <div class="data-grid">
+                <div class="data-item">
+                    <span class="data-label">Caso</span>
+                    <span class="data-value">{{ tramite.caso.descripcion_breve }} · {{ tramite.caso.cct_id }}</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Fecha</span>
+                    <span class="data-value">{{ tramite.fecha|date:"d/m/Y" }}</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Estatus</span>
+                    <span class="data-value">
+                        {% if tramite.estatus %}
+                        <span class="status-chip status-chip--{{ tramite.estatus.nombre|slugify }}">{{ tramite.estatus.nombre }}</span>
+                        {% else %}
+                        <span class="status-chip status-chip--default">Sin estatus</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Tipo de trámite</span>
+                    <span class="data-value">{{ tramite.tipo.nombre }}</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Número de oficio</span>
+                    <span class="data-value">{{ tramite.numero_oficio|default:"-" }}</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Solicitante</span>
+                    <span class="data-value">{{ tramite.solicitante.nombre|default:"-" }}</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Dirigido a</span>
+                    <span class="data-value">{{ tramite.dirigido_a.nombre|default:"-" }}</span>
+                </div>
+                <div class="data-item data-item--full">
+                    <span class="data-label">Asunto</span>
+                    <span class="data-value">{{ tramite.asunto|default:"-" }}</span>
+                </div>
+                <div class="data-item data-item--full">
+                    <span class="data-label">Observaciones</span>
+                    <span class="data-value">{{ tramite.observaciones|default:"-" }}</span>
+                </div>
+            </div>
+
+            <section class="form-subsection">
+                <h2 class="section-title">Participantes</h2>
+                <div class="data-grid">
+                    <div class="data-item">
+                        <span class="data-label">Generador</span>
+                        <span class="data-value">
+                            {{ tramite.generador_nombre|default:"-" }}
+                            {% if tramite.generador_iniciales %} · {{ tramite.generador_iniciales }}{% endif %}
+                            {% if tramite.generador_sexo %} · {% if tramite.generador_sexo == "M" %}Mujer{% elif tramite.generador_sexo == "H" %}Hombre{% endif %}{% endif %}
+                        </span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Receptor</span>
+                        <span class="data-value">
+                            {{ tramite.receptor_nombre|default:"-" }}
+                            {% if tramite.receptor_iniciales %} · {{ tramite.receptor_iniciales }}{% endif %}
+                            {% if tramite.receptor_sexo %} · {% if tramite.receptor_sexo == "M" %}Mujer{% elif tramite.receptor_sexo == "H" %}Hombre{% endif %}{% endif %}
+                        </span>
+                    </div>
+                </div>
+                {% if tramite.receptores_adicionales %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Iniciales</th>
+                            <th>Sexo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rec in tramite.receptores_adicionales %}
+                        <tr>
+                            <td>{{ rec.nombre|default:"-" }}</td>
+                            <td>{{ rec.iniciales|default:"-" }}</td>
+                            <td>
+                                {% if rec.sexo == "M" %}Mujer{% elif rec.sexo == "H" %}Hombre{% else %}-{% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="table__empty">No hay receptores adicionales.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+
+    <div class="module-table-card">
+        <div class="module-table-card__header">
+            <h2 class="module-table-card__title">Historial de estatus</h2>
+            <p class="module-table-card__meta">Consulta cuándo se ha cambiado el estatus y quién lo registró.</p>
+        </div>
+        <div class="module-table-card__actions">
+            <form method="post" action="{% url 'tramites:tramite-caso-estatus-create' tramite.caso_id tramite.pk %}" class="form-inline">
+                {% csrf_token %}
+                {{ estatus_tramite_form.estatus_nuevo }}
+                {{ estatus_tramite_form.comentario }}
+                <button type="submit" class="btn btn--primary btn--sm">Agregar estatus</button>
+            </form>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Estatus anterior</th>
+                    <th>Estatus nuevo</th>
+                    <th>Registró</th>
+                    <th>Comentario</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cambio in historial_estatus %}
+                <tr>
+                    <td>{{ cambio.fecha_cambio|date:"d/m/Y H:i" }}</td>
+                    <td>{{ cambio.estatus_anterior.nombre|default:"-" }}</td>
+                    <td>{{ cambio.estatus_nuevo.nombre|default:"-" }}</td>
+                    <td>{{ cambio.usuario|default:"-" }}</td>
+                    <td>{{ cambio.comentario|default:"-" }}</td>
+                    <td class="table-actions">
+                        {% if forloop.first %}
+                            {% if perms.licencias.change_tramitecaso %}
+                            <a class="table-actions__link" href="{% url 'tramites:tramite-caso-estatus-update' tramite.caso_id tramite.pk cambio.pk %}">Editar</a>
+                            {% endif %}
+                            {% if perms.licencias.change_tramitecaso %}
+                            <a class="table-actions__link table-actions__link--danger" href="{% url 'tramites:tramite-caso-estatus-delete' tramite.caso_id tramite.pk cambio.pk %}">Eliminar</a>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="table__empty">No hay cambios de estatus registrados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

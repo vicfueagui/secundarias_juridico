@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}Gestión de trámites jurídicos{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="{% static 'img/segey-logo.png' %}">
+    <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body>
+    <header class="sg-navbar">
+        <div class="sg-navbar__inner">
+            <a href="{% url 'tramites:casointerno-list' %}" class="sg-navbar__brand">
+                <img src="{% static 'img/segey-logo.png' %}" alt="SEGEY Secretaría de Educación">
+                <span>Sistema de Trámites</span>
+            </a>
+            <nav class="sg-navbar__nav sg-navbar__nav--primary" aria-label="Secciones principales">
+                {% if perms.licencias.view_casointerno %}
+                <a class="sg-navbar__link" href="{% url 'tramites:casointerno-list' %}">Trámites</a>
+                {% endif %}
+                <a class="sg-navbar__link" href="{% url 'tramites:herramientas-index' %}">Herramientas</a>
+            </nav>
+            <form method="get" action="{% url 'tramites:casointerno-list' %}" role="search" class="sg-search sg-navbar__search">
+                <svg class="sg-search__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M11.5 5.5a6 6 0 1 1 0 12 6 6 0 0 1 0-12Zm6.75 10.75 4.25 4.25" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                <label class="visually-hidden" for="navbar-search">Buscar trámites</label>
+                <input id="navbar-search" class="sg-search__input" type="search" name="buscar" placeholder="Buscar trámite, folio o CCT">
+            </form>
+            <div class="sg-navbar__nav sg-navbar__nav--secondary" aria-label="Acciones de cuenta">
+                {% if user.is_authenticated %}
+                <span class="sg-navbar__link" aria-label="Usuario autenticado">{{ user.username }}</span>
+                {% if perms.licencias.add_casointerno %}
+                <a class="btn btn--primary btn--sm" href="{% url 'tramites:casointerno-create' %}">Registrar trámite</a>
+                {% endif %}
+                <a class="btn btn--ghost btn--sm" href="{% url 'logout' %}">Cerrar sesión</a>
+                {% else %}
+                <a class="btn btn--primary btn--sm" href="{% url 'login' %}">Iniciar sesión</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+    <main class="container">
+        {% include 'tramites/partials/messages.html' %}
+        {% block content %}{% endblock %}
+    </main>
+    <footer>
+        <small>SEGEY · Sistema de Seguimiento de Trámites · {% now 'Y' %}</small>
+    </footer>
+    <script src="{% static 'js/app.js' %}" defer></script>
+</body>
+</html>

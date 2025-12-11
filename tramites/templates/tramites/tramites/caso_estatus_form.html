@@ -1,0 +1,36 @@
+{% extends "tramites/base.html" %}
+
+{% block title %}Editar estatus del trámite principal | SEGEY Trámites{% endblock %}
+
+{% block content %}
+<section class="module-shell module-shell--form">
+    <div class="module-shell__header">
+        <div class="module-shell__intro">
+            <p class="module-shell__eyebrow">Trámite principal</p>
+            <div class="module-shell__headline-group">
+                <h1 class="module-shell__title">Editar estatus del trámite</h1>
+                <p class="module-shell__lead">Solo puedes editar el último cambio de estatus registrado.</p>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" class="tramite-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="form-grid">
+            <div class="form-field">
+                <label for="{{ form.estatus_nuevo.id_for_label }}">{{ form.estatus_nuevo.label }}</label>
+                {{ form.estatus_nuevo }}
+            </div>
+            <div class="form-field form-field--full">
+                <label for="{{ form.comentario.id_for_label }}">{{ form.comentario.label }}</label>
+                {{ form.comentario }}
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn--primary btn--md">Guardar</button>
+            <a class="btn btn--ghost btn--md" href="{% url 'tramites:casointerno-detail' caso.pk %}">Cancelar</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

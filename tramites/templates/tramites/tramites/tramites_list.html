@@ -1,0 +1,126 @@
+{% extends "tramites/base.html" %}
+{% load form_tags %}
+
+{% block title %}Trámites registrados | SEGEY Trámites{% endblock %}
+
+{% block content %}
+<section class="module-shell">
+    <div class="module-shell__header">
+        <div class="module-shell__intro module-shell__intro--spaced">
+            <p class="module-shell__eyebrow">Jurídico · Trámites</p>
+            <h1 class="module-shell__title">Trámites registrados</h1>
+            <p class="module-shell__lead">Consulta y da seguimiento a los trámites jurídicos asociados a cada CCT.</p>
+        </div>
+        {% if perms.licencias.add_casointerno %}
+        <div class="module-shell__actions module-shell__actions--stacked">
+            <button type="button" class="btn btn--secondary btn--lg" data-filters-toggle>
+                Mostrar/ocultar filtros
+            </button>
+            <a class="btn btn--primary btn--lg" href="{% url 'tramites:casointerno-create' %}">
+                Registrar trámite
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <section class="filters module-panel" data-filters-panel>
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Filtrar información</h2>
+            <p class="module-panel__subtitle">Busca por CCT, folio, tipo o estatus del trámite.</p>
+        </div>
+        <form method="get">
+            <div class="filter-grid">
+                {% for field in filter.form.visible_fields %}
+                <div class="filter-field">
+                    <label>{{ field.label }} {{ field }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="module-panel__footer">
+                <button type="submit" class="btn btn--primary btn--sm">Aplicar filtros</button>
+                <a href="{% url 'tramites:casointerno-list' %}" class="btn btn--ghost btn--sm">Limpiar</a>
+            </div>
+        </form>
+    </section>
+
+    <div class="module-table-card">
+        <div class="module-table-card__header">
+            <h2 class="module-table-card__title">Listado de trámites</h2>
+            <p class="module-table-card__meta">
+                {% if page_obj %}
+                Mostrando {{ page_obj.start_index }} – {{ page_obj.end_index }} de {{ page_obj.paginator.count }} registros.
+                {% else %}
+                Total de registros: {{ casos|length }}
+                {% endif %}
+            </p>
+        </div>
+
+        <table class="table table--interactive">
+            <thead>
+                <tr>
+                    <th>CCT</th>
+                    <th>Asunto / descripción</th>
+                    <th>Tipo inicial</th>
+                    <th>Número de oficio</th>
+                    <th>Fecha del trámite</th>
+                    <th>Solicitante</th>
+                    <th>Tipo de violencia</th>
+                    <th>Estatus</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for caso in casos %}
+                <tr>
+                    <td>
+                        <span class="table__primary">{{ caso.cct_id }}</span>
+                        <span class="table__secondary">{{ caso.cct_nombre }}</span>
+                    </td>
+                    <td>
+                        <span class="table__primary">{{ caso.asunto|default:caso.descripcion_breve|default:"(sin asunto)" }}</span>
+                        <span class="table__secondary">Creado {{ caso.fecha_apertura|date:"d/m/Y" }}</span>
+                    </td>
+                    <td>{{ caso.tipo_inicial.nombre }}</td>
+                    <td>{{ caso.numero_oficio|default:"-" }}</td>
+                    <td>{{ caso.fecha_apertura|date:"d/m/Y" }}</td>
+                    <td>{{ caso.solicitante.nombre|default:"-" }}</td>
+                    <td>{{ caso.tipo_violencia.nombre|default:"-" }}</td>
+                    <td>
+                        {% if caso.estatus %}
+                        <span class="status-chip status-chip--{{ caso.estatus.nombre|slugify }}">{{ caso.estatus.nombre }}</span>
+                        {% else %}
+                        <span class="status-chip status-chip--default">Sin estatus</span>
+                        {% endif %}
+                    </td>
+                    <td class="table-actions">
+                        <a class="table-actions__link" href="{% url 'tramites:casointerno-detail' caso.pk %}">Ver trámite</a>
+                        {% if perms.licencias.change_casointerno %}
+                        <a class="table-actions__link" href="{% url 'tramites:casointerno-update' caso.pk %}">Editar</a>
+                        {% endif %}
+                        {% if perms.licencias.delete_casointerno %}
+                        <a class="table-actions__link table-actions__link--danger" href="{% url 'tramites:casointerno-delete' caso.pk %}">Eliminar</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="table__empty">No se encontraron trámites con los filtros actuales.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if is_paginated %}
+        <div class="pagination pagination--inset">
+            {% if page_obj.has_previous %}
+            <a class="pagination__button" href="?{% if request.GET %}{{ request.GET.urlencode }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Página anterior">&larr;</a>
+            {% endif %}
+            <span class="pagination__page pagination__page--current">Página {{ page_obj.number }} de {{ paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+            <a class="pagination__button" href="?{% if request.GET %}{{ request.GET.urlencode }}&amp;{% endif %}page={{ page_obj.next_page_number }}" aria-label="Página siguiente">&rarr;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
