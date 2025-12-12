@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                 (
                     "numero_oficio",
                     models.CharField(
-                        blank=True, max_length=150, verbose_name="Número de oficio"
+                        blank=True, max_length=150, verbose_name="Número de expediente"
                     ),
                 ),
                 (
@@ -89,7 +89,7 @@ class Migration(migrations.Migration):
                 (
                     "numero_oficio",
                     models.CharField(
-                        blank=True, max_length=150, verbose_name="Número de oficio"
+                        blank=True, max_length=150, verbose_name="Número de expediente"
                     ),
                 ),
                 (

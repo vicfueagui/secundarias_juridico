@@ -145,6 +145,7 @@ class CasoInternoForm(CCTReferenceFormMixin):
             "cct_modalidad",
             "asesor_cct",
             "fecha_apertura",
+            "fecha_termino",
             "estatus",
             "tipo_inicial",
             "tipo_violencia",
@@ -163,6 +164,7 @@ class CasoInternoForm(CCTReferenceFormMixin):
         )
         widgets = {
             "fecha_apertura": forms.DateInput(attrs={"type": "date"}),
+            "fecha_termino": forms.DateInput(attrs={"type": "date"}),
             "asunto": forms.Textarea(attrs={"rows": 3}),
             "observaciones_iniciales": forms.Textarea(attrs={"rows": 3}),
             "receptores_adicionales": forms.HiddenInput(),
@@ -173,6 +175,8 @@ class CasoInternoForm(CCTReferenceFormMixin):
         self.fields["estatus"].queryset = models.EstatusCaso.objects.order_by("orden", "nombre")
         self.fields["tipo_inicial"].queryset = models.TipoProceso.objects.order_by("nombre")
         self.fields["fecha_apertura"].label = "Fecha del trámite"
+        self.fields["fecha_termino"].required = False
+        self.fields["fecha_termino"].label = "Fecha de término (opcional)"
         self.fields["numero_oficio"].widget.attrs.setdefault(
             "placeholder", "Ej. SE/SEB/DES-EESP/001/2024"
         )
@@ -214,6 +218,7 @@ class CasoInternoForm(CCTReferenceFormMixin):
                 "asesor_cct",
                 "tipo_inicial",
                 "fecha_apertura",
+                "fecha_termino",
                 "tipo_violencia",
                 "asunto",
                 "numero_oficio",
@@ -239,6 +244,7 @@ class TramiteCasoForm(forms.ModelForm):
             "tipo",
             "estatus",
             "fecha",
+            "fecha_termino",
             "numero_oficio",
             "tipo_violencia",
             "asunto",
@@ -255,6 +261,7 @@ class TramiteCasoForm(forms.ModelForm):
         )
         widgets = {
             "fecha": forms.DateInput(attrs={"type": "date"}),
+            "fecha_termino": forms.DateInput(attrs={"type": "date"}),
             "observaciones": forms.Textarea(attrs={"rows": 3}),
             "receptores_adicionales": forms.HiddenInput(),
         }
@@ -271,6 +278,8 @@ class TramiteCasoForm(forms.ModelForm):
         self.fields["solicitante"].required = False
         self.fields["dirigido_a"].queryset = models.Destinatario.objects.order_by("nombre")
         self.fields["dirigido_a"].required = False
+        self.fields["fecha_termino"].required = False
+        self.fields["fecha_termino"].label = "Fecha de término (opcional)"
         self.fields["numero_oficio"].widget.attrs.setdefault("list", "prefijo-oficio-options")
         sexo_choices = models.SEXO_NNA_CHOICES
         for field_name in ("generador_sexo", "receptor_sexo"):
@@ -312,4 +321,7 @@ class HistorialEstatusCasoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["estatus_nuevo"].queryset = models.EstatusCaso.objects.order_by("orden", "nombre")
         self.fields["estatus_nuevo"].widget.attrs.setdefault("class", "form-input")
+        self.fields["estatus_nuevo"].widget.attrs.setdefault("data-estatus-caso-select", "true")
+        self.fields["estatus_nuevo"].widget.attrs.setdefault("data-estatus-api", "/api/estatus-caso/")
+        self.fields["estatus_nuevo"].widget.attrs.setdefault("data-estatus-label", "estatus")
         self.fields["comentario"].widget.attrs.setdefault("class", "form-input")

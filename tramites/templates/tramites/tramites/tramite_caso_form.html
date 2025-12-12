@@ -47,6 +47,16 @@
                     {{ form.fecha }}
                 </div>
                 <div class="form-field">
+                    <label for="{{ form.fecha_termino.id_for_label }}">{{ form.fecha_termino.label }}</label>
+                    {{ form.fecha_termino }}
+                    <p class="help-text">Opcional. Define la fecha límite y se calcularán los días restantes.</p>
+                </div>
+                <div class="form-field">
+                    <label>Días restantes</label>
+                    <div class="termino-pill" data-termino-dias-tramite>—</div>
+                    <p class="help-text">Se actualiza automáticamente al elegir la fecha de término.</p>
+                </div>
+                <div class="form-field">
                     <label for="{{ form.numero_oficio.id_for_label }}">{{ form.numero_oficio.label }}</label>
                     {{ form.numero_oficio }}
                     <p class="help-text">Selecciona un prefijo sugerido o escribe el número completo.</p>
@@ -96,6 +106,10 @@
                         <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="solicitante" data-crud-target="{{ form.solicitante.id_for_label }}">Editar seleccionado</button>
                         <button type="button" class="btn btn--danger btn--sm" data-crud-delete="solicitante" data-crud-target="{{ form.solicitante.id_for_label }}">Eliminar seleccionado</button>
                     </div>
+                    <div class="label-stack" data-funcion-display data-target="{{ form.solicitante.id_for_label }}">
+                        <span class="label-stack__primary" data-funcion-nombre>-</span>
+                        <span class="label-stack__secondary" data-funcion-detalle></span>
+                    </div>
                 </div>
                 <div class="form-field">
                     <label for="{{ form.dirigido_a.id_for_label }}">{{ form.dirigido_a.label }}</label>
@@ -104,6 +118,10 @@
                         <button type="button" class="btn btn--ghost btn--sm" data-crud-open="destinatario" data-crud-target="{{ form.dirigido_a.id_for_label }}">Nuevo</button>
                         <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="destinatario" data-crud-target="{{ form.dirigido_a.id_for_label }}">Editar seleccionado</button>
                         <button type="button" class="btn btn--danger btn--sm" data-crud-delete="destinatario" data-crud-target="{{ form.dirigido_a.id_for_label }}">Eliminar seleccionado</button>
+                    </div>
+                    <div class="label-stack" data-funcion-display data-target="{{ form.dirigido_a.id_for_label }}">
+                        <span class="label-stack__primary" data-funcion-nombre>-</span>
+                        <span class="label-stack__secondary" data-funcion-detalle></span>
                     </div>
                 </div>
                 <div class="form-field">
@@ -334,8 +352,8 @@
                         <input type="text" id="solicitante-nombre" name="nombre" required maxlength="255">
                     </div>
                     <div class="modal-field">
-                        <label for="solicitante-descripcion">Descripción (opcional)</label>
-                        <textarea id="solicitante-descripcion" name="descripcion" maxlength="500" rows="3"></textarea>
+                        <label for="solicitante-descripcion">Función</label>
+                        <textarea id="solicitante-descripcion" name="descripcion" maxlength="500" rows="3" placeholder="Ej. Representante legal"></textarea>
                     </div>
                 </fieldset>
                 <div class="modal-message" data-modal-message role="alert"></div>
@@ -363,8 +381,8 @@
                         <input type="text" id="destinatario-nombre" name="nombre" required maxlength="255">
                     </div>
                     <div class="modal-field">
-                        <label for="destinatario-descripcion">Descripción (opcional)</label>
-                        <textarea id="destinatario-descripcion" name="descripcion" maxlength="500" rows="3"></textarea>
+                        <label for="destinatario-descripcion">Función</label>
+                        <textarea id="destinatario-descripcion" name="descripcion" maxlength="500" rows="3" placeholder="Ej. Director, Coordinador, etc."></textarea>
                     </div>
                 </fieldset>
                 <div class="modal-message" data-modal-message role="alert"></div>

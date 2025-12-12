@@ -149,6 +149,22 @@
             </section>
 
             <section class="form-subsection">
+                <h2 class="section-title">Término del trámite</h2>
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label for="{{ form.fecha_termino.id_for_label }}">{{ form.fecha_termino.label }}</label>
+                        {{ form.fecha_termino }}
+                        <p class="help-text">Opcional. Selecciona una fecha límite para calcular los días restantes.</p>
+                    </div>
+                    <div class="form-field">
+                        <label>Días restantes</label>
+                        <div class="termino-pill" data-termino-dias-caso>—</div>
+                        <p class="help-text">Se calcula automáticamente a partir de la fecha de término.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-subsection">
                 <h2 class="section-title">Solicitante y destinatario</h2>
                 <div class="form-grid">
                     <div class="form-field">
@@ -159,6 +175,10 @@
                             <button type="button" class="btn btn--ghost btn--sm" data-solicitante-modal-edit="">Editar seleccionado</button>
                             <button type="button" class="btn btn--danger btn--sm" data-solicitante-modal-delete="">Eliminar seleccionado</button>
                         </div>
+                        <div class="label-stack" data-funcion-display data-target="{{ form.solicitante.id_for_label }}">
+                            <span class="label-stack__primary" data-funcion-nombre>-</span>
+                            <span class="label-stack__secondary" data-funcion-detalle></span>
+                        </div>
                         <p class="help-text">Opcional. Administra el catálogo con nombre y descripción.</p>
                     </div>
                     <div class="form-field">
@@ -168,6 +188,10 @@
                             <button type="button" class="btn btn--ghost btn--sm" data-destinatario-modal-open="">Nuevo</button>
                             <button type="button" class="btn btn--ghost btn--sm" data-destinatario-modal-edit="">Editar seleccionado</button>
                             <button type="button" class="btn btn--danger btn--sm" data-destinatario-modal-delete="">Eliminar seleccionado</button>
+                        </div>
+                        <div class="label-stack" data-funcion-display data-target="{{ form.dirigido_a.id_for_label }}">
+                            <span class="label-stack__primary" data-funcion-nombre>-</span>
+                            <span class="label-stack__secondary" data-funcion-detalle></span>
                         </div>
                         <p class="help-text">Opcional. Administra el catálogo con nombre y descripción.</p>
                     </div>
@@ -266,8 +290,12 @@
 
             <div class="form-actions">
                 <button type="submit" class="btn btn--primary btn--md">Guardar trámite</button>
-                <a class="btn btn--secondary btn--md" href="{% url 'tramites:casointerno-list' %}">Cancelar</a>
-            </div>
+            {% if request.GET.from_list %}
+            <a class="btn btn--secondary btn--md" href="{{ request.GET.from_list }}">Cancelar</a>
+            {% else %}
+            <a class="btn btn--secondary btn--md" href="{% url 'tramites:casointerno-list' %}">Cancelar</a>
+            {% endif %}
+        </div>
         </form>
     </div>
 
@@ -461,8 +489,8 @@
                             <input type="text" id="solicitante-nombre" name="nombre" required maxlength="255" placeholder="Ej. Sindicato de Trabajadores">
                         </div>
                         <div class="modal-field">
-                            <label for="solicitante-descripcion">Descripción (opcional)</label>
-                            <textarea id="solicitante-descripcion" name="descripcion" maxlength="500" rows="3" placeholder="Notas internas para identificarlo."></textarea>
+                            <label for="solicitante-descripcion">Función</label>
+                            <textarea id="solicitante-descripcion" name="descripcion" maxlength="500" rows="3" placeholder="Ej. Representante legal"></textarea>
                         </div>
                     </fieldset>
                     <div class="modal-message" data-modal-message role="alert"></div>
@@ -490,8 +518,8 @@
                             <input type="text" id="destinatario-nombre" name="nombre" required maxlength="255" placeholder="Ej. Dirección Jurídica">
                         </div>
                         <div class="modal-field">
-                            <label for="destinatario-descripcion">Descripción (opcional)</label>
-                            <textarea id="destinatario-descripcion" name="descripcion" maxlength="500" rows="3" placeholder="Notas internas para identificarlo."></textarea>
+                            <label for="destinatario-descripcion">Función</label>
+                            <textarea id="destinatario-descripcion" name="descripcion" maxlength="500" rows="3" placeholder="Ej. Director, Coordinador, etc."></textarea>
                         </div>
                     </fieldset>
                     <div class="modal-message" data-modal-message role="alert"></div>

@@ -49,6 +49,10 @@ python manage.py --version
 docker start cejei_postgres_5532
 ```
 
+cd /Users/admin/Documents/project_secu_juridi
+docker-compose -f docker/docker-compose.yml up -d postgres
+
+
 **Verificar que está corriendo:**
 ```bash
 docker ps | grep cejei

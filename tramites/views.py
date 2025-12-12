@@ -6,7 +6,7 @@ from typing import Any, Dict
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db import DatabaseError
+from django.db import DatabaseError, models as dj_models
 from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.urls import reverse_lazy
 from django.shortcuts import get_object_or_404, redirect
@@ -58,16 +58,13 @@ def registrar_cambio_estatus_caso(
     comentario: str = "",
 ) -> None:
     """Registra en la bitácora cuando el estatus del trámite cambia."""
-    anterior_id = getattr(estatus_anterior, "pk", None)
-    nuevo_id = getattr(estatus_nuevo, "pk", None)
-    if anterior_id and nuevo_id and anterior_id == nuevo_id:
-        return
     actor = usuario if getattr(usuario, "is_authenticated", False) else None
     models.HistorialEstatusCaso.objects.create(
         caso=caso,
         estatus_anterior=estatus_anterior,
         estatus_nuevo=estatus_nuevo,
         usuario=actor,
+        comentario=comentario or "",
     )
 
 
@@ -79,10 +76,6 @@ def registrar_cambio_estatus_tramite(
     comentario: str = "",
 ) -> None:
     """Guarda el historial cuando cambia el estatus de un trámite asociado."""
-    anterior_id = getattr(estatus_anterior, "pk", None)
-    nuevo_id = getattr(estatus_nuevo, "pk", None)
-    if anterior_id and nuevo_id and anterior_id == nuevo_id:
-        return
     actor = usuario if getattr(usuario, "is_authenticated", False) else None
     models.HistorialEstatusTramiteCaso.objects.create(
         tramite=tramite,
@@ -229,6 +222,9 @@ class CasoInternoUpdateView(
         )
         messages.success(self.request, _("Trámite actualizado."))
         return response
+
+    def get_success_url(self):
+        return self.request.GET.get("from_list") or str(self.success_url)
 
 
 class CasoInternoDetailView(
@@ -400,10 +396,23 @@ class TramiteCasoEstatusCreateView(LoginRequiredMixin, PermissionRequiredMixin, 
     def form_valid(self, form):
         nuevo_estatus = form.cleaned_data["estatus_nuevo"]
         comentario = form.cleaned_data.get("comentario", "")
+        anterior = (
+            self.tramite.historial_estatus.order_by("-fecha_cambio", "-id")
+            .values_list("estatus_nuevo", flat=True)
+            .first()
+        )
+        estatus_anterior_obj = None
+        if anterior:
+            try:
+                estatus_anterior_obj = models.EstatusTramite.objects.get(pk=anterior)
+            except models.EstatusTramite.DoesNotExist:
+                estatus_anterior_obj = self.tramite.estatus
+        else:
+            estatus_anterior_obj = self.tramite.estatus
         registrar_cambio_estatus_tramite(
             tramite=self.tramite,
             usuario=self.request.user,
-            estatus_anterior=self.tramite.estatus,
+            estatus_anterior=estatus_anterior_obj,
             estatus_nuevo=nuevo_estatus,
             comentario=comentario,
         )
@@ -534,6 +543,9 @@ class CasoInternoDeleteView(
         messages.success(request, _("Trámite eliminado."))
         return super().delete(request, *args, **kwargs)
 
+    def get_success_url(self):
+        return self.request.GET.get("from_list") or str(self.success_url)
+
 
 class CasoInternoEstatusCreateView(LoginRequiredMixin, PermissionRequiredMixin, FormView):
     """Agrega un cambio de estatus al trámite principal y actualiza su estatus actual."""
@@ -548,10 +560,23 @@ class CasoInternoEstatusCreateView(LoginRequiredMixin, PermissionRequiredMixin, 
     def form_valid(self, form):
         nuevo_estatus = form.cleaned_data["estatus_nuevo"]
         comentario = form.cleaned_data.get("comentario", "")
+        anterior = (
+            self.caso.historial_estatus.order_by("-fecha_cambio", "-id")
+            .values_list("estatus_nuevo", flat=True)
+            .first()
+        )
+        estatus_anterior_obj = None
+        if anterior:
+            try:
+                estatus_anterior_obj = models.EstatusCaso.objects.get(pk=anterior)
+            except models.EstatusCaso.DoesNotExist:
+                estatus_anterior_obj = self.caso.estatus
+        else:
+            estatus_anterior_obj = self.caso.estatus
         registrar_cambio_estatus_caso(
             caso=self.caso,
             usuario=self.request.user,
-            estatus_anterior=self.caso.estatus,
+            estatus_anterior=estatus_anterior_obj,
             estatus_nuevo=nuevo_estatus,
             comentario=comentario,
         )
@@ -794,7 +819,12 @@ class EstatusCasoViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         if not self.request.user.has_perm("licencias.delete_estatuscaso"):
             raise PermissionDenied("No tienes permisos para eliminar estatus de caso.")
-        instance.delete()
+        try:
+            instance.delete()
+        except dj_models.ProtectedError as exc:
+            raise PermissionDenied(
+                "No se puede eliminar el estatus porque está en uso en trámites o en su historial."
+            ) from exc
 
 
 class TipoViolenciaViewSet(viewsets.ModelViewSet):

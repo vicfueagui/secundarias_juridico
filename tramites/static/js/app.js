@@ -6,6 +6,9 @@
     initCasoInternoForm();
     initFilterToggle();
     initTramiteCasoDetail();
+    initTerminoCalculators();
+    initFuncionDisplays();
+    initEstatusCasoCrud();
   });
 
   function initTabs() {
@@ -55,6 +58,50 @@
     });
   }
 
+  function initTerminoCalculators() {
+    const calculateDiff = (value) => {
+      if (!value) return null;
+      const target = new Date(`${value}T00:00:00`);
+      const today = new Date();
+      const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const diffMs = target - todayMidnight;
+      return Math.round(diffMs / (1000 * 60 * 60 * 24));
+    };
+
+    const bindCalculator = (inputSelector, outputSelector) => {
+      const inputs = document.querySelectorAll(inputSelector);
+      inputs.forEach((input) => {
+        const output = input
+          .closest("section, form")
+          ?.querySelector(outputSelector) || document.querySelector(outputSelector);
+        if (!output) return;
+        const update = () => {
+          const diffDays = calculateDiff(input.value);
+          if (diffDays === null || Number.isNaN(diffDays)) {
+            output.textContent = "—";
+            output.dataset.delta = "";
+            return;
+          }
+          const absDiff = Math.abs(diffDays);
+          const suffix = absDiff === 1 ? "día" : "días";
+          output.textContent =
+            diffDays >= 0 ? `${diffDays} ${suffix} restantes` : `Vencido hace ${absDiff} ${suffix}`;
+          output.dataset.delta = diffDays;
+        };
+        input.addEventListener("change", update);
+        input.addEventListener("input", update);
+        update();
+      });
+    };
+
+    // Caso principal
+    bindCalculator("#id_fecha_termino", "[data-termino-dias-caso]");
+    // Trámite asociado (prefijo en modal)
+    bindCalculator("#id_tramite_caso-fecha_termino", "[data-termino-dias-tramite]");
+    // Trámite asociado standalone (sin prefijo)
+    bindCalculator("#id_fecha_termino", "[data-termino-dias-tramite]");
+  }
+
   function initFilterToggle() {
     const toggleBtn = document.querySelector("[data-filters-toggle]");
     const panel = document.querySelector("[data-filters-panel]");
@@ -67,7 +114,8 @@
       panel.hidden = hide;
       toggleBtn.textContent = hide ? "Mostrar filtros" : "Ocultar filtros";
     };
-    applyState(false);
+    // Oculto por defecto al cargar
+    applyState(true);
     toggleBtn.addEventListener("click", () => {
       const hide = !panel.hidden;
       applyState(hide);
@@ -1239,7 +1287,13 @@
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
+          const contentType = response.headers.get("Content-Type") || "";
+          let errorData = {};
+          if (contentType.includes("application/json")) {
+            errorData = await response.json();
+          } else {
+            errorData = { detail: await response.text() };
+          }
           let errorMessage = `Error al crear ${fieldConfig.label || catalogType}.`;
 
           if (typeof errorData === "object") {
@@ -1247,6 +1301,8 @@
             if (firstError) {
               errorMessage = String(firstError);
             }
+          } else if (typeof errorData === "string" && errorData.trim()) {
+            errorMessage = errorData.trim();
           }
 
           showMessage(errorMessage, true);
@@ -1271,7 +1327,13 @@
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
+          const contentType = response.headers.get("Content-Type") || "";
+          let errorData = {};
+          if (contentType.includes("application/json")) {
+            errorData = await response.json();
+          } else {
+            errorData = { detail: await response.text() };
+          }
           let errorMessage = `Error al actualizar ${fieldConfig.label || catalogType}.`;
 
           if (typeof errorData === "object") {
@@ -1279,6 +1341,8 @@
             if (firstError) {
               errorMessage = String(firstError);
             }
+          } else if (typeof errorData === "string" && errorData.trim()) {
+            errorMessage = errorData.trim();
           }
 
           showMessage(errorMessage, true);
@@ -1302,7 +1366,13 @@
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
+          const contentType = response.headers.get("Content-Type") || "";
+          let errorData = {};
+          if (contentType.includes("application/json")) {
+            errorData = await response.json();
+          } else {
+            errorData = { detail: await response.text() };
+          }
           let errorMessage = `Error al eliminar ${fieldConfig.label || catalogType}.`;
 
           if (typeof errorData === "object") {
@@ -1310,6 +1380,8 @@
             if (firstError) {
               errorMessage = String(firstError);
             }
+          } else if (typeof errorData === "string" && errorData.trim()) {
+            errorMessage = errorData.trim();
           }
 
           showMessage(errorMessage, true);
@@ -1324,18 +1396,34 @@
       }
     };
 
+    const formatOptionText = (data) => {
+      if (!data) return "";
+      const nombre = data.nombre || "";
+      const funcion = data.descripcion || "";
+      return funcion ? `${nombre} · ${funcion}` : nombre;
+    };
+
+    const dispatchChange = (select) => {
+      const evt = new Event("change", { bubbles: true });
+      select.dispatchEvent(evt);
+    };
+
     const addOption = (select, data) => {
       const option = document.createElement("option");
       option.value = data.id;
-      option.textContent = data.nombre;
+      option.textContent = formatOptionText(data);
       select.appendChild(option);
       select.value = data.id;
+      dispatchChange(select);
     };
 
     const updateOption = (select, data) => {
       const option = select.querySelector(`option[value="${data.id}"]`);
       if (option) {
-        option.textContent = data.nombre;
+        option.textContent = formatOptionText(data);
+        if (select.value === String(data.id)) {
+          dispatchChange(select);
+        }
       }
     };
 
@@ -1347,6 +1435,7 @@
       }
       if (select.value === idStr) {
         select.value = "";
+        dispatchChange(select);
       }
     };
 
@@ -1711,7 +1800,8 @@
   }
 
   function initEstatusCasoCrud() {
-    const selectElement = document.querySelector("#id_estatus");
+    const selectElement =
+      document.querySelector("[data-estatus-caso-select]") || document.querySelector("#id_estatus");
     const modal = document.getElementById("estatus-caso-modal");
     const form = document.getElementById("estatus-caso-form");
     const fieldset = form ? form.querySelector("#estatus-caso-fields") : null;
@@ -2918,6 +3008,30 @@
         modal.hidden = true;
       })
     );
+  }
+
+  function initFuncionDisplays() {
+    const containers = document.querySelectorAll("[data-funcion-display]");
+    containers.forEach((container) => {
+      const targetId = container.dataset.target;
+      const select = document.getElementById(targetId);
+      if (!select) return;
+      const primary = container.querySelector("[data-funcion-nombre]");
+      const secondary = container.querySelector("[data-funcion-detalle]");
+
+      const update = () => {
+        const option = select.options[select.selectedIndex];
+        if (!option || !primary || !secondary) return;
+        const text = option.textContent || "";
+        const [nombre, detalle] = text.split("·").map((t) => t.trim());
+        primary.textContent = nombre || "-";
+        secondary.textContent = detalle || "";
+        secondary.style.display = detalle ? "block" : "none";
+      };
+
+      select.addEventListener("change", update);
+      update();
+    });
   }
   function initPrefijoOficioCrud() {
     // Inicializar objeto de debugging

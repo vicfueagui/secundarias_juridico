@@ -17,7 +17,11 @@
             {% csrf_token %}
             <div class="form-actions" style="margin-top: 1.5rem;">
                 <button type="submit" class="btn btn--danger btn--md">Sí, eliminar</button>
+                {% if request.GET.from_list %}
+                <a class="btn btn--secondary btn--md" href="{{ request.GET.from_list }}">Cancelar</a>
+                {% else %}
                 <a class="btn btn--secondary btn--md" href="{% url 'tramites:casointerno-detail' object.pk %}">Cancelar</a>
+                {% endif %}
             </div>
         </form>
     </div>

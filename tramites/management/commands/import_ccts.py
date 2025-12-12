@@ -4,7 +4,7 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
-from tramites.services import protocolos_import
+from tramites.services import importar_ccts
 
 
 class Command(BaseCommand):
@@ -23,7 +23,7 @@ class Command(BaseCommand):
             raise CommandError(f"No se encontró el archivo CSV: {csv_path}")
 
         self.stdout.write(self.style.NOTICE(f"Importando catálogo de CCT desde {csv_path}..."))
-        resultado = protocolos_import.importar_ccts(csv_path)
+        resultado = importar_ccts(csv_path)
         self.stdout.write(
             self.style.SUCCESS(
                 f"CCT creados: {resultado.ccts_creados}, actualizados: {resultado.ccts_actualizados}"

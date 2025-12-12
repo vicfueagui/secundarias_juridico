@@ -1486,19 +1486,20 @@
 
 .table-actions {
     display: inline-flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-1);
+    gap: 6px;
+    max-width: 100%;
 }
 
-.table-actions a {
+.table-actions a,
+.table-actions__link {
     font-weight: 600;
     color: var(--brand-600);
-}
-
-.table-actions__link {
-    padding: var(--space-1) var(--space-2);
+    padding: 6px 10px;
     border-radius: var(--radius-pill);
     transition: background-color var(--transition-fast), color var(--transition-fast);
+    white-space: nowrap;
 }
 
 .table-actions__link:hover {
@@ -1834,4 +1835,96 @@
     gap: var(--space-3);
     flex-wrap: wrap;
     justify-content: flex-end;
+}
+
+/* Cálculo de término */
+.termino-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    background: #f0f7ff;
+    color: #21527a;
+    font-weight: 700;
+    border: 1px solid #d6e7f5;
+    min-width: 100px;
+}
+.label-stack {
+    display: block;
+    margin-top: 8px;
+    line-height: 1.45;
+    max-width: 100%;
+    word-break: break-word;
+}
+.label-stack__primary,
+.label-stack__secondary {
+    display: block;
+    white-space: normal;
+}
+.label-stack__primary {
+    font-weight: 600;
+    color: var(--neutral-900, #1f2933);
+}
+.label-stack__secondary {
+    color: var(--neutral-500, #6b7280);
+    font-size: 0.95em;
+}
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+.table--responsive td[data-label]::before {
+    content: attr(data-label);
+    display: none;
+    font-weight: 600;
+    color: var(--neutral-700, #4b5563);
+    margin-bottom: 4px;
+}
+
+@media (max-width: 900px) {
+    .table--responsive thead {
+        display: none;
+    }
+    .table--responsive tbody tr {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 6px;
+        padding: 12px;
+        border: 1px solid var(--neutral-200, #e5e7eb);
+        border-radius: 12px;
+        margin-bottom: 12px;
+        background: #fff;
+    }
+    .table--responsive td {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 6px 0;
+        border: none;
+    }
+    .table--responsive td[data-label]::before {
+        display: block;
+    }
+    .table-actions {
+        width: 100%;
+    }
+    .table-actions a {
+        display: inline-block;
+        margin-right: 10px;
+        margin-bottom: 6px;
+    }
+}
+
+/* Acciones listado trámites */
+.acciones-tramite {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    max-width: 100%;
+}
+.acciones-tramite .btn-accion {
+    white-space: nowrap;
 }

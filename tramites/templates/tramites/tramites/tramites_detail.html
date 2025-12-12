@@ -14,9 +14,13 @@
         </div>
         <div class="module-shell__actions">
             {% if perms.licencias.change_casointerno %}
-            <a class="btn btn--primary btn--md" href="{% url 'tramites:casointerno-update' caso.pk %}">Editar trámite</a>
+            <a class="btn btn--primary btn--md" href="{% url 'tramites:casointerno-update' caso.pk %}{% if request.GET.from_list %}?from_list={{ request.GET.from_list|urlencode }}{% endif %}">Editar trámite</a>
             {% endif %}
+            {% if request.GET.from_list %}
+            <a class="btn btn--ghost btn--md" href="{{ request.GET.from_list }}">Volver al listado</a>
+            {% else %}
             <a class="btn btn--ghost btn--md" href="{% url 'tramites:casointerno-list' %}">Volver al listado</a>
+            {% endif %}
         </div>
     </div>
 
@@ -67,11 +71,21 @@
                 </div>
                 <div class="data-item">
                     <span class="data-label">Solicitante</span>
-                    <span class="data-value">{{ caso.solicitante.nombre|default:"-" }}</span>
+                    <span class="data-value label-stack">
+                        {% if caso.solicitante %}
+                        <span class="label-stack__primary">{{ caso.solicitante.nombre }}</span>
+                        {% if caso.solicitante.descripcion %}<span class="label-stack__secondary">{{ caso.solicitante.descripcion }}</span>{% endif %}
+                        {% else %}<span class="label-stack__primary">-</span>{% endif %}
+                    </span>
                 </div>
                 <div class="data-item">
                     <span class="data-label">Dirigido a</span>
-                    <span class="data-value">{{ caso.dirigido_a.nombre|default:"-" }}</span>
+                    <span class="data-value label-stack">
+                        {% if caso.dirigido_a %}
+                        <span class="label-stack__primary">{{ caso.dirigido_a.nombre }}</span>
+                        {% if caso.dirigido_a.descripcion %}<span class="label-stack__secondary">{{ caso.dirigido_a.descripcion }}</span>{% endif %}
+                        {% else %}<span class="label-stack__primary">-</span>{% endif %}
+                    </span>
                 </div>
                 <div class="data-item">
                     <span class="data-label">Generador</span>
@@ -157,7 +171,15 @@
             <form method="post" action="{% url 'tramites:casointerno-estatus-create' caso.pk %}" class="history-card__form">
                 {% csrf_token %}
                 <div class="history-card__fields">
-                    {{ estatus_caso_form.estatus_nuevo }}
+                    <div class="form-field">
+                        <label class="visually-hidden" for="{{ estatus_caso_form.estatus_nuevo.id_for_label }}">{{ estatus_caso_form.estatus_nuevo.label }}</label>
+                        {{ estatus_caso_form.estatus_nuevo }}
+                        <div class="field-actions">
+                            <button type="button" class="btn btn--ghost btn--sm" data-estatus-caso-modal-open>Agregar estatus</button>
+                            <button type="button" class="btn btn--ghost btn--sm" data-estatus-caso-modal-edit>Editar seleccionado</button>
+                            <button type="button" class="btn btn--danger btn--sm" data-estatus-caso-modal-delete>Eliminar seleccionado</button>
+                        </div>
+                    </div>
                     {{ estatus_caso_form.comentario }}
                 </div>
                 <button type="submit" class="btn btn--primary btn--pill btn--sm">Agregar estatus</button>
@@ -200,8 +222,38 @@
                     </tr>
                     {% endfor %}
                 </tbody>
-            </table>
+        </table>
+    </div>
+
+    <!-- Modal estatus de caso -->
+    <div class="modal" id="estatus-caso-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title" data-modal-title>Agregar estatus</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="estatus-caso-form" class="modal-form">
+                    <fieldset id="estatus-caso-fields">
+                        <div class="modal-field">
+                            <label for="estatus-caso-nombre">Nombre del estatus</label>
+                            <input type="text" id="estatus-caso-nombre" name="nombre" required maxlength="255">
+                        </div>
+                        <div class="modal-field">
+                            <label for="estatus-caso-orden">Orden (número para ordenamiento)</label>
+                            <input type="number" id="estatus-caso-orden" name="orden" value="1" min="1">
+                        </div>
+                    </fieldset>
+                    <div class="modal-message" data-modal-message role="alert"></div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn--primary btn--md" data-estatus-caso-save>Guardar</button>
+                        <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                    </div>
+                </form>
+            </div>
         </div>
+    </div>
     </div>
 
     <div class="history-card">
@@ -220,7 +272,7 @@
                         <th>Tipo</th>
                         <th>Estatus</th>
                         <th>Asunto</th>
-                        <th>Número de oficio</th>
+                        <th>Número de expediente</th>
                         <th>Observaciones</th>
                         <th>Acciones</th>
                     </tr>
@@ -284,6 +336,16 @@
                                 <label for="{{ tramite_caso_form.fecha.id_for_label }}">{{ tramite_caso_form.fecha.label }}</label>
                                 {{ tramite_caso_form.fecha }}
                             </div>
+                            <div class="form-field">
+                                <label for="{{ tramite_caso_form.fecha_termino.id_for_label }}">{{ tramite_caso_form.fecha_termino.label }}</label>
+                                {{ tramite_caso_form.fecha_termino }}
+                                <p class="help-text">Opcional. Define una fecha límite para calcular los días restantes.</p>
+                            </div>
+                            <div class="form-field">
+                                <label>Días restantes</label>
+                                <div class="termino-pill" data-termino-dias-tramite>—</div>
+                                <p class="help-text">Se actualizará al elegir la fecha de término.</p>
+                            </div>
                             <div class="form-field form-field--full">
                                 <label for="{{ tramite_caso_form.numero_oficio.id_for_label }}">{{ tramite_caso_form.numero_oficio.label }}</label>
                                 {{ tramite_caso_form.numero_oficio }}
@@ -336,6 +398,10 @@
                                     <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="solicitante" data-crud-target="id_tramite_caso-solicitante">Editar seleccionado</button>
                                     <button type="button" class="btn btn--danger btn--sm" data-crud-delete="solicitante" data-crud-target="id_tramite_caso-solicitante">Eliminar seleccionado</button>
                                 </div>
+                                <div class="label-stack" data-funcion-display data-target="id_tramite_caso-solicitante">
+                                    <span class="label-stack__primary" data-funcion-nombre>-</span>
+                                    <span class="label-stack__secondary" data-funcion-detalle></span>
+                                </div>
                             </div>
                             <div class="form-field">
                                 <label for="{{ tramite_caso_form.dirigido_a.id_for_label }}">{{ tramite_caso_form.dirigido_a.label }}</label>
@@ -344,6 +410,10 @@
                                     <button type="button" class="btn btn--ghost btn--sm" data-crud-open="destinatario" data-crud-target="id_tramite_caso-dirigido_a">Nuevo</button>
                                     <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="destinatario" data-crud-target="id_tramite_caso-dirigido_a">Editar seleccionado</button>
                                     <button type="button" class="btn btn--danger btn--sm" data-crud-delete="destinatario" data-crud-target="id_tramite_caso-dirigido_a">Eliminar seleccionado</button>
+                                </div>
+                                <div class="label-stack" data-funcion-display data-target="id_tramite_caso-dirigido_a">
+                                    <span class="label-stack__primary" data-funcion-nombre>-</span>
+                                    <span class="label-stack__secondary" data-funcion-detalle></span>
                                 </div>
                             </div>
                         </div>
@@ -587,6 +657,10 @@
                             <input type="text" id="solicitante-nombre" name="nombre" required maxlength="255" placeholder="Ej. Sindicato de Trabajadores">
                         </div>
                         <div class="modal-field">
+                            <label for="solicitante-funcion">Función</label>
+                            <input type="text" id="solicitante-funcion" name="funcion" maxlength="255" placeholder="Ej. Representante legal">
+                        </div>
+                        <div class="modal-field">
                             <label for="solicitante-descripcion">Descripción (opcional)</label>
                             <textarea id="solicitante-descripcion" name="descripcion" maxlength="500" rows="3" placeholder="Notas internas para identificarlo."></textarea>
                         </div>
@@ -614,6 +688,10 @@
                         <div class="modal-field">
                             <label for="destinatario-nombre">Nombre</label>
                             <input type="text" id="destinatario-nombre" name="nombre" required maxlength="255" placeholder="Ej. Dirección Jurídica">
+                        </div>
+                        <div class="modal-field">
+                            <label for="destinatario-funcion">Función</label>
+                            <input type="text" id="destinatario-funcion" name="funcion" maxlength="255" placeholder="Ej. Director, Coordinador, etc.">
                         </div>
                         <div class="modal-field">
                             <label for="destinatario-descripcion">Descripción (opcional)</label>

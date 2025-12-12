@@ -49,16 +49,26 @@
                     <span class="data-value">{{ tramite.tipo.nombre }}</span>
                 </div>
                 <div class="data-item">
-                    <span class="data-label">Número de oficio</span>
+                    <span class="data-label">Número de expediente</span>
                     <span class="data-value">{{ tramite.numero_oficio|default:"-" }}</span>
                 </div>
                 <div class="data-item">
                     <span class="data-label">Solicitante</span>
-                    <span class="data-value">{{ tramite.solicitante.nombre|default:"-" }}</span>
+                    <span class="data-value label-stack">
+                        {% if tramite.solicitante %}
+                        <span class="label-stack__primary">{{ tramite.solicitante.nombre }}</span>
+                        {% if tramite.solicitante.descripcion %}<span class="label-stack__secondary">{{ tramite.solicitante.descripcion }}</span>{% endif %}
+                        {% else %}<span class="label-stack__primary">-</span>{% endif %}
+                    </span>
                 </div>
                 <div class="data-item">
                     <span class="data-label">Dirigido a</span>
-                    <span class="data-value">{{ tramite.dirigido_a.nombre|default:"-" }}</span>
+                    <span class="data-value label-stack">
+                        {% if tramite.dirigido_a %}
+                        <span class="label-stack__primary">{{ tramite.dirigido_a.nombre }}</span>
+                        {% if tramite.dirigido_a.descripcion %}<span class="label-stack__secondary">{{ tramite.dirigido_a.descripcion }}</span>{% endif %}
+                        {% else %}<span class="label-stack__primary">-</span>{% endif %}
+                    </span>
                 </div>
                 <div class="data-item data-item--full">
                     <span class="data-label">Asunto</span>

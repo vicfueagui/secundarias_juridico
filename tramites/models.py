@@ -125,6 +125,9 @@ class Solicitante(CatalogoBase):
         verbose_name = "Solicitante"
         verbose_name_plural = "Solicitantes"
 
+    def __str__(self) -> str:
+        return f"{self.nombre} · {self.descripcion}" if self.descripcion else self.nombre
+
 
 class Destinatario(CatalogoBase):
     """Catálogo de destinatarios (dirigido a)."""
@@ -132,6 +135,9 @@ class Destinatario(CatalogoBase):
     class Meta(CatalogoBase.Meta):
         verbose_name = "Destinatario"
         verbose_name_plural = "Destinatarios"
+
+    def __str__(self) -> str:
+        return f"{self.nombre} · {self.descripcion}" if self.descripcion else self.nombre
 
 
 class EstatusTramite(CatalogoBase):
@@ -241,6 +247,7 @@ class CasoInterno(models.Model):
         blank=True,
         null=True,
     )
+    fecha_termino = models.DateField(blank=True, null=True, verbose_name="Fecha de término")
     history = HistoricalRecords()
 
     class Meta:
@@ -264,6 +271,14 @@ class CasoInterno(models.Model):
             if not self.asesor_cct:
                 self.asesor_cct = self.cct.asesor
         self.cct_sistema = normalise_sistema(self.cct_sistema)
+
+    @property
+    def dias_para_termino(self) -> int | None:
+        """Devuelve días restantes para la fecha de término, si existe."""
+        if not self.fecha_termino:
+            return None
+        today = timezone.localdate()
+        return (self.fecha_termino - today).days
 
 
 class HistorialEstatusCaso(models.Model):
@@ -400,7 +415,7 @@ class TramiteCaso(models.Model):
         null=True,
     )
     fecha = models.DateField(verbose_name="Fecha del trámite")
-    numero_oficio = models.CharField(max_length=150, blank=True, verbose_name="Número de oficio")
+    numero_oficio = models.CharField(max_length=150, blank=True, verbose_name="Número de expediente")
     asunto = models.CharField(max_length=255, blank=True, verbose_name="Asunto")
     observaciones = models.TextField(blank=True, verbose_name="Observaciones")
     generador_nombre = models.CharField(max_length=255, blank=True, verbose_name="Nombre del generador")
@@ -416,6 +431,7 @@ class TramiteCaso(models.Model):
     receptores_adicionales = models.JSONField(default=list, blank=True, verbose_name="Receptores adicionales")
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
+    fecha_termino = models.DateField(blank=True, null=True, verbose_name="Fecha de término")
     history = HistoricalRecords()
 
     class Meta:
@@ -425,3 +441,10 @@ class TramiteCaso(models.Model):
 
     def __str__(self) -> str:
         return f"{self.caso} · {self.tipo} · {self.fecha}"
+
+    @property
+    def dias_para_termino(self) -> int | None:
+        if not self.fecha_termino:
+            return None
+        today = timezone.localdate()
+        return (self.fecha_termino - today).days

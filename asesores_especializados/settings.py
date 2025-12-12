@@ -18,21 +18,21 @@ ALLOWED_HOSTS = [
     'ngrok-free.app',
     '127.0.0.1',
     'localhost',
-    '192.168.184.175',
+    '192.168.184.69',
     'admins-macbook-pro.local',
 ]
 
 # Configuración para CSRF
 CSRF_TRUSTED_ORIGINS = [
     'https://*.ngrok-free.app',
-    'http://192.168.184.175:8000',
+    'http://192.168.184.69:8000',
     'http://admins-macbook-pro.local:8000',
 ]
 
 # Configuración CORS si usas API REST
 CORS_ALLOWED_ORIGINS = [
     'https://*.ngrok-free.app',
-    'http://192.168.184.175:8000',
+    'http://192.168.184.69:8000',
     'http://admins-macbook-pro.local:8000',
 ]
 

@@ -55,50 +55,60 @@
             </p>
         </div>
 
-        <table class="table table--interactive">
+        <div class="table-responsive">
+        <table class="table table--interactive table--responsive">
             <thead>
                 <tr>
                     <th>CCT</th>
                     <th>Asunto / descripción</th>
                     <th>Tipo inicial</th>
-                    <th>Número de oficio</th>
+                    <th>Número de expediente</th>
                     <th>Fecha del trámite</th>
                     <th>Solicitante</th>
                     <th>Tipo de violencia</th>
                     <th>Estatus</th>
+                    <th>Usuario</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for caso in casos %}
                 <tr>
-                    <td>
+                    <td data-label="CCT">
                         <span class="table__primary">{{ caso.cct_id }}</span>
                         <span class="table__secondary">{{ caso.cct_nombre }}</span>
                     </td>
-                    <td>
+                    <td data-label="Asunto / descripción">
                         <span class="table__primary">{{ caso.asunto|default:caso.descripcion_breve|default:"(sin asunto)" }}</span>
                         <span class="table__secondary">Creado {{ caso.fecha_apertura|date:"d/m/Y" }}</span>
                     </td>
-                    <td>{{ caso.tipo_inicial.nombre }}</td>
-                    <td>{{ caso.numero_oficio|default:"-" }}</td>
-                    <td>{{ caso.fecha_apertura|date:"d/m/Y" }}</td>
-                    <td>{{ caso.solicitante.nombre|default:"-" }}</td>
-                    <td>{{ caso.tipo_violencia.nombre|default:"-" }}</td>
-                    <td>
+                    <td data-label="Tipo inicial">{{ caso.tipo_inicial.nombre }}</td>
+                    <td data-label="Número de expediente">{{ caso.numero_oficio|default:"-" }}</td>
+                    <td data-label="Fecha del trámite">{{ caso.fecha_apertura|date:"d/m/Y" }}</td>
+                    <td data-label="Solicitante">
+                        {% if caso.solicitante %}
+                        <div class="label-stack">
+                            <span class="label-stack__primary">{{ caso.solicitante.nombre }}</span>
+                            {% if caso.solicitante.descripcion %}<span class="label-stack__secondary">{{ caso.solicitante.descripcion }}</span>{% endif %}
+                        </div>
+                        {% else %}-{% endif %}
+                    </td>
+                    <td data-label="Tipo de violencia">{{ caso.tipo_violencia.nombre|default:"-" }}</td>
+                    <td data-label="Estatus">
                         {% if caso.estatus %}
                         <span class="status-chip status-chip--{{ caso.estatus.nombre|slugify }}">{{ caso.estatus.nombre }}</span>
                         {% else %}
                         <span class="status-chip status-chip--default">Sin estatus</span>
                         {% endif %}
                     </td>
-                    <td class="table-actions">
-                        <a class="table-actions__link" href="{% url 'tramites:casointerno-detail' caso.pk %}">Ver trámite</a>
+                    <td data-label="Usuario">{{ caso.creado_por.username|default:"-" }}</td>
+                    <td class="table-actions" data-label="Acciones">
+                        <a class="table-actions__link" href="{% url 'tramites:casointerno-detail' caso.pk %}?from_list={{ request.get_full_path|urlencode }}">Ver trámite</a>
                         {% if perms.licencias.change_casointerno %}
-                        <a class="table-actions__link" href="{% url 'tramites:casointerno-update' caso.pk %}">Editar</a>
+                        <a class="table-actions__link" href="{% url 'tramites:casointerno-update' caso.pk %}?from_list={{ request.get_full_path|urlencode }}">Editar</a>
                         {% endif %}
                         {% if perms.licencias.delete_casointerno %}
-                        <a class="table-actions__link table-actions__link--danger" href="{% url 'tramites:casointerno-delete' caso.pk %}">Eliminar</a>
+                        <a class="table-actions__link table-actions__link--danger" href="{% url 'tramites:casointerno-delete' caso.pk %}?from_list={{ request.get_full_path|urlencode }}">Eliminar</a>
                         {% endif %}
                     </td>
                 </tr>
@@ -109,6 +119,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
 
         {% if is_paginated %}
         <div class="pagination pagination--inset">
