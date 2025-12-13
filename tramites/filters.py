@@ -32,10 +32,17 @@ class CasoInternoFilter(django_filters.FilterSet):
         lookup_expr="icontains",
         label="Iniciales receptor",
     )
-    asesor_cct = django_filters.CharFilter(
+    asesor_cct = django_filters.ChoiceFilter(
         field_name="asesor_cct",
-        lookup_expr="icontains",
-        label="Asesor CCT",
+        lookup_expr="exact",
+        label="Asesor",
+        empty_label="Todos",
+    )
+    tipo_violencia = django_filters.ModelChoiceFilter(
+        queryset=models.TipoViolencia.objects.all(),
+        field_name="tipo_violencia",
+        label="Tipo de violencia",
+        empty_label="Todos",
     )
     fecha_registro = django_filters.DateFromToRangeFilter(
         label="Rango fecha de registro",
@@ -49,7 +56,8 @@ class CasoInternoFilter(django_filters.FilterSet):
             "estatus": ["exact"],
             "tipo_inicial": ["exact"],
             "creado_por": ["exact"],
-            "asesor_cct": ["icontains"],
+            "asesor_cct": ["exact"],
+            "tipo_violencia": ["exact"],
             "fecha_registro": ["exact"],
         }
 
@@ -78,3 +86,14 @@ class CasoInternoFilter(django_filters.FilterSet):
             )
             .distinct()
         )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Llenar dinámicamente la lista de asesores disponibles.
+        asesores = (
+            models.CasoInterno.objects.exclude(asesor_cct="")
+            .order_by("asesor_cct")
+            .values_list("asesor_cct", flat=True)
+            .distinct()
+        )
+        self.filters["asesor_cct"].extra["choices"] = [(a, a) for a in asesores]
