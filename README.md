@@ -50,6 +50,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
+./scripts/bootstrap_data.sh  # migra e importa cct_secundarias.csv
 python manage.py createsuperuser  # opcional
 python manage.py runserver
 ```
@@ -107,7 +108,15 @@ Permite:
 
 - `LEVANTAR_PROYECTO.md`: checklist para configurar el entorno local.
 - `INICIO_RAPIDO.md`: pasos funcionales para el personal jurídico.
-- `VERIFICACION_CAMBIOS.md`: pruebas recomendadas antes de liberar.
+- `VERIFICACION_CAMBIOS.md`: **Definition of Done** y pruebas manuales obligatorias antes de liberar.
+- `PROMPT_RENOMBRAR_TRAMITES.md`: guía para eliminar rastros del nombre histórico “Licencias” y usar “Trámites”.
+- `RENOMBRADO_TRAMITES_PLAN.md`: plan seguro para migrar nombres sin perder datos (app_label histórico y BD).
+
+## ✅ Puerta de entrada (Definition of Done)
+
+- Cada cambio debe pasar los cuatro tests funcionales de `VERIFICACION_CAMBIOS.md` (crear, filtrar, editar trámites y usar el analizador).
+- Completa la checklist previa a despliegue de `VERIFICACION_CAMBIOS.md` como criterio de salida.
+- Antes de liberar: revisa los logs (`django_server.log`) para descartar errores y confirma que el listado de trámites usa queries optimizadas (ej. `select_related`, <10 queries).
 
 ---
 

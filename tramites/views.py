@@ -242,7 +242,9 @@ class CasoInternoDetailView(
         ctx["historial_estatus"] = self.object.historial_estatus.select_related(
             "estatus_anterior", "estatus_nuevo", "usuario"
         )
-        ctx["tramites_caso"] = self.object.tramites_relacionados.select_related("tipo", "estatus")
+        ctx["tramites_caso"] = (
+            self.object.tramites_relacionados.select_related("tipo", "estatus").order_by("-fecha")
+        )
         ctx["tramite_caso_form"] = forms.TramiteCasoForm(prefix="tramite_caso")
         ctx["estatus_tramite_form"] = forms.HistorialEstatusTramiteCasoForm()
         ctx["estatus_caso_form"] = forms.HistorialEstatusCasoForm()

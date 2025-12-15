@@ -4,6 +4,147 @@
 {% block title %}Trámites registrados | SEGEY Trámites{% endblock %}
 
 {% block content %}
+<style>
+    /* Ampliar el ancho utilizable del cuerpo principal para mostrar más columnas */
+    body > main {
+        max-width: 1400px;
+        width: 100%;
+    }
+
+    .module-shell {
+        max-width: 100%;
+    }
+
+    /* Ajustes de layout para ampliar el contenedor de la tabla en desktop */
+    .module-table-card.module-table-card--fluid {
+        width: 100%;
+        max-width: 100%;
+        padding: 0.5rem;
+        overflow: hidden;
+    }
+
+    /* Contenedor con scroll horizontal solo cuando se necesite en móviles/tablet */
+    .table-responsive--wide {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 0.5rem;
+        scrollbar-width: thin;
+        scrollbar-color: #c1c1c1 transparent;
+    }
+
+    /* La tabla crece con el ancho disponible y mantiene columnas legibles en desktop */
+    .table--auto {
+        table-layout: auto;
+        min-width: 940px;
+        width: 100%;
+        font-size: 0.8rem;
+        line-height: 1.35;
+        border-collapse: collapse;
+        border-spacing: 0;
+        border-radius: 14px;
+        overflow: hidden;
+        background: transparent;
+        border: none;
+    }
+
+    .table--auto th,
+    .table--auto td {
+        padding: 0.4rem 0.55rem;
+        vertical-align: top;
+        white-space: normal;
+        border: none;
+        text-align: center;
+    }
+
+    .table--auto th {
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+
+    /* Puntas redondeadas en la tabla */
+    .table--auto thead tr th:first-child { border-top-left-radius: 14px; }
+    .table--auto thead tr th:last-child { border-top-right-radius: 14px; }
+    .table--auto tbody tr:last-child td:first-child { border-bottom-left-radius: 14px; }
+    .table--auto tbody tr:last-child td:last-child { border-bottom-right-radius: 14px; }
+
+    /* Anchos mínimos para priorizar columnas clave */
+    .table--auto .col-cct { min-width: 110px; }
+    .table--auto .col-expediente { min-width: 160px; }
+    .table--auto .col-tipo { min-width: 130px; }
+    .table--auto .col-fecha { min-width: 130px; white-space: nowrap; }
+    .table--auto .col-estatus { min-width: 130px; text-align: center; }
+    .table--auto .col-asesor { min-width: 150px; }
+
+    /* Columna de acciones más amplia y con botones separados */
+    .table--auto .col-acciones {
+        min-width: 230px;
+    }
+
+    .table-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .table-actions__link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.35rem 0.65rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        border: 1px solid var(--border-subtle, #e0e0e0);
+        background-color: #fff;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        min-height: 32px;
+    }
+
+    .table-actions__link:hover {
+        background-color: #f6f6f6;
+    }
+
+    .table-actions__link--danger {
+        border-color: #f3c2c2;
+        color: #b00020;
+    }
+
+    /* Redondeo del header del card */
+    .module-table-card__header {
+        border-radius: 12px;
+    }
+
+    /* Badge de estatus compacto y legible */
+    .status-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.25rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        min-height: 28px;
+        line-height: 1.2;
+    }
+
+    /* Ajustes para tablet/móvil */
+    @media (max-width: 768px) {
+        .module-table-card.module-table-card--fluid {
+            padding: 1.25rem;
+        }
+        .table--auto {
+            font-size: 0.82rem;
+            min-width: 900px;
+        }
+        .table-actions {
+            justify-content: flex-start;
+            gap: 0.35rem;
+        }
+        .table-actions__link {
+            padding: 0.3rem 0.55rem;
+        }
+    }
+</style>
 <section class="module-shell">
     <div class="module-shell__header">
         <div class="module-shell__intro module-shell__intro--spaced">
@@ -43,7 +184,7 @@
         </form>
     </section>
 
-    <div class="module-table-card">
+    <div class="module-table-card module-table-card--fluid">
         <div class="module-table-card__header">
             <h2 class="module-table-card__title">Listado de trámites</h2>
             <p class="module-table-card__meta">
@@ -55,61 +196,47 @@
             </p>
         </div>
 
-        <div class="table-responsive">
-        <table class="table table--interactive table--responsive">
+        <div class="table-responsive table-responsive--wide table-responsive--mobile">
+        <table class="table table--interactive table--responsive table--auto table--stack-mobile" data-table-sortable="true">
             <thead>
                 <tr>
-                    <th>CCT</th>
-                    <th>Asunto / descripción</th>
-                    <th>Tipo inicial</th>
-                    <th>Número de expediente</th>
-                    <th>Fecha del trámite</th>
-                    <th>Solicitante</th>
-                    <th>Tipo de violencia</th>
-                    <th>Estatus</th>
-                    <th>Usuario</th>
-                    <th>Acciones</th>
+                    <th class="col-cct" data-sort-key="cct">CCT</th>
+                    <th class="col-tipo" data-sort-key="tipo">Tipo inicial</th>
+                    <th class="col-expediente" data-sort-key="expediente">Número de expediente</th>
+                    <th class="col-fecha" data-sort-key="fecha">Fecha del trámite</th>
+                    <th class="col-estatus" data-sort-key="estatus">Estatus</th>
+                    <th class="col-asesor" data-sort-key="asesor">Asesor CCT</th>
+                    <th class="col-acciones">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for caso in casos %}
                 <tr>
-                    <td data-label="CCT">
+                    <td data-label="CCT" data-sort-value="{{ caso.cct_id }}">
                         <span class="table__primary">{{ caso.cct_id }}</span>
                         <span class="table__secondary">{{ caso.cct_nombre }}</span>
                     </td>
-                    <td data-label="Asunto / descripción">
-                        <span class="table__primary">{{ caso.asunto|default:caso.descripcion_breve|default:"(sin asunto)" }}</span>
-                        <span class="table__secondary">Creado {{ caso.fecha_apertura|date:"d/m/Y" }}</span>
-                    </td>
-                    <td data-label="Tipo inicial">{{ caso.tipo_inicial.nombre }}</td>
-                    <td data-label="Número de expediente">{{ caso.numero_oficio|default:"-" }}</td>
-                    <td data-label="Fecha del trámite">{{ caso.fecha_apertura|date:"d/m/Y" }}</td>
-                    <td data-label="Solicitante">
-                        {% if caso.solicitante %}
-                        <div class="label-stack">
-                            <span class="label-stack__primary">{{ caso.solicitante.nombre }}</span>
-                            {% if caso.solicitante.descripcion %}<span class="label-stack__secondary">{{ caso.solicitante.descripcion }}</span>{% endif %}
-                        </div>
-                        {% else %}-{% endif %}
-                    </td>
-                    <td data-label="Tipo de violencia">{{ caso.tipo_violencia.nombre|default:"-" }}</td>
-                    <td data-label="Estatus">
+                    <td data-label="Tipo inicial" data-sort-value="{{ caso.tipo_inicial.nombre }}">{{ caso.tipo_inicial.nombre }}</td>
+                    <td data-label="Número de expediente" data-sort-value="{{ caso.numero_oficio|default_if_none:'' }}">{{ caso.numero_oficio|default:"-" }}</td>
+                    <td data-label="Fecha del trámite" data-sort-value="{{ caso.fecha_apertura|date:'Y-m-d' }}">{{ caso.fecha_apertura|date:"d/m/Y" }}</td>
+                    <td data-label="Estatus" data-sort-value="{{ caso.estatus.nombre|default_if_none:'' }}">
                         {% if caso.estatus %}
                         <span class="status-chip status-chip--{{ caso.estatus.nombre|slugify }}">{{ caso.estatus.nombre }}</span>
                         {% else %}
                         <span class="status-chip status-chip--default">Sin estatus</span>
                         {% endif %}
                     </td>
-                    <td data-label="Usuario">{{ caso.creado_por.username|default:"-" }}</td>
-                    <td class="table-actions" data-label="Acciones">
-                        <a class="table-actions__link" href="{% url 'tramites:casointerno-detail' caso.pk %}?from_list={{ request.get_full_path|urlencode }}">Ver trámite</a>
-                        {% if perms.licencias.change_casointerno %}
-                        <a class="table-actions__link" href="{% url 'tramites:casointerno-update' caso.pk %}?from_list={{ request.get_full_path|urlencode }}">Editar</a>
-                        {% endif %}
-                        {% if perms.licencias.delete_casointerno %}
-                        <a class="table-actions__link table-actions__link--danger" href="{% url 'tramites:casointerno-delete' caso.pk %}?from_list={{ request.get_full_path|urlencode }}">Eliminar</a>
-                        {% endif %}
+                    <td data-label="Asesor CCT" data-sort-value="{{ caso.asesor_cct|default_if_none:'' }}">{{ caso.asesor_cct|default:"-" }}</td>
+                    <td class="col-acciones" data-label="Acciones">
+                        <div class="table-actions">
+                            <a class="table-actions__link" href="{% url 'tramites:casointerno-detail' caso.pk %}?from_list={{ request.get_full_path|urlencode }}" title="Ver trámite completo" aria-label="Ver trámite">Ver trámite</a>
+                            {% if perms.licencias.change_casointerno %}
+                            <a class="table-actions__link" href="{% url 'tramites:casointerno-update' caso.pk %}?from_list={{ request.get_full_path|urlencode }}" title="Editar trámite" aria-label="Editar trámite">Editar</a>
+                            {% endif %}
+                            {% if perms.licencias.delete_casointerno %}
+                            <a class="table-actions__link table-actions__link--danger" href="{% url 'tramites:casointerno-delete' caso.pk %}?from_list={{ request.get_full_path|urlencode }}" title="Eliminar trámite" aria-label="Eliminar trámite">Eliminar</a>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% empty %}

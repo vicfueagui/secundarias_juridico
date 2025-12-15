@@ -9,6 +9,7 @@
     initTerminoCalculators();
     initFuncionDisplays();
     initEstatusCasoCrud();
+    initSortableTables();
   });
 
   function initTabs() {
@@ -126,6 +127,71 @@
     const trimmed = (value || "").trim();
     return trimmed.toUpperCase() === "FEDERAL TRANSFERIDO" ? "FEDERAL" : trimmed;
   };
+
+  function initSortableTables() {
+    const tables = document.querySelectorAll('[data-table-sortable="true"]');
+    if (!tables.length) return;
+
+    const getCellValue = (row, index) => {
+      const cell = row.children[index];
+      if (!cell) return "";
+      const raw = cell.dataset.sortValue || cell.textContent || "";
+      const value = raw.toString().trim();
+      const num = Number(value);
+      if (!Number.isNaN(num) && value !== "") {
+        return num;
+      }
+      return value.toLowerCase();
+    };
+
+    const sortTable = (table, columnIndex, direction) => {
+      const tbody = table.querySelector("tbody");
+      if (!tbody) return;
+      const rows = Array.from(tbody.querySelectorAll("tr"));
+      const dataRows = rows.filter((row) => !row.classList.contains("table__empty"));
+      const emptyRows = rows.filter((row) => row.classList.contains("table__empty"));
+
+      dataRows.sort((a, b) => {
+        const aVal = getCellValue(a, columnIndex);
+        const bVal = getCellValue(b, columnIndex);
+        if (aVal < bVal) return direction === "asc" ? -1 : 1;
+        if (aVal > bVal) return direction === "asc" ? 1 : -1;
+        return 0;
+      });
+
+      [...dataRows, ...emptyRows].forEach((row) => tbody.appendChild(row));
+    };
+
+    tables.forEach((table) => {
+      const headers = table.querySelectorAll("th[data-sort-key]");
+      headers.forEach((th, index) => {
+        th.tabIndex = 0;
+        th.classList.add("table__sortable");
+        th.setAttribute("role", "button");
+        th.setAttribute("aria-sort", "none");
+
+        const toggleSort = () => {
+          const current = th.getAttribute("data-sort-direction") || "none";
+          const next = current === "asc" ? "desc" : "asc";
+          headers.forEach((h) => {
+            h.setAttribute("aria-sort", "none");
+            h.removeAttribute("data-sort-direction");
+          });
+          th.setAttribute("data-sort-direction", next);
+          th.setAttribute("aria-sort", next === "asc" ? "ascending" : "descending");
+          sortTable(table, index, next);
+        };
+
+        th.addEventListener("click", toggleSort);
+        th.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            toggleSort();
+          }
+        });
+      });
+    });
+  }
 
   function setupCCTForm(options) {
     const {
@@ -480,7 +546,7 @@
 
     // Inicializar CRUD de tipos de proceso
     initTipoProcesoCrud();
-    
+
     // Inicializar CRUD de estatus de caso
     initEstatusCasoCrud();
 
@@ -666,43 +732,43 @@
       typeof upsertOption === "function"
         ? upsertOption
         : (item) => {
-            if (!datalist) {
-              return;
-            }
-            const code = item.cct;
-            if (!code) {
-              return;
-            }
-            const existing = Array.from(datalist.options).find(
-              (opt) => normalize(opt.value) === normalize(code),
-            );
-            const label = `${code} · ${item.nombre || ""}`.trim();
-            if (existing) {
-              existing.value = code;
-              existing.textContent = label;
-              existing.dataset.nombre = item.nombre || "";
-              existing.dataset.servicio = item.servicio || "";
-              existing.dataset.asesor = item.asesor || "";
-              existing.dataset.sostenimiento = item.sostenimiento || "";
-              existing.setAttribute("data-nombre", item.nombre || "");
-              existing.setAttribute("data-servicio", item.servicio || "");
-              existing.setAttribute("data-asesor", item.asesor || "");
-              existing.setAttribute("data-sostenimiento", item.sostenimiento || "");
-            } else {
-              const option = document.createElement("option");
-              option.value = code;
-              option.textContent = label;
-              option.dataset.nombre = item.nombre || "";
-              option.dataset.servicio = item.servicio || "";
-              option.dataset.asesor = item.asesor || "";
-              option.dataset.sostenimiento = item.sostenimiento || "";
-              option.setAttribute("data-nombre", item.nombre || "");
-              option.setAttribute("data-servicio", item.servicio || "");
-              option.setAttribute("data-asesor", item.asesor || "");
-              option.setAttribute("data-sostenimiento", item.sostenimiento || "");
-              datalist.appendChild(option);
-            }
-          };
+          if (!datalist) {
+            return;
+          }
+          const code = item.cct;
+          if (!code) {
+            return;
+          }
+          const existing = Array.from(datalist.options).find(
+            (opt) => normalize(opt.value) === normalize(code),
+          );
+          const label = `${code} · ${item.nombre || ""}`.trim();
+          if (existing) {
+            existing.value = code;
+            existing.textContent = label;
+            existing.dataset.nombre = item.nombre || "";
+            existing.dataset.servicio = item.servicio || "";
+            existing.dataset.asesor = item.asesor || "";
+            existing.dataset.sostenimiento = item.sostenimiento || "";
+            existing.setAttribute("data-nombre", item.nombre || "");
+            existing.setAttribute("data-servicio", item.servicio || "");
+            existing.setAttribute("data-asesor", item.asesor || "");
+            existing.setAttribute("data-sostenimiento", item.sostenimiento || "");
+          } else {
+            const option = document.createElement("option");
+            option.value = code;
+            option.textContent = label;
+            option.dataset.nombre = item.nombre || "";
+            option.dataset.servicio = item.servicio || "";
+            option.dataset.asesor = item.asesor || "";
+            option.dataset.sostenimiento = item.sostenimiento || "";
+            option.setAttribute("data-nombre", item.nombre || "");
+            option.setAttribute("data-servicio", item.servicio || "");
+            option.setAttribute("data-asesor", item.asesor || "");
+            option.setAttribute("data-sostenimiento", item.sostenimiento || "");
+            datalist.appendChild(option);
+          }
+        };
 
     const removeOption = (code) => {
       if (!datalist) {
@@ -1046,7 +1112,11 @@
         }
         upsertOptionFn(result);
         fillMainForm(result);
-        closeModal();
+        const successText = mode === "create"
+          ? "CCT guardado correctamente."
+          : "CCT actualizado correctamente.";
+        displayMessage(successText, false);
+        window.setTimeout(() => closeModal(), 800);
       } catch (error) {
         displayMessage(error.message, true);
       }
@@ -1651,7 +1721,7 @@
         if (!response.ok) {
           const errorData = await response.json();
           let errorMessage = "Error al crear el tipo de trámite.";
-          
+
           // Procesar errores del servidor
           if (errorData.nombre) {
             errorMessage = Array.isArray(errorData.nombre) ? errorData.nombre[0] : errorData.nombre;
@@ -1663,7 +1733,7 @@
               errorMessage = String(firstError);
             }
           }
-          
+
           showMessage(errorMessage, true);
           return;
         }
@@ -1688,7 +1758,7 @@
         if (!response.ok) {
           const errorData = await response.json();
           let errorMessage = "Error al actualizar el tipo de trámite.";
-          
+
           // Procesar errores del servidor
           if (errorData.nombre) {
             errorMessage = Array.isArray(errorData.nombre) ? errorData.nombre[0] : errorData.nombre;
@@ -1700,7 +1770,7 @@
               errorMessage = String(firstError);
             }
           }
-          
+
           showMessage(errorMessage, true);
           return;
         }
@@ -1724,7 +1794,7 @@
         if (!response.ok) {
           const errorData = await response.json();
           let errorMessage = "Error al eliminar el tipo de trámite.";
-          
+
           if (errorData.detail) {
             errorMessage = errorData.detail;
           } else if (typeof errorData === 'object') {
@@ -1733,7 +1803,7 @@
               errorMessage = String(firstError);
             }
           }
-          
+
           showMessage(errorMessage, true);
           return;
         }
@@ -1782,12 +1852,12 @@
     if (deleteBtn) {
       deleteBtn.addEventListener("click", openModalForDelete);
     }
-    
+
     // Agregar event listeners a todos los botones de cerrar
     closeBtns.forEach((btn) => {
       btn.addEventListener("click", closeModal);
     });
-    
+
     if (form) {
       form.addEventListener("submit", submitForm);
     }
@@ -1976,7 +2046,7 @@
         if (!response.ok) {
           const errorData = await response.json();
           let errorMessage = "Error al crear el estatus.";
-          
+
           if (errorData.nombre) {
             errorMessage = Array.isArray(errorData.nombre) ? errorData.nombre[0] : errorData.nombre;
           } else if (errorData.detail) {
@@ -1987,7 +2057,7 @@
               errorMessage = String(firstError);
             }
           }
-          
+
           showMessage(errorMessage, true);
           return;
         }
@@ -2012,7 +2082,7 @@
         if (!response.ok) {
           const errorData = await response.json();
           let errorMessage = "Error al actualizar el estatus.";
-          
+
           if (errorData.nombre) {
             errorMessage = Array.isArray(errorData.nombre) ? errorData.nombre[0] : errorData.nombre;
           } else if (errorData.detail) {
@@ -2023,7 +2093,7 @@
               errorMessage = String(firstError);
             }
           }
-          
+
           showMessage(errorMessage, true);
           return;
         }
@@ -2047,7 +2117,7 @@
         if (!response.ok) {
           const errorData = await response.json();
           let errorMessage = "Error al eliminar el estatus.";
-          
+
           if (errorData.detail) {
             errorMessage = errorData.detail;
           } else if (typeof errorData === 'object') {
@@ -2056,7 +2126,7 @@
               errorMessage = String(firstError);
             }
           }
-          
+
           showMessage(errorMessage, true);
           return;
         }
@@ -2105,11 +2175,11 @@
     if (deleteBtn) {
       deleteBtn.addEventListener("click", openModalForDelete);
     }
-    
+
     closeBtns.forEach((btn) => {
       btn.addEventListener("click", closeModal);
     });
-    
+
     if (form) {
       form.addEventListener("submit", submitForm);
     }
@@ -2640,9 +2710,9 @@
           typeof customDataBuilder === "function"
             ? customDataBuilder(form)
             : {
-                nombre: nombreInput.value.trim(),
-                descripcion: form.querySelector(descriptionSelector).value.trim(),
-              };
+              nombre: nombreInput.value.trim(),
+              descripcion: form.querySelector(descriptionSelector).value.trim(),
+            };
 
         if (currentMode === "create") {
           await createRecord(data);
@@ -3097,7 +3167,7 @@
     if (selectElement) {
       const fieldContainer = selectElement.closest(".form-field");
       const actionsContainer = fieldContainer?.querySelector(".field-actions");
-      
+
       debugLog("[initPrefijoOficioCrud] Búsqueda estrategia 1 (contenedor padre):", {
         fieldContainer: !!fieldContainer,
         actionsContainer: !!actionsContainer,
@@ -3107,7 +3177,7 @@
         openBtn = actionsContainer.querySelector("[data-prefijo-oficio-modal-open]");
         editBtn = actionsContainer.querySelector("[data-prefijo-oficio-modal-edit]");
         deleteBtn = actionsContainer.querySelector("[data-prefijo-oficio-modal-delete]");
-        
+
         debugLog("[initPrefijoOficioCrud] Botones encontrados en contenedor:", {
           openBtn: !!openBtn,
           editBtn: !!editBtn,

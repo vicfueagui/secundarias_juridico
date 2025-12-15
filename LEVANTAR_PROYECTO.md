@@ -4,6 +4,9 @@
 
 ## 🚀 Configuración Inicial (Primera vez)
 
+- Requisitos: Python 3.11+, PostgreSQL 14+ (contenedor `cejei_postgres_5532` en puerto 5532).
+- Entorno: virtualenv en `.venv`.
+
 ### 0. Instalar Dependencias
 
 **Si es la primera vez que levantas el proyecto:**
@@ -65,7 +68,20 @@ cejei_postgres_5532   Up   0.0.0.0:5532->5432/tcp
 
 ---
 
-### 3. Levantar el Servidor Django
+### 3. Cargar datos base (migraciones + catálogo CCT)
+
+Ejecuta el bootstrap de datos para desarrollo/QA. Por defecto usa `cct_secundarias.csv` en la raíz del proyecto; puedes pasar otra ruta como primer argumento.
+
+```bash
+cd /Users/admin/Documents/project_secu_juridi
+./scripts/bootstrap_data.sh  # o ./scripts/bootstrap_data.sh /ruta/a/cct_secundarias.csv
+```
+
+Esto aplicará migraciones y ejecutará `python manage.py import_ccts`.
+
+---
+
+### 4. Levantar el Servidor Django
 
 ```bash
 cd /Users/admin/Documents/project_secu_juridi
@@ -81,24 +97,11 @@ python manage.py runserver 0.0.0.0:8000
 
 ---
 
-### 4. Acceder al Sistema
+### 5. Acceder al Sistema
 
 - **URL:** http://127.0.0.1:8000
 - **Usuario:** admin
 - **Contraseña:** admin123
-
-### 5. Importar el catálogo de CCT (una sola vez)
-
-Antes de usar el módulo de Trámites asegúrate de cargar el archivo `cct_secundarias.csv`:
-
-```bash
-source .venv/bin/activate
-python manage.py import_ccts --path "cct_secundarias.csv"
-```
-
-> Si el archivo se encuentra en otra ruta, ajusta el parámetro `--path`.
-
-El CSV debe incluir los encabezados `CCT`, `c_nombre`, `ASESOR`, `sostenimiento_c_subcontrol` y `tiponivelsub_c_servicion3` (separados por comas y codificados en UTF-8).
 
 ---
 
@@ -240,5 +243,3 @@ source .venv/bin/activate && python manage.py check
 - Hay otros proyectos usando PostgreSQL en el puerto 5432
 - El entorno virtual está en `.venv/`
 - Los datos de CCT deben importarse una sola vez con `import_ccts`
-
-

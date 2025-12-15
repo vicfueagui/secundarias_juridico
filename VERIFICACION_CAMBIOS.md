@@ -1,6 +1,8 @@
 # Verificación de Cambios - Sistema de Trámites
 
-## 🧪 Pruebas Manuales
+> Esta verificación manual es la **puerta de entrada** para liberar cambios. Es la Definition of Done de cualquier ajuste: todo cambio debe pasar los cuatro tests funcionales (crear, filtrar, editar trámites y usar el analizador), cerrar la checklist y evidenciar revisión de logs y queries optimizadas antes de entregar.
+
+## 🧪 Pruebas Manuales (Definition of Done)
 
 ### Test 1: Crear Trámite
 
@@ -168,7 +170,7 @@ print(form.is_valid())  # Debe ser True
 
 ## 📋 Checklist de Verificación
 
-### Antes de Desplegar
+### Antes de Desplegar (obligatoria - Definition of Done)
 
 - [ ] Test 1: Crear trámite - ✅ PASÓ
 - [ ] Test 2: Filtrar trámites - ✅ PASÓ

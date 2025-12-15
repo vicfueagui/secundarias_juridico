@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:14
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: cejei_licencias
+          POSTGRES_USER: cejei
+          POSTGRES_PASSWORD: cejei
+        options: >-
+          --health-cmd="pg_isready -U cejei -d cejei_licencias"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests (tramites flows)
+        env:
+          POSTGRES_DB: cejei_licencias
+          POSTGRES_USER: cejei
+          POSTGRES_PASSWORD: cejei
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          DJANGO_SETTINGS_MODULE: asesores_especializados.settings
+        run: |
+          python manage.py migrate --noinput
+          python manage.py test tests
+
+      - name: Run analyzer unit tests (Node)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: node --test tests/js

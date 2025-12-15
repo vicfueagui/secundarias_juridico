@@ -1,0 +1,4 @@
+- [ ] Revisé y seguí `LEVANTAR_PROYECTO.md` para entorno local/QA (Python, PostgreSQL, virtualenv, datos base).
+- [ ] Apliqué/verifiqué los pasos de `VERIFICACION_CAMBIOS.md` (tests manuales Definition of Done y checklist).
+- [ ] Validé que los módulos principales mantienen la arquitectura descrita en el README (tramites/admin.py, api_urls.py, apps.py, filters.py, forms.py, models.py, static/, templates/, urls.py, views.py).
+- [ ] Ejecuté pruebas relevantes (incluye CI automatizada y, si aplica, bootstrap de datos/fixtures).

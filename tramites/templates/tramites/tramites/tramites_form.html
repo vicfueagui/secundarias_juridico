@@ -3,6 +3,149 @@
 {% block title %}{% if form.instance.pk %}Editar trámite{% else %}Registrar trámite{% endif %} | SEGEY Trámites{% endblock %}
 
 {% block content %}
+<style>
+    /* Card y layout para Centro de trabajo */
+    .form-subsection {
+        max-width: 1100px;
+        width: 100%;
+        margin: 0 auto 1.5rem;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+        box-sizing: border-box;
+    }
+    /* Participantes */
+    .card-participante {
+        background: var(--neutral-50);
+        border: 1px solid rgba(91, 15, 40, 0.08);
+        border-radius: 14px;
+        padding: 1rem 1.1rem;
+        box-shadow: var(--shadow-sm);
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .card-participante .section-subtitle {
+        font-size: 1.05rem;
+        margin-bottom: 0.3rem;
+    }
+    .card-participante .module-panel__subtitle {
+        margin-bottom: 0.85rem;
+    }
+    .card-participante .form-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .receptores-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        border-radius: 12px;
+        border: 1px solid rgba(91, 15, 40, 0.08);
+        background: var(--white);
+        padding: 0.25rem;
+    }
+    .receptores-table-wrapper table {
+        min-width: 420px;
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .cct-card {
+        background: var(--white);
+        border-radius: 18px;
+        box-shadow: var(--shadow-md);
+        padding: 1.5rem 1.6rem;
+        display: grid;
+        gap: 1.15rem;
+    }
+    .cct-card .section-title {
+        font-size: clamp(1.25rem, 1.2vw + 1rem, 1.5rem);
+        margin-bottom: 0.35rem;
+    }
+    .cct-card .form-grid {
+        gap: 1rem;
+    }
+    .cct-card .form-field--full {
+        margin-bottom: 0;
+    }
+    .form-field label {
+        font-size: 0.95rem;
+    }
+    .cct-help {
+        display: block;
+        margin-top: 0.35rem;
+        margin-bottom: 0.9rem;
+        font-size: 0.85rem;
+        color: var(--neutral-600);
+        line-height: 1.5;
+    }
+    .acciones-cct {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+        width: 100%;
+    }
+    .acciones-cct .btn {
+        padding: 0.5rem 1.05rem;
+        border-radius: 0.85rem;
+        font-size: 0.9rem;
+        min-height: 38px;
+        flex: 0 0 auto;
+    }
+    /* Grillas y campos generales para todas las secciones (Datos del trámite, Solicitante, etc.) */
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1rem 1.25rem;
+    }
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    .form-field--full {
+        grid-column: 1 / -1;
+    }
+    @media (max-width: 900px) {
+        .form-subsection {
+            margin: 0 auto 1.25rem;
+        }
+        .cct-card {
+            padding: 1.25rem 1.3rem;
+        }
+        .acciones-cct {
+            gap: 0.65rem;
+        }
+        .acciones-cct .btn {
+            flex: 1 1 calc(50% - 0.65rem);
+            min-width: 140px;
+            justify-content: center;
+        }
+        .form-grid {
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+    }
+    @media (max-width: 640px) {
+        .acciones-cct {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.65rem;
+        }
+        .acciones-cct .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        .form-subsection {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+    }
+</style>
 <section class="module-shell module-shell--form">
     <div class="module-shell__header">
         <div class="module-shell__intro">
@@ -38,9 +181,10 @@
             </div>
             {% endif %}
 
-            <section class="form-subsection">
-                <h2 class="section-title">Centro de trabajo</h2>
-                <div class="form-grid">
+            <section class="form-subsection cct-section">
+                <div class="cct-card">
+                    <h2 class="section-title">Centro de trabajo</h2>
+                    <div class="form-grid">
                     <div class="form-field form-field--full">
                         <label for="{{ form.cct_codigo.id_for_label }}">{{ form.cct_codigo.label }}</label>
                         {{ form.cct_codigo }}
@@ -51,12 +195,12 @@
                             {% endfor %}
                         </datalist>
                         {% if form.cct_codigo.help_text %}
-                        <span class="help-text">{{ form.cct_codigo.help_text }}</span>
+                        <span class="help-text cct-help">{{ form.cct_codigo.help_text }}</span>
                         {% endif %}
                         {% for error in form.cct_codigo.errors %}
                         <span class="error-text">{{ error }}</span>
                         {% endfor %}
-                        <div class="field-actions">
+                        <div class="field-actions acciones-cct">
                             <button type="button" class="btn btn--secondary btn--sm" data-cct-action="search">Buscar</button>
                             {% if perms.licencias.add_cctsecundaria %}
                             <button type="button" class="btn btn--ghost btn--sm" data-cct-action="create">Nuevo</button>
@@ -84,6 +228,7 @@
                     <div class="form-field">
                         <label for="{{ form.asesor_cct.id_for_label }}">{{ form.asesor_cct.label }}</label>
                         {{ form.asesor_cct }}
+                    </div>
                     </div>
                 </div>
             </section>
@@ -252,19 +397,21 @@
                             </div>
                         </div>
                         {{ form.receptores_adicionales }}
-                        <table class="table table--interactive" id="receptores-adicionales-table">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Iniciales NNA</th>
-                                    <th>Sexo</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody data-receptores-rows>
-                                <tr class="table__empty-row"><td colspan="4" class="table__empty">No hay receptores adicionales.</td></tr>
-                            </tbody>
-                        </table>
+                        <div class="receptores-table-wrapper">
+                            <table class="table table--interactive table--responsive" id="receptores-adicionales-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Iniciales NNA</th>
+                                        <th>Sexo</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody data-receptores-rows>
+                                    <tr class="table__empty-row"><td colspan="4" class="table__empty">No hay receptores adicionales.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </section>
