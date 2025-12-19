@@ -73,6 +73,7 @@
     .table--auto .col-expediente { min-width: 160px; }
     .table--auto .col-tipo { min-width: 130px; }
     .table--auto .col-fecha { min-width: 130px; white-space: nowrap; }
+    .table--auto .col-fecha-registro { min-width: 150px; white-space: nowrap; }
     .table--auto .col-estatus { min-width: 130px; text-align: center; }
     .table--auto .col-asesor { min-width: 150px; }
 
@@ -204,6 +205,7 @@
                     <th class="col-tipo" data-sort-key="tipo">Tipo inicial</th>
                     <th class="col-expediente" data-sort-key="expediente">Número de expediente</th>
                     <th class="col-fecha" data-sort-key="fecha">Fecha del trámite</th>
+                    <th class="col-fecha-registro" data-sort-key="fecha_registro">Fecha de registro</th>
                     <th class="col-estatus" data-sort-key="estatus">Estatus</th>
                     <th class="col-asesor" data-sort-key="asesor">Asesor CCT</th>
                     <th class="col-acciones">Acciones</th>
@@ -219,6 +221,7 @@
                     <td data-label="Tipo inicial" data-sort-value="{{ caso.tipo_inicial.nombre }}">{{ caso.tipo_inicial.nombre }}</td>
                     <td data-label="Número de expediente" data-sort-value="{{ caso.numero_oficio|default_if_none:'' }}">{{ caso.numero_oficio|default:"-" }}</td>
                     <td data-label="Fecha del trámite" data-sort-value="{{ caso.fecha_apertura|date:'Y-m-d' }}">{{ caso.fecha_apertura|date:"d/m/Y" }}</td>
+                    <td data-label="Fecha de registro" data-sort-value="{{ caso.fecha_registro|date:'Y-m-d H:i' }}">{{ caso.fecha_registro|date:"d/m/Y H:i" }}</td>
                     <td data-label="Estatus" data-sort-value="{{ caso.estatus.nombre|default_if_none:'' }}">
                         {% if caso.estatus %}
                         <span class="status-chip status-chip--{{ caso.estatus.nombre|slugify }}">{{ caso.estatus.nombre }}</span>

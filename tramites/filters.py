@@ -44,9 +44,14 @@ class CasoInternoFilter(django_filters.FilterSet):
         label="Tipo de violencia",
         empty_label="Todos",
     )
-    fecha_registro = django_filters.DateFromToRangeFilter(
+    fecha_registro = django_filters.DateTimeFromToRangeFilter(
         label="Rango fecha de registro",
-        widget=django_filters.widgets.RangeWidget(attrs={"type": "date"}),
+        widget=django_filters.widgets.RangeWidget(
+            attrs={
+                "type": "datetime-local",
+                "step": "60",  # permitir selección a nivel de minuto
+            }
+        ),
     )
 
     class Meta:
