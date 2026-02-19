@@ -1,0 +1,238 @@
+@page {
+    size: letter;
+    margin: 16mm;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    color: #0f172a;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 10.5pt;
+    line-height: 1.4;
+}
+
+.exec-header {
+    border: 1px solid #0f172a;
+    border-left: 6px solid #0f172a;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+}
+
+.exec-header__kicker {
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+}
+
+.exec-header__title {
+    margin: 4px 0;
+    font-size: 16pt;
+    text-transform: uppercase;
+    line-height: 1.2;
+}
+
+.exec-header__subtitle {
+    margin: 0 0 8px;
+    font-size: 9.5pt;
+}
+
+.exec-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.exec-meta-item {
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    padding: 6px 8px;
+}
+
+.exec-meta-label {
+    display: block;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #334155;
+}
+
+.exec-meta-value {
+    display: block;
+    margin-top: 2px;
+    font-size: 10pt;
+    font-weight: 700;
+}
+
+.exec-actions {
+    display: flex;
+    gap: 8px;
+    margin: 8px 0 14px;
+}
+
+.btn-print,
+.btn-link {
+    border: 1px solid #0f172a;
+    background: #ffffff;
+    color: #0f172a;
+    padding: 6px 10px;
+    text-decoration: none;
+    font-size: 9pt;
+    cursor: pointer;
+}
+
+.exec-section {
+    margin-bottom: 14px;
+    page-break-inside: avoid;
+}
+
+.exec-section > h2 {
+    margin: 0 0 6px;
+    font-size: 11pt;
+    text-transform: uppercase;
+    border-bottom: 1px solid #0f172a;
+    padding-bottom: 4px;
+}
+
+.exec-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.metric {
+    border: 1px solid #94a3b8;
+    background: #f8fafc;
+    padding: 8px;
+    text-align: center;
+}
+
+.metric__label {
+    font-size: 8.5pt;
+    color: #334155;
+    text-transform: uppercase;
+}
+
+.metric__value {
+    margin-top: 2px;
+    font-size: 16pt;
+    font-weight: 700;
+}
+
+.exec-note {
+    margin: 0;
+    font-size: 9pt;
+}
+
+.info-table,
+.timeline-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.info-table th,
+.info-table td,
+.timeline-table th,
+.timeline-table td {
+    border: 1px solid #334155;
+    padding: 6px;
+    vertical-align: top;
+    word-break: break-word;
+}
+
+.info-table th,
+.timeline-table th {
+    background: #e2e8f0;
+    font-size: 8.5pt;
+    text-transform: uppercase;
+}
+
+.info-table td,
+.timeline-table td {
+    font-size: 9.5pt;
+}
+
+.info-table--compact th,
+.info-table--compact td {
+    font-size: 9pt;
+    padding: 5px;
+}
+
+.row-focus td {
+    background: #fef3c7;
+}
+
+.table-empty {
+    text-align: center;
+    color: #475569;
+    font-style: italic;
+    padding: 10px;
+}
+
+.tramite-card {
+    border: 1px solid #334155;
+    margin-top: 10px;
+    padding: 10px;
+    page-break-inside: avoid;
+}
+
+.tramite-card--focus {
+    border-left: 5px solid #b45309;
+    background: #fffbeb;
+}
+
+.tramite-card__header {
+    margin-bottom: 8px;
+}
+
+.tramite-card__header h3 {
+    margin: 0 0 4px;
+    font-size: 10.5pt;
+}
+
+.badge-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.badge {
+    border: 1px solid #64748b;
+    background: #f8fafc;
+    padding: 2px 6px;
+    font-size: 8pt;
+    text-transform: uppercase;
+}
+
+.badge--focus {
+    border-color: #b45309;
+    color: #92400e;
+    background: #fef3c7;
+}
+
+.subsection-title {
+    margin: 10px 0 6px;
+    font-size: 9.5pt;
+    text-transform: uppercase;
+}
+
+.doc-list {
+    margin: 4px 0 0;
+    padding-left: 18px;
+}
+
+.no-print {
+    display: block;
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}

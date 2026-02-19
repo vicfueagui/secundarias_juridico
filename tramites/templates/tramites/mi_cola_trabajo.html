@@ -1,0 +1,335 @@
+{% extends "tramites/base.html" %}
+
+{% block title %}Agenda operativa | Sistema de Trámites{% endblock %}
+
+{% block content %}
+<style>
+    .queue-layout {
+        display: grid;
+        gap: 1rem;
+    }
+    .queue-filters {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.75rem;
+        align-items: end;
+    }
+    .queue-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.75rem;
+    }
+    .queue-summary__item {
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        border-radius: 12px;
+        background: #fff;
+        padding: 0.75rem;
+        display: grid;
+        gap: 0.3rem;
+    }
+    .queue-summary__label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        color: #64748b;
+        font-weight: 700;
+    }
+    .queue-summary__value {
+        font-size: 1.55rem;
+        line-height: 1;
+        font-weight: 800;
+        color: #0f172a;
+    }
+    .queue-saved-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 0.65rem;
+    }
+    .queue-saved-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.35rem 0.6rem;
+        border-radius: 999px;
+        border: 1px solid rgba(15, 23, 42, 0.15);
+        background: #fff;
+        font-size: 0.8rem;
+    }
+    .queue-saved-item form {
+        margin: 0;
+    }
+    .queue-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        border-radius: 12px;
+        background: #fff;
+    }
+    .queue-table {
+        width: 100%;
+        min-width: 1020px;
+        border-collapse: collapse;
+    }
+    .queue-table th,
+    .queue-table td {
+        padding: 0.65rem;
+        border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+        text-align: left;
+        vertical-align: top;
+        font-size: 0.84rem;
+    }
+    .queue-table th {
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+    }
+    .queue-chip {
+        display: inline-flex;
+        padding: 0.22rem 0.55rem;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.74rem;
+    }
+    .queue-chip--critica { background: #fee2e2; color: #991b1b; }
+    .queue-chip--alta { background: #ffedd5; color: #9a3412; }
+    .queue-chip--media { background: #fef9c3; color: #854d0e; }
+    .queue-chip--normal { background: #e2e8f0; color: #334155; }
+    .queue-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        align-items: center;
+    }
+    .queue-actions form {
+        display: inline-flex;
+        gap: 0.35rem;
+        align-items: center;
+    }
+    .queue-actions select {
+        min-width: 145px;
+        max-width: 220px;
+    }
+    .queue-muted {
+        color: #64748b;
+        font-size: 0.8rem;
+    }
+    @media (max-width: 768px) {
+        .queue-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .queue-actions form {
+            width: 100%;
+        }
+        .queue-actions select,
+        .queue-actions button,
+        .queue-actions a {
+            width: 100%;
+        }
+    }
+</style>
+
+<section class="module-shell queue-layout">
+    <div class="module-shell__header">
+        <div class="module-shell__intro module-shell__intro--spaced">
+            <p class="module-shell__eyebrow">Operación diaria</p>
+            <h1 class="module-shell__title">Agenda operativa</h1>
+            <p class="module-shell__lead">Priorización consistente por riesgo, vencimiento y antigüedad.</p>
+        </div>
+        <div class="module-shell__actions">
+            <a class="btn btn--ghost btn--sm" href="{% url 'tramites:home' %}">Volver al dashboard</a>
+        </div>
+    </div>
+
+    <section class="queue-summary" aria-label="Resumen de agenda">
+        <article class="queue-summary__item">
+            <span class="queue-summary__label">Total</span>
+            <span class="queue-summary__value">{{ snapshot_operacion.total }}</span>
+        </article>
+        <article class="queue-summary__item">
+            <span class="queue-summary__label">Críticos</span>
+            <span class="queue-summary__value">{{ snapshot_operacion.criticos_total }}</span>
+        </article>
+        <article class="queue-summary__item">
+            <span class="queue-summary__label">Vencidos</span>
+            <span class="queue-summary__value">{{ snapshot_operacion.vencidos_total }}</span>
+        </article>
+        <article class="queue-summary__item">
+            <span class="queue-summary__label">Sin movimiento</span>
+            <span class="queue-summary__value">{{ snapshot_operacion.sin_movimiento_total }}</span>
+        </article>
+    </section>
+
+    <section class="module-panel">
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Filtros de agenda</h2>
+            <p class="module-panel__subtitle">Filtra por tipo, prioridad y estado operativo.</p>
+        </div>
+        <form method="get" class="queue-filters">
+            <div>
+                <label for="cola-tipo">Tipo de registro</label>
+                <select id="cola-tipo" name="tipo" class="form-input">
+                    <option value="" {% if not cola_filters.tipo %}selected{% endif %}>Todos</option>
+                    <option value="caso" {% if cola_filters.tipo == 'caso' %}selected{% endif %}>Casos</option>
+                    <option value="tramite" {% if cola_filters.tipo == 'tramite' %}selected{% endif %}>Trámites</option>
+                </select>
+            </div>
+            <div>
+                <label for="cola-prioridad">Prioridad</label>
+                <select id="cola-prioridad" name="prioridad" class="form-input">
+                    <option value="" {% if not cola_filters.prioridad %}selected{% endif %}>Todas</option>
+                    <option value="Crítica" {% if cola_filters.prioridad == 'Crítica' %}selected{% endif %}>Crítica</option>
+                    <option value="Alta" {% if cola_filters.prioridad == 'Alta' %}selected{% endif %}>Alta</option>
+                    <option value="Media" {% if cola_filters.prioridad == 'Media' %}selected{% endif %}>Media</option>
+                    <option value="Normal" {% if cola_filters.prioridad == 'Normal' %}selected{% endif %}>Normal</option>
+                </select>
+            </div>
+            <div>
+                <label for="cola-estado">Estado operativo</label>
+                <select id="cola-estado" name="estado" class="form-input">
+                    <option value="" {% if not cola_filters.estado %}selected{% endif %}>Todos</option>
+                    <option value="criticos" {% if cola_filters.estado == 'criticos' %}selected{% endif %}>Críticos</option>
+                    <option value="vencidos" {% if cola_filters.estado == 'vencidos' %}selected{% endif %}>Vencidos</option>
+                    <option value="sin-movimiento" {% if cola_filters.estado == 'sin-movimiento' %}selected{% endif %}>Sin movimiento</option>
+                </select>
+            </div>
+            <div class="queue-actions">
+                <button class="btn btn--primary btn--sm" type="submit">Aplicar</button>
+                <a class="btn btn--ghost btn--sm" href="{% url 'tramites:mi-cola' %}">Limpiar</a>
+            </div>
+        </form>
+
+        <div style="margin-top: 1rem;">
+            <form method="post" action="{% url 'tramites:filtro-guardado' %}" class="queue-filters">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="save">
+                <input type="hidden" name="next" value="{{ operacion_next_url }}">
+                <input type="hidden" name="alcance" value="{{ saved_filter_form_cola.initial.alcance|default:'cola_trabajo' }}">
+                <input type="hidden" name="querystring" value="{{ saved_filters_cola_querystring }}">
+                <div>
+                    <label for="filtro-cola-nombre">Guardar filtro actual</label>
+                    <input id="filtro-cola-nombre" class="form-input" type="text" name="nombre" maxlength="120" placeholder="Ej. Mis críticos de hoy" required>
+                </div>
+                <div class="queue-actions">
+                    <button class="btn btn--secondary btn--sm" type="submit" {% if not saved_filters_cola_querystring %}disabled{% endif %}>Guardar filtro</button>
+                </div>
+            </form>
+            <div class="queue-saved-list" aria-label="Filtros guardados de agenda">
+                {% for filtro in saved_filters_cola %}
+                <span class="queue-saved-item">
+                    <a href="{{ filtro.apply_url }}">{{ filtro.nombre }}</a>
+                    <form method="post" action="{% url 'tramites:filtro-guardado' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="filter_id" value="{{ filtro.id }}">
+                        <input type="hidden" name="next" value="{{ operacion_next_url }}">
+                        <button class="btn btn--danger btn--sm" type="submit">Quitar</button>
+                    </form>
+                </span>
+                {% empty %}
+                <span class="queue-muted">Sin filtros guardados para la agenda.</span>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="module-panel">
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Listado priorizado</h2>
+            <p class="module-panel__subtitle">{{ cola_items|length }} registros en la vista actual.</p>
+        </div>
+        <div class="queue-table-wrap">
+            <table class="queue-table">
+                <thead>
+                    <tr>
+                        <th>Registro</th>
+                        <th>Expediente / asunto</th>
+                        <th>Prioridad</th>
+                        <th>Estatus</th>
+                        <th>Límite</th>
+                        <th>Sin movimiento</th>
+                        <th>Acciones rápidas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cola_items %}
+                    <tr>
+                        <td>
+                            <strong>{{ item.referencia }}</strong><br>
+                            <span class="queue-muted">{{ item.tipo|title }} · Caso #{{ item.caso_id }} · CCT {{ item.cct|default:"-" }}</span>
+                        </td>
+                        <td>
+                            <strong>{{ item.expediente }}</strong><br>
+                            <span class="queue-muted">{{ item.asunto|default:"Sin asunto" }}</span>
+                        </td>
+                        <td><span class="queue-chip queue-chip--{{ item.priority_class }}">{{ item.priority_label }}</span></td>
+                        <td>{{ item.estatus }}</td>
+                        <td>
+                            {% if item.fecha_limite %}
+                            {{ item.fecha_limite|date:"d/m/Y" }}
+                            {% if item.dias_para_termino < 0 %}
+                            <div class="queue-muted">{{ item.dias_vencido }} días de atraso</div>
+                            {% elif item.dias_para_termino == 0 %}
+                            <div class="queue-muted">Vence hoy</div>
+                            {% else %}
+                            <div class="queue-muted">{{ item.dias_para_termino }} días restantes</div>
+                            {% endif %}
+                            {% else %}
+                            <span class="queue-muted">Sin fecha límite</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.dias_sin_movimiento }} días</td>
+                        <td>
+                            <div class="queue-actions">
+                                <a class="btn btn--ghost btn--sm" href="{{ item.detail_url }}">Abrir expediente</a>
+                                {% if item.tipo == "caso" and can_change_casos or item.tipo == "tramite" and can_change_tramites %}
+                                <form method="post" action="{% url 'tramites:operacion-accion-rapida' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="asignar">
+                                    <input type="hidden" name="target_type" value="{{ item.tipo }}">
+                                    <input type="hidden" name="target_id" value="{{ item.id }}">
+                                    <input type="hidden" name="next" value="{{ operacion_next_url }}">
+                                    <select name="usuario_asignado" class="form-input" aria-label="Asignar usuario">
+                                        {% for usuario in operation_assignable_users %}
+                                        <option value="{{ usuario.id }}" {% if usuario.id == user.id %}selected{% endif %}>{{ usuario.username }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button class="btn btn--secondary btn--sm" type="submit">Asignar</button>
+                                </form>
+                                <form method="post" action="{% url 'tramites:operacion-accion-rapida' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="cambiar_estatus">
+                                    <input type="hidden" name="target_type" value="{{ item.tipo }}">
+                                    <input type="hidden" name="target_id" value="{{ item.id }}">
+                                    <input type="hidden" name="next" value="{{ operacion_next_url }}">
+                                    {% if item.tipo == "caso" %}
+                                    <select name="estatus_caso" class="form-input" aria-label="Cambiar estatus de caso">
+                                        {% for option in operation_estatus_caso %}
+                                        <option value="{{ option.id }}">{{ option.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    {% else %}
+                                    <select name="estatus_tramite" class="form-input" aria-label="Cambiar estatus de trámite">
+                                        {% for option in operation_estatus_tramite %}
+                                        <option value="{{ option.id }}">{{ option.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    {% endif %}
+                                    <button class="btn btn--secondary btn--sm" type="submit">Cambiar estatus</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="queue-muted">No hay registros para los filtros seleccionados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</section>
+{% endblock %}

@@ -1,0 +1,53 @@
+<div class="module-panel__header">
+    <h3 class="module-panel__title">Gestionar trabajadores</h3>
+    <p class="module-panel__subtitle">Busca, edita o selecciona para llenar la licencia.</p>
+</div>
+<form class="filter-grid" data-empleado-picker-form>
+    <div class="filter-field">
+        <label>Buscar</label>
+        <input type="search" name="q" value="{{ query }}" placeholder="Nombre, RFC o CURP" class="form-input">
+    </div>
+</form>
+
+<div class="table-responsive table-responsive--wide table-responsive--mobile" data-empleado-picker-results>
+    <table class="table table--responsive table--auto">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>RFC</th>
+                <th>CURP</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for empleado in empleados %}
+            <tr>
+                <td data-label="Nombre" data-highlight="{{ empleado.nombre }}">{{ empleado.nombre }}</td>
+                <td data-label="RFC" data-highlight="{{ empleado.rfc|default:"-" }}">{{ empleado.rfc|default:"-" }}</td>
+                <td data-label="CURP" data-highlight="{{ empleado.curp|default:"-" }}">{{ empleado.curp|default:"-" }}</td>
+                <td data-label="Acciones">
+                    <div class="table-actions">
+                        <button type="button" class="table-actions__link" data-empleado-select data-empleado-id="{{ empleado.id }}">
+                            Seleccionar
+                        </button>
+                        {% if not empleados_readonly and perms.licencias.change_plantillaempleado %}
+                        <button type="button" class="table-actions__link" data-empleado-edit data-empleado-edit-url="{% url 'tramites:empleado-picker-edit' empleado.pk %}">
+                            Editar
+                        </button>
+                        {% endif %}
+                        {% if not empleados_readonly and perms.licencias.delete_plantillaempleado %}
+                        <button type="button" class="table-actions__link table-actions__link--danger" data-empleado-delete data-empleado-delete-url="{% url 'tramites:empleado-picker-delete' empleado.pk %}">
+                            Eliminar
+                        </button>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="table__empty">No se encontraron trabajadores.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

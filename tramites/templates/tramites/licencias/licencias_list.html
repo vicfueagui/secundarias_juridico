@@ -1,0 +1,158 @@
+{% extends "tramites/base.html" %}
+{% load form_tags %}
+
+{% block title %}Licencias registradas | SEGEY Trámites{% endblock %}
+
+{% block content %}
+<section class="module-shell">
+    <div class="module-shell__header">
+        <div class="module-shell__intro module-shell__intro--spaced">
+            <p class="module-shell__eyebrow">Jurídico · Licencias</p>
+            <h1 class="module-shell__title">Licencias registradas</h1>
+            <p class="module-shell__lead">Controla el avance por áreas, oficios y resoluciones finales.</p>
+        </div>
+        <div class="module-shell__actions module-shell__actions--stacked">
+            <button type="button" class="btn btn--secondary btn--lg" data-filters-toggle>
+                Mostrar/ocultar filtros
+            </button>
+            {% if perms.licencias.add_licenciaregistro %}
+            <a class="btn btn--primary btn--lg" href="{% url 'tramites:licencia-create' %}">
+                Registrar licencia
+            </a>
+            {% endif %}
+            {% if perms.licencias.view_plantillaempleado %}
+            <a class="btn btn--ghost btn--lg" href="{% url 'tramites:empleado-list' %}">
+                Gestionar trabajadores
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <section class="filters module-panel" data-filters-panel>
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Filtrar información</h2>
+            <p class="module-panel__subtitle">Busca por trabajador, expediente, tipo o estatus.</p>
+        </div>
+        <form method="get">
+            <div class="filter-grid">
+                {% for field in filter.form.visible_fields %}
+                <div class="filter-field">
+                    <label>{{ field.label }} {{ field }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="module-panel__footer">
+                <button type="submit" class="btn btn--primary btn--sm">Aplicar filtros</button>
+                <a href="{% url 'tramites:licencia-list' %}" class="btn btn--ghost btn--sm">Limpiar</a>
+            </div>
+        </form>
+    </section>
+
+    <div class="module-table-card module-table-card--fluid">
+        <div class="module-table-card__header">
+            <h2 class="module-table-card__title">Listado de licencias</h2>
+            <p class="module-table-card__meta">
+                {% if page_obj %}
+                Mostrando {{ page_obj.start_index }} – {{ page_obj.end_index }} de {{ page_obj.paginator.count }} registros.
+                {% else %}
+                Total de registros: {{ licencias|length }}
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="table-responsive table-responsive--wide table-responsive--mobile">
+            <table class="table table--interactive table--responsive table--auto table--stack-mobile">
+                <thead>
+                    <tr>
+                        <th>
+                            <a class="table__sort-link" href="?{{ orden_base_qs }}orden={% if orden_actual == 'trabajador' %}-trabajador{% else %}trabajador{% endif %}">
+                                Trabajador
+                                {% if orden_actual == 'trabajador' %}↑{% elif orden_actual == '-trabajador' %}↓{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a class="table__sort-link" href="?{{ orden_base_qs }}orden={% if orden_actual == 'tipo' %}-tipo{% else %}tipo{% endif %}">
+                                Tipo
+                                {% if orden_actual == 'tipo' %}↑{% elif orden_actual == '-tipo' %}↓{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a class="table__sort-link" href="?{{ orden_base_qs }}orden={% if orden_actual == 'prorroga' %}-prorroga{% else %}prorroga{% endif %}">
+                                Prórroga
+                                {% if orden_actual == 'prorroga' %}↑{% elif orden_actual == '-prorroga' %}↓{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a class="table__sort-link" href="?{{ orden_base_qs }}orden={% if orden_actual == 'sindicato' %}-sindicato{% else %}sindicato{% endif %}">
+                                Sindicato
+                                {% if orden_actual == 'sindicato' %}↑{% elif orden_actual == '-sindicato' %}↓{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a class="table__sort-link" href="?{{ orden_base_qs }}orden={% if orden_actual == 'fecha' %}-fecha{% else %}fecha{% endif %}">
+                                Fecha trámite
+                                {% if orden_actual == 'fecha' %}↑{% elif orden_actual == '-fecha' %}↓{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a class="table__sort-link" href="?{{ orden_base_qs }}orden={% if orden_actual == 'estatus' %}-estatus{% else %}estatus{% endif %}">
+                                Estatus
+                                {% if orden_actual == 'estatus' %}↑{% elif orden_actual == '-estatus' %}↓{% endif %}
+                            </a>
+                        </th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for licencia in licencias %}
+                    <tr>
+                        <td data-label="Trabajador">
+                            <span class="table__primary">{{ licencia.trabajador.nombre }}</span>
+                            <span class="table__secondary">{{ licencia.trabajador.rfc|default:"-" }}</span>
+                        </td>
+                        <td data-label="Tipo">{{ licencia.get_tipo_tramite_display }}</td>
+                        <td data-label="Prórroga">{{ licencia.get_tipo_prorroga_display }}</td>
+                        <td data-label="Sindicato">{{ licencia.get_sindicato_display }}</td>
+                        <td data-label="Fecha trámite">{{ licencia.fecha_tramite|date:"d/m/Y" }}</td>
+                        <td data-label="Estatus">
+                            {% if licencia.estatus %}
+                            <span class="status-chip status-chip--{{ licencia.estatus.nombre|slugify }}">{{ licencia.estatus.nombre }}</span>
+                            {% else %}
+                            <span class="status-chip status-chip--default">Sin estatus</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Acciones">
+                            <div class="table-actions">
+                                <a class="table-actions__link" href="{% url 'tramites:licencia-detail' licencia.pk %}?from_list={{ request.get_full_path|urlencode }}" title="Ver licencia">Ver detalle</a>
+                                {% if perms.licencias.change_licenciaregistro %}
+                                <a class="table-actions__link" href="{% url 'tramites:licencia-update' licencia.pk %}?from_list={{ request.get_full_path|urlencode }}" title="Editar licencia">Editar</a>
+                                {% endif %}
+                                {% if perms.licencias.delete_licenciaregistro %}
+                                <a class="table-actions__link table-actions__link--danger" href="{% url 'tramites:licencia-delete' licencia.pk %}?from_list={{ request.get_full_path|urlencode }}" title="Eliminar licencia">Eliminar</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="table__empty">No se encontraron licencias con los filtros actuales.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if is_paginated %}
+        <div class="pagination pagination--inset">
+            {% if page_obj.has_previous %}
+            <a class="pagination__button" href="?{% if request.GET %}{{ request.GET.urlencode }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Página anterior">&larr;</a>
+            {% endif %}
+            <span class="pagination__page pagination__page--current">Página {{ page_obj.number }} de {{ paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+            <a class="pagination__button" href="?{% if request.GET %}{{ request.GET.urlencode }}&amp;{% endif %}page={{ page_obj.next_page_number }}" aria-label="Página siguiente">&rarr;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

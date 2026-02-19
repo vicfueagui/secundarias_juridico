@@ -18,9 +18,32 @@
         {% csrf_token %}
         {{ form.non_field_errors }}
         <div class="form-grid">
+            <div class="form-field status-management">
+                <label for="tramite-estatus-edit-typeahead">{{ form.estatus_nuevo.label }}</label>
+                <input
+                    type="search"
+                    id="tramite-estatus-edit-typeahead"
+                    name="tramite_estatus_edicion_busqueda"
+                    class="form-input"
+                    placeholder="Escribe para buscar estatus..."
+                    data-select-typeahead
+                    data-typeahead-target="#{{ form.estatus_nuevo.id_for_label }}"
+                    data-typeahead-results="#estatus-tramite-edit-suggestions"
+                >
+                <p class="help-text">Selecciona un estatus existente; no escribas uno nuevo aquí.</p>
+                <div class="cct-suggestions surface-subtle" id="estatus-tramite-edit-suggestions" hidden></div>
+                <div class="select-hidden">
+                    {{ form.estatus_nuevo }}
+                </div>
+                <div class="field-actions" data-estatus-actions>
+                    <button type="button" class="btn btn--ghost btn--sm" data-crud-open="estatus-tramite" data-crud-target="{{ form.estatus_nuevo.id_for_label }}">Agregar estatus</button>
+                    <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="estatus-tramite" data-crud-target="{{ form.estatus_nuevo.id_for_label }}">Editar seleccionado</button>
+                    <button type="button" class="btn btn--danger btn--sm" data-crud-delete="estatus-tramite" data-crud-target="{{ form.estatus_nuevo.id_for_label }}">Eliminar seleccionado</button>
+                </div>
+            </div>
             <div class="form-field">
-                <label for="{{ form.estatus_nuevo.id_for_label }}">{{ form.estatus_nuevo.label }}</label>
-                {{ form.estatus_nuevo }}
+                <label for="{{ form.fecha_estatus.id_for_label }}">{{ form.fecha_estatus.label }}</label>
+                {{ form.fecha_estatus }}
             </div>
             <div class="form-field form-field--full">
                 <label for="{{ form.comentario.id_for_label }}">{{ form.comentario.label }}</label>
@@ -33,4 +56,37 @@
         </div>
     </form>
 </section>
+
+<div class="modal" id="estatus-tramite-modal" hidden role="dialog" aria-modal="true">
+    <div class="modal-overlay" data-modal-close></div>
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3 class="modal-title" data-modal-title>Agregar estatus de trámite</h3>
+            <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="estatus-tramite-form" class="modal-form">
+                <fieldset id="estatus-tramite-fields">
+                    <div class="modal-field">
+                        <label for="estatus-tramite-nombre">Nombre del estatus</label>
+                        <input type="text" id="estatus-tramite-nombre" name="nombre" required maxlength="255">
+                    </div>
+                    <div class="modal-field">
+                        <label for="estatus-tramite-descripcion">Descripción (opcional)</label>
+                        <textarea id="estatus-tramite-descripcion" name="descripcion" maxlength="500" rows="3"></textarea>
+                    </div>
+                    <div class="modal-field">
+                        <label for="estatus-tramite-orden">Orden</label>
+                        <input type="number" id="estatus-tramite-orden" name="orden" min="1" step="1" value="1">
+                    </div>
+                </fieldset>
+                <div class="modal-message" data-modal-message role="alert"></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn--primary btn--md" data-estatus-tramite-save>Guardar</button>
+                    <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

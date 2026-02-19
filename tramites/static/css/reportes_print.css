@@ -1,0 +1,127 @@
+@page {
+    size: letter;
+    margin: 18mm;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    font-size: 9.5pt;
+    line-height: 1.35;
+    color: #111;
+}
+
+.report-header {
+    border-bottom: 1px solid #111;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+}
+
+.report-header__title {
+    font-size: 14pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.report-header__meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9pt;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.filters-summary {
+    margin-bottom: 12px;
+    font-size: 9pt;
+}
+
+.filters-summary h2 {
+    font-size: 10pt;
+    margin: 0 0 4px 0;
+    text-transform: uppercase;
+}
+
+.filters-summary ul {
+    margin: 0;
+    padding-left: 16px;
+}
+
+.print-actions {
+    margin: 8px 0 16px;
+}
+
+.btn-print {
+    border: 1px solid #111;
+    background: #fff;
+    padding: 6px 12px;
+    font-size: 9pt;
+    cursor: pointer;
+}
+
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.report-table th,
+.report-table td {
+    border: 1px solid #111;
+    padding: 6px;
+    vertical-align: top;
+    word-break: break-word;
+}
+
+.report-table th {
+    text-transform: uppercase;
+    font-size: 9pt;
+    background: #f3f3f3;
+}
+
+.case-section {
+    margin-top: 6px;
+}
+
+.case-section__title {
+    font-weight: bold;
+    font-size: 9pt;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+.case-list {
+    margin: 4px 0 0;
+    padding-left: 16px;
+}
+
+.case-muted {
+    color: #555;
+    font-style: italic;
+}
+
+.tramite-card {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed #999;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 16px;
+}
+
+.no-print {
+    display: block;
+}
+
+@media print {
+    .no-print {
+        display: none;
+    }
+}

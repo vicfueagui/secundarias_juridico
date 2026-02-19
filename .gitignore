@@ -1,8 +1,42 @@
-.DS_Store
+# Environment
 .env
 .env.*
-.venv/
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# Virtualenv
+.venv/
+venv/
+
+# Logs
+logs/*.log
+*.log
+
+# Media/uploads
+media/
+
+# Backups / restore points
+*.dump
+*.sql
+*.tar.gz
+.restore_points/
+
+# Build artifacts
 staticfiles/
-django_server.log
+node_modules/
+
+# Local heavy artifacts
+REPORTE_PLANTILLA_*.csv
+logo segey*.png
+logo_segey*.png
+Generadores
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/

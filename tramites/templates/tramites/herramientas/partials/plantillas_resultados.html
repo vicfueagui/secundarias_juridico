@@ -1,0 +1,147 @@
+<section class="card" id="plantillas-resultados">
+    <div class="card__body">
+        <div class="tool-header">
+            <div>
+                <h2 class="section-title">Resultados</h2>
+                {% if query or cct_query or ciclo_query %}
+                <p>Coincidencias encontradas: {{ resultados_total }}</p>
+                {% else %}
+                <p>Ingresa un criterio para iniciar la consulta.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if limite_excedido %}
+        <div class="alert alert--warning" role="alert">
+            Se muestran los primeros 50 resultados. Ajusta los filtros para acotar la búsqueda.
+        </div>
+        {% endif %}
+
+        <div class="plantilla-result-list" aria-live="polite">
+            {% for grupo in resultados_agrupados %}
+            <article class="card plantilla-card">
+                <div class="card__body">
+                    <div class="plantilla-card__header plantilla-card__header--summary">
+                        <div>
+                            <p class="plantilla-summary__eyebrow">Resumen por ciclo escolar</p>
+                            <h3 class="card__title">{{ grupo.empleado.nombre }}</h3>
+                            <p class="text-small text-muted">
+                                RFC: {{ grupo.empleado.rfc|default:"Sin RFC" }} · CURP: {{ grupo.empleado.curp|default:"Sin CURP" }}
+                            </p>
+                        </div>
+                        <div class="plantilla-card__meta">
+                            <span class="chip chip--strong">Ciclo: {{ grupo.ciclo|default:"-" }}</span>
+                            <span class="chip">Último: {{ grupo.ultimo_ciclo|default:"-" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="plantilla-card__section plantilla-card__section--summary">
+                        <p class="plantilla-card__section-title">CCT y centro de trabajo del ciclo</p>
+                        <div class="plantilla-centros">
+                            <div class="plantilla-centros__header">
+                                <span>CCT</span>
+                                <span>Nombre CT</span>
+                                <span>Asesor jurídico</span>
+                            </div>
+                            {% for centro in grupo.centros %}
+                            <div class="plantilla-centros__row">
+                                <span>{{ centro.cct }}</span>
+                                <span>{{ centro.nombre }}</span>
+                                <span>{{ centro.asesor|default:"-" }}</span>
+                            </div>
+                            {% empty %}
+                            <div class="plantilla-centros__row">
+                                <span>-</span>
+                                <span>-</span>
+                                <span>-</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="plantilla-card__section">
+                        <p class="plantilla-card__section-title">Contacto y domicilio</p>
+                        <div class="data-grid">
+                            <div class="data-item">
+                                <span class="data-label">Correo</span>
+                                <span class="data-value">{{ grupo.empleado.correo|default:"-" }}</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-label">Teléfono</span>
+                                <span class="data-value">{{ grupo.empleado.telefono|default:"-" }}</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-label">Celular</span>
+                                <span class="data-value">{{ grupo.empleado.celular|default:"-" }}</span>
+                            </div>
+                            <div class="data-item data-item--full">
+                                <span class="data-label">Dirección</span>
+                                <span class="data-value">
+                                    {{ grupo.empleado.direccion|default:"-" }}
+                                    {% if grupo.empleado.colonia %}
+                                        · {{ grupo.empleado.colonia }}
+                                    {% endif %}
+                                    {% if grupo.empleado.codigo_postal %}
+                                        · CP {{ grupo.empleado.codigo_postal }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="plantilla-divider" aria-hidden="true"></div>
+
+                    {% for registro in grupo.registros %}
+                    <div class="plantilla-card__section">
+                        <p class="plantilla-card__section-title">Registro y claves</p>
+                        <div class="data-grid">
+                            <div class="data-item">
+                                <span class="data-label">CCT</span>
+                                <span class="data-value">{{ registro.centro_trabajo.cct }}</span>
+                            </div>
+                            <div class="data-item data-item--full">
+                                <span class="data-label">Nombre CT</span>
+                                <span class="data-value">{{ registro.centro_trabajo.nombre }}</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-label">Situación</span>
+                                <span class="data-value">{{ registro.situacion|default:"-" }}</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-label">Función</span>
+                                <span class="data-value">{{ registro.funcion|default:"-" }}</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-label">Grado/Grupo/Horas</span>
+                                <span class="data-value">{{ registro.grado_grupo_horas|default:"-" }}</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-label">Año</span>
+                                <span class="data-value">{{ registro.anio|default:"-" }}</span>
+                            </div>
+                            <div class="data-item data-item--full">
+                                <span class="data-label">Claves presupuestales</span>
+                                <span class="data-value">
+                                    {% for clave in registro.claves.all %}
+                                        {{ clave.clave }}{% if not forloop.last %} · {% endif %}
+                                    {% empty %}
+                                        -
+                                    {% endfor %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% if not forloop.last %}
+                    <div class="plantilla-divider" aria-hidden="true"></div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </article>
+            {% empty %}
+            <div class="alert alert--warning" role="alert">
+                No se encontraron registros con los filtros actuales.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>

@@ -1,0 +1,417 @@
+{% extends "tramites/base.html" %}
+
+{% block title %}Gobierno de datos{% endblock %}
+
+{% block content %}
+<style>
+    .governance-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+    .governance-actions form {
+        display: inline-flex;
+        gap: 0.5rem;
+        align-items: center;
+        margin: 0;
+    }
+    .governance-kpis {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 0.85rem;
+        margin-bottom: 1.25rem;
+    }
+    .governance-kpi {
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 12px;
+        background: #fff;
+        padding: 0.85rem 1rem;
+        display: grid;
+        gap: 0.35rem;
+    }
+    .governance-kpi__label {
+        color: var(--neutral-700);
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    .governance-kpi__value {
+        font-size: 1.55rem;
+        font-weight: 700;
+    }
+    .governance-grid {
+        display: grid;
+        gap: 1.1rem;
+    }
+    .governance-filters {
+        display: flex;
+        gap: 0.75rem;
+        align-items: end;
+        flex-wrap: wrap;
+        margin-bottom: 0.75rem;
+    }
+    .governance-filters form {
+        display: inline-flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    .governance-code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 0.85rem;
+        color: var(--neutral-700);
+    }
+    .governance-subtle {
+        color: var(--neutral-600);
+        font-size: 0.88rem;
+    }
+    .governance-block {
+        margin-bottom: 1.2rem;
+    }
+    .governance-block:last-child {
+        margin-bottom: 0;
+    }
+    .governance-details summary {
+        cursor: pointer;
+    }
+</style>
+
+<section class="page-header">
+    <div>
+        <span class="chip">E1</span>
+        <h1 class="page-title">Gobierno de datos</h1>
+        <p>Auditoría unificada, feature flags por rol, jobs asíncronos y calidad de datos en un solo panel.</p>
+    </div>
+</section>
+
+<section class="card governance-block">
+    <div class="card__body">
+        <div class="governance-actions">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="quality-run">
+                <button class="btn btn--primary btn--sm" type="submit">Ejecutar calidad ahora</button>
+            </form>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="jobs-enqueue-quality">
+                <button class="btn btn--ghost btn--sm" type="submit">Encolar job de calidad</button>
+            </form>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="jobs-schedule">
+                <button class="btn btn--ghost btn--sm" type="submit">Programar jobs vencidos</button>
+            </form>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="jobs-run">
+                <input class="form-input" type="number" min="1" max="100" name="limit" value="10" aria-label="Límite de jobs">
+                <button class="btn btn--ghost btn--sm" type="submit">Procesar cola</button>
+            </form>
+        </div>
+        <div class="governance-subtle">
+            Última corrida de calidad:
+            {% if latest_quality_run %}
+            <strong>#{{ latest_quality_run.pk }}</strong> · {{ latest_quality_run.iniciado_en|date:"d/m/Y H:i" }} · estado {{ latest_quality_run.get_estado_display }}
+            {% else %}
+            Sin corridas registradas.
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section class="governance-kpis">
+    <article class="governance-kpi">
+        <span class="governance-kpi__label">Issues activos</span>
+        <span class="governance-kpi__value">{{ quality_summary.total_activos }}</span>
+    </article>
+    <article class="governance-kpi">
+        <span class="governance-kpi__label">Incompletos</span>
+        <span class="governance-kpi__value">{{ quality_summary.incompletos }}</span>
+    </article>
+    <article class="governance-kpi">
+        <span class="governance-kpi__label">Duplicados</span>
+        <span class="governance-kpi__value">{{ quality_summary.duplicados }}</span>
+    </article>
+    <article class="governance-kpi">
+        <span class="governance-kpi__label">Inconsistentes</span>
+        <span class="governance-kpi__value">{{ quality_summary.inconsistentes }}</span>
+    </article>
+</section>
+
+<section class="governance-grid">
+    <article class="card governance-block">
+        <div class="card__body">
+            <h2 class="section-title">Feature flags por módulo y grupo</h2>
+            <p class="governance-subtle">Gestiona el despliegue gradual por módulo. El backend valida acceso por rol.</p>
+            <div class="governance-filters">
+                <form method="get">
+                    <label for="group_id">Grupo</label>
+                    <select id="group_id" name="group_id" class="form-input">
+                        {% for grupo in feature_groups %}
+                        <option value="{{ grupo.pk }}" {% if selected_group and grupo.pk == selected_group.pk %}selected{% endif %}>{{ grupo.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn--ghost btn--sm" type="submit">Aplicar</button>
+                </form>
+            </div>
+            <div class="table-responsive table-responsive--wide table-responsive--mobile">
+                <table class="table table--responsive table--auto table--stack-mobile">
+                    <thead>
+                        <tr>
+                            <th>Módulo / código</th>
+                            <th>Global</th>
+                            <th>Default</th>
+                            <th>Regla de grupo{% if selected_group %}: {{ selected_group.name }}{% endif %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for flag in feature_flags %}
+                        <tr>
+                            <td>
+                                <strong>{{ flag.nombre }}</strong>
+                                <div class="governance-code">{{ flag.modulo }} · {{ flag.codigo }}</div>
+                                {% if flag.descripcion %}
+                                <div class="governance-subtle">{{ flag.descripcion }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="flag-global">
+                                    <input type="hidden" name="flag_id" value="{{ flag.pk }}">
+                                    <input type="hidden" name="default_enabled" value="{% if flag.habilitado_por_defecto %}1{% else %}0{% endif %}">
+                                    <input type="hidden" name="enabled" value="{% if flag.habilitado %}0{% else %}1{% endif %}">
+                                    <button type="submit" class="btn btn--sm {% if flag.habilitado %}btn--primary{% else %}btn--ghost{% endif %}">
+                                        {% if flag.habilitado %}ON{% else %}OFF{% endif %}
+                                    </button>
+                                </form>
+                            </td>
+                            <td>
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="flag-global">
+                                    <input type="hidden" name="flag_id" value="{{ flag.pk }}">
+                                    <input type="hidden" name="enabled" value="{% if flag.habilitado %}1{% else %}0{% endif %}">
+                                    <input type="hidden" name="default_enabled" value="{% if flag.habilitado_por_defecto %}0{% else %}1{% endif %}">
+                                    <button type="submit" class="btn btn--sm {% if flag.habilitado_por_defecto %}btn--primary{% else %}btn--ghost{% endif %}">
+                                        {% if flag.habilitado_por_defecto %}ON{% else %}OFF{% endif %}
+                                    </button>
+                                </form>
+                            </td>
+                            <td>
+                                {% if selected_group %}
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="flag-grupo">
+                                    <input type="hidden" name="flag_id" value="{{ flag.pk }}">
+                                    <input type="hidden" name="group_id" value="{{ selected_group.pk }}">
+                                    <select class="form-input" name="enabled">
+                                        <option value="1" {% if flag.selected_group_rule and flag.selected_group_rule.habilitado %}selected{% elif not flag.selected_group_rule and flag.habilitado_por_defecto %}selected{% endif %}>Habilitado</option>
+                                        <option value="0" {% if flag.selected_group_rule and not flag.selected_group_rule.habilitado %}selected{% elif not flag.selected_group_rule and not flag.habilitado_por_defecto %}selected{% endif %}>Deshabilitado</option>
+                                    </select>
+                                    <button class="btn btn--ghost btn--sm" type="submit">Guardar</button>
+                                </form>
+                                {% else %}
+                                <span class="governance-subtle">No hay grupos disponibles.</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="table__empty">No hay feature flags registrados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </article>
+
+    <article class="card governance-block">
+        <div class="card__body">
+            <h2 class="section-title">Servicio de calidad de datos</h2>
+            <div class="table-responsive table-responsive--wide table-responsive--mobile">
+                <table class="table table--responsive table--auto table--stack-mobile">
+                    <thead>
+                        <tr>
+                            <th>Categoría</th>
+                            <th>Regla</th>
+                            <th>Entidad</th>
+                            <th>Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for issue in quality_issues %}
+                        <tr>
+                            <td>{{ issue.get_categoria_display }}</td>
+                            <td>
+                                <strong>{{ issue.titulo }}</strong>
+                                <div class="governance-code">{{ issue.regla_codigo }}</div>
+                            </td>
+                            <td>
+                                {% if issue.caso_id %}
+                                <a href="{% url 'tramites:casointerno-detail' issue.caso_id %}">Caso #{{ issue.caso_id }}</a>
+                                {% elif issue.tramite_id and issue.tramite %}
+                                <a href="{% url 'tramites:tramite-caso-detail' issue.tramite.caso_id issue.tramite_id %}">Trámite #{{ issue.tramite_id }}</a>
+                                {% elif issue.licencia_id %}
+                                <a href="{% url 'tramites:licencia-detail' issue.licencia_id %}">Licencia #{{ issue.licencia_id }}</a>
+                                {% else %}
+                                {{ issue.entidad_tipo|title }} #{{ issue.entidad_id }}
+                                {% endif %}
+                            </td>
+                            <td>{{ issue.descripcion|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="table__empty">Sin hallazgos activos.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </article>
+
+    <article class="card governance-block">
+        <div class="card__body">
+            <h2 class="section-title">Jobs programados y cola asíncrona</h2>
+            <h3 class="data-label">Programados</h3>
+            <div class="table-responsive table-responsive--wide table-responsive--mobile" style="margin-bottom: 1rem;">
+                <table class="table table--responsive table--auto table--stack-mobile">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Handler</th>
+                            <th>Próxima ejecución</th>
+                            <th>Último estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for scheduled in scheduled_jobs %}
+                        <tr>
+                            <td><strong>{{ scheduled.codigo }}</strong></td>
+                            <td>{{ scheduled.handler }}</td>
+                            <td>{{ scheduled.proxima_ejecucion|date:"d/m/Y H:i" }}</td>
+                            <td>{{ scheduled.get_ultimo_estado_display }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="table__empty">Sin jobs programados.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 class="data-label">Ejecuciones recientes</h3>
+            <div class="table-responsive table-responsive--wide table-responsive--mobile">
+                <table class="table table--responsive table--auto table--stack-mobile">
+                    <thead>
+                        <tr>
+                            <th>Job</th>
+                            <th>Estado</th>
+                            <th>Intentos</th>
+                            <th>Fechas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in recent_async_jobs %}
+                        <tr>
+                            <td>
+                                <strong>{{ item.job_type }}</strong>
+                                {% if item.scheduled_job %}
+                                <div class="governance-subtle">Programado: {{ item.scheduled_job.codigo }}</div>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.get_estado_display }}</td>
+                            <td>{{ item.intentos }}/{{ item.max_intentos }}</td>
+                            <td>
+                                <div>Creado: {{ item.creado_en|date:"d/m/Y H:i" }}</div>
+                                <div>Fin: {{ item.finalizado_en|date:"d/m/Y H:i"|default:"-" }}</div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="table__empty">Sin ejecuciones registradas.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </article>
+
+    <article class="card governance-block">
+        <div class="card__body">
+            <h2 class="section-title">Eventos unificados recientes</h2>
+            <div class="table-responsive table-responsive--wide table-responsive--mobile">
+                <table class="table table--responsive table--auto table--stack-mobile">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Categoría</th>
+                            <th>Acción</th>
+                            <th>Descripción</th>
+                            <th>Actor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for evento in eventos_sistema %}
+                        <tr>
+                            <td>{{ evento.creado_en|date:"d/m/Y H:i:s" }}</td>
+                            <td>{{ evento.get_categoria_display }}</td>
+                            <td>{{ evento.get_accion_display }}</td>
+                            <td>
+                                <strong>{{ evento.descripcion }}</strong>
+                                {% if evento.detalle %}
+                                <div class="governance-subtle">{{ evento.detalle }}</div>
+                                {% endif %}
+                            </td>
+                            <td>{{ evento.actor.get_full_name|default:evento.actor.username|default:"Sistema" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="table__empty">Sin eventos registrados.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </article>
+
+    <article class="card governance-block">
+        <div class="card__body">
+            <h2 class="section-title">Bitácora extendida de cambios críticos</h2>
+            <div class="table-responsive table-responsive--wide table-responsive--mobile">
+                <table class="table table--responsive table--auto table--stack-mobile">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Módulo</th>
+                            <th>Acción</th>
+                            <th>Descripción</th>
+                            <th>Antes / después</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in cambios_criticos %}
+                        <tr>
+                            <td>{{ item.creado_en|date:"d/m/Y H:i:s" }}</td>
+                            <td>{{ item.modulo }}</td>
+                            <td>{{ item.get_accion_display }}</td>
+                            <td>
+                                <strong>{{ item.descripcion|default:"Cambio crítico" }}</strong>
+                                <div class="governance-subtle">Actor: {{ item.actor.get_full_name|default:item.actor.username|default:"Sistema" }}</div>
+                            </td>
+                            <td>
+                                <details class="governance-details">
+                                    <summary>Ver detalle</summary>
+                                    <pre class="governance-code">{{ item.cambios|default:"{}" }}</pre>
+                                </details>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="table__empty">Sin cambios críticos registrados.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </article>
+</section>
+{% endblock %}

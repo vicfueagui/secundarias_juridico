@@ -1,0 +1,25 @@
+{% extends "tramites/base.html" %}
+
+{% block title %}Eliminar trabajador | SEGEY Trámites{% endblock %}
+
+{% block content %}
+{% url 'tramites:empleado-list' as empleado_list_url %}
+<section class="module-shell">
+    <div class="module-shell__header">
+        <div class="module-shell__intro">
+            <p class="module-shell__eyebrow">Jurídico · Licencias</p>
+            <h1 class="module-shell__title">Eliminar trabajador</h1>
+            <p class="module-shell__lead">Esta acción no se puede deshacer.</p>
+        </div>
+    </div>
+
+    <form method="post" class="module-panel">
+        {% csrf_token %}
+        <p>¿Seguro que deseas eliminar al trabajador <strong>{{ object.nombre }}</strong>?</p>
+        <div class="module-panel__footer">
+            <button type="submit" class="btn btn--danger btn--lg">Eliminar</button>
+            <a href="{{ request.GET.from_list|default:empleado_list_url }}" class="btn btn--ghost btn--lg">Cancelar</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

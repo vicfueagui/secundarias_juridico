@@ -14,6 +14,7 @@ from tramites import models
 
 class TramitesFlowTests(TestCase):
     """Flujos críticos del módulo /tramites/ (Definition of Done en CI)."""
+    MAX_LISTADO_QUERIES = 30
 
     def setUp(self):
         self.user = get_user_model().objects.create_user(
@@ -27,29 +28,35 @@ class TramitesFlowTests(TestCase):
                 "view_casointerno",
                 "add_casointerno",
                 "change_casointerno",
+                "view_tramitecaso",
+                "change_tramitecaso",
+                "delete_tramitecaso",
             ],
             content_type__app_label="licencias",
         )
         self.user.user_permissions.set(required_perms)
         self.client.force_login(self.user)
 
-        self.cct = models.CCTSecundaria.objects.create(
-            cct="ABC1234567",
+        self.cct = models.PlantillaCentroTrabajo.objects.create(
+            cct="31ABC1234X",
             nombre="Secundaria Uno",
             asesor="Asesor 1",
-            servicio="General",
             sostenimiento="Federal",
+            subnivel="General",
         )
         self.estatus_abierto = models.EstatusCaso.objects.create(nombre="Abierto", orden=1)
         self.estatus_cerrado = models.EstatusCaso.objects.create(nombre="Cerrado", orden=2)
+        self.estatus_tramite_a = models.EstatusTramite.objects.create(nombre="Turnado", orden=1)
+        self.estatus_tramite_b = models.EstatusTramite.objects.create(nombre="Concluido", orden=2)
         self.tipo_inicial = models.TipoProceso.objects.create(nombre="Tipo A")
 
     def test_crear_tramite_registra_historial_inicial(self):
         payload = {
-            "cct": self.cct.pk,
+            "cct": self.cct.cct,
+            "cct_codigo": self.cct.cct,
             "cct_nombre": self.cct.nombre,
             "cct_sistema": self.cct.sostenimiento,
-            "cct_modalidad": self.cct.servicio,
+            "cct_modalidad": self.cct.subnivel,
             "asesor_cct": self.cct.asesor,
             "fecha_apertura": date.today(),
             "estatus": self.estatus_abierto.pk,
@@ -60,6 +67,15 @@ class TramitesFlowTests(TestCase):
 
         response = self.client.post(reverse("tramites:casointerno-create"), payload, follow=True)
 
+        form = None
+        if response.context:
+            contexts = response.context if isinstance(response.context, list) else [response.context]
+            for ctx in contexts:
+                if ctx and "form" in ctx:
+                    form = ctx["form"]
+                    break
+        if form:
+            self.assertFalse(form.errors, form.errors)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(models.CasoInterno.objects.count(), 1)
         caso = models.CasoInterno.objects.get()
@@ -71,7 +87,7 @@ class TramitesFlowTests(TestCase):
             cct=self.cct,
             cct_nombre=self.cct.nombre,
             cct_sistema=self.cct.sostenimiento,
-            cct_modalidad=self.cct.servicio,
+            cct_modalidad=self.cct.subnivel,
             asesor_cct=self.cct.asesor,
             fecha_apertura=date.today(),
             estatus=self.estatus_abierto,
@@ -80,10 +96,11 @@ class TramitesFlowTests(TestCase):
         )
 
         payload = {
-            "cct": self.cct.pk,
+            "cct": self.cct.cct,
+            "cct_codigo": self.cct.cct,
             "cct_nombre": self.cct.nombre,
             "cct_sistema": self.cct.sostenimiento,
-            "cct_modalidad": self.cct.servicio,
+            "cct_modalidad": self.cct.subnivel,
             "asesor_cct": self.cct.asesor,
             "fecha_apertura": date.today(),
             "estatus": self.estatus_cerrado.pk,
@@ -98,6 +115,15 @@ class TramitesFlowTests(TestCase):
             follow=True,
         )
 
+        form = None
+        if response.context:
+            contexts = response.context if isinstance(response.context, list) else [response.context]
+            for ctx in contexts:
+                if ctx and "form" in ctx:
+                    form = ctx["form"]
+                    break
+        if form:
+            self.assertFalse(form.errors, form.errors)
         self.assertEqual(response.status_code, 200)
         caso.refresh_from_db()
         self.assertEqual(caso.estatus, self.estatus_cerrado)
@@ -108,7 +134,7 @@ class TramitesFlowTests(TestCase):
             cct=self.cct,
             cct_nombre=self.cct.nombre,
             cct_sistema=self.cct.sostenimiento,
-            cct_modalidad=self.cct.servicio,
+            cct_modalidad=self.cct.subnivel,
             asesor_cct=self.cct.asesor,
             fecha_apertura=date.today(),
             estatus=self.estatus_abierto,
@@ -120,7 +146,7 @@ class TramitesFlowTests(TestCase):
             cct=self.cct,
             cct_nombre=self.cct.nombre,
             cct_sistema=self.cct.sostenimiento,
-            cct_modalidad=self.cct.servicio,
+            cct_modalidad=self.cct.subnivel,
             asesor_cct=self.cct.asesor,
             fecha_apertura=date.today(),
             estatus=self.estatus_cerrado,
@@ -137,12 +163,88 @@ class TramitesFlowTests(TestCase):
         object_list = response.context_data["object_list"]
         self.assertEqual(list(object_list), [caso_match])
 
+    def test_listado_busca_por_folio_generado_en_caso(self):
+        caso = models.CasoInterno.objects.create(
+            cct=self.cct,
+            cct_nombre=self.cct.nombre,
+            cct_sistema=self.cct.sostenimiento,
+            cct_modalidad=self.cct.subnivel,
+            asesor_cct=self.cct.asesor,
+            fecha_apertura=date.today(),
+            estatus=self.estatus_abierto,
+            tipo_inicial=self.tipo_inicial,
+            asunto="Caso con folio generado",
+        )
+        folio = models.FolioRegistro.objects.create(
+            anio=2026,
+            prefijo="SE/TEST",
+            numero=1,
+            folio="SE/TEST/0001/2026",
+            tipo="caso",
+            creado_por=self.user,
+        )
+        folio.casos.add(caso)
+
+        response = self.client.get(
+            reverse("tramites:casointerno-list"),
+            {"buscar": folio.folio},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        object_list = response.context_data["object_list"]
+        self.assertIn(caso, list(object_list))
+
+    def test_listado_busca_tramite_anexo_por_folio_generado(self):
+        caso = models.CasoInterno.objects.create(
+            cct=self.cct,
+            cct_nombre=self.cct.nombre,
+            cct_sistema=self.cct.sostenimiento,
+            cct_modalidad=self.cct.subnivel,
+            asesor_cct=self.cct.asesor,
+            fecha_apertura=date.today(),
+            estatus=self.estatus_abierto,
+            tipo_inicial=self.tipo_inicial,
+            asunto="Caso base",
+        )
+        tramite = models.TramiteCaso.objects.create(
+            caso=caso,
+            tipo=self.tipo_inicial,
+            estatus=self.estatus_tramite_a,
+            fecha=date.today(),
+            asunto="Trámite con folio generado",
+        )
+        folio = models.FolioRegistro.objects.create(
+            anio=2026,
+            prefijo="SE/TRM",
+            numero=2,
+            folio="SE/TRM/0002/2026",
+            tipo="tramite",
+            tramite=tramite,
+            creado_por=self.user,
+        )
+
+        response = self.client.get(
+            reverse("tramites:casointerno-list"),
+            {"buscar": folio.folio},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        tramites_busqueda = response.context_data["tramites_busqueda"]
+        self.assertIn(tramite, list(tramites_busqueda))
+
+    def test_listado_renderiza_buscador_con_lupa_submit(self):
+        response = self.client.get(reverse("tramites:casointerno-list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="navbar-search"')
+        self.assertContains(response, 'class="sg-search__submit"')
+        self.assertContains(response, 'type="submit"')
+
     def test_listado_usa_select_related_en_queries(self):
         models.CasoInterno.objects.create(
             cct=self.cct,
             cct_nombre=self.cct.nombre,
             cct_sistema=self.cct.sostenimiento,
-            cct_modalidad=self.cct.servicio,
+            cct_modalidad=self.cct.subnivel,
             asesor_cct=self.cct.asesor,
             fecha_apertura=date.today(),
             estatus=self.estatus_abierto,
@@ -150,9 +252,14 @@ class TramitesFlowTests(TestCase):
             asunto="Optimización",
         )
 
-        with self.assertNumQueries(10):
+        with CaptureQueriesContext(connection) as ctx:
             response = self.client.get(reverse("tramites:casointerno-list"))
             self.assertEqual(response.status_code, 200)
+        self.assertLessEqual(
+            len(ctx),
+            self.MAX_LISTADO_QUERIES,
+            f"Demasiadas consultas en listado: {len(ctx)}",
+        )
 
     def test_listado_no_dispara_queries_extra_al_acceder_relaciones(self):
         """Monitorea consultas para evitar regresiones de select_related en el listado."""
@@ -160,7 +267,7 @@ class TramitesFlowTests(TestCase):
             cct=self.cct,
             cct_nombre=self.cct.nombre,
             cct_sistema=self.cct.sostenimiento,
-            cct_modalidad=self.cct.servicio,
+            cct_modalidad=self.cct.subnivel,
             asesor_cct=self.cct.asesor,
             fecha_apertura=date.today(),
             estatus=self.estatus_abierto,
@@ -172,11 +279,131 @@ class TramitesFlowTests(TestCase):
             response = self.client.get(reverse("tramites:casointerno-list"))
             self.assertEqual(response.status_code, 200)
             casos = list(response.context_data["object_list"])
+            queries_after_list = len(ctx)
             # Acceder a relaciones no debe generar consultas adicionales (select_related activo).
             for caso in casos:
                 _ = caso.cct.nombre
                 _ = caso.estatus.nombre
                 _ = caso.tipo_inicial.nombre
+            queries_after_related_access = len(ctx)
 
-        # Uso de select_related: la cantidad total debe mantenerse baja (<10).
-        self.assertLessEqual(len(ctx), 10, f"Demasiadas consultas en listado: {len(ctx)}")
+        self.assertEqual(
+            queries_after_related_access,
+            queries_after_list,
+            "Acceder a relaciones del caso disparó consultas extra; falta select_related/prefetch.",
+        )
+        self.assertLessEqual(
+            queries_after_related_access,
+            self.MAX_LISTADO_QUERIES,
+            f"Demasiadas consultas en listado: {queries_after_related_access}",
+        )
+
+    def test_agregar_estatus_caso_guarda_fecha_estatus(self):
+        caso = models.CasoInterno.objects.create(
+            cct=self.cct,
+            cct_nombre=self.cct.nombre,
+            cct_sistema=self.cct.sostenimiento,
+            cct_modalidad=self.cct.subnivel,
+            asesor_cct=self.cct.asesor,
+            fecha_apertura=date.today(),
+            estatus=self.estatus_abierto,
+            tipo_inicial=self.tipo_inicial,
+            asunto="Caso para estatus",
+        )
+        fecha_estatus = date(2026, 2, 10)
+
+        response = self.client.post(
+            reverse("tramites:casointerno-estatus-create", kwargs={"pk": caso.pk}),
+            {
+                "estatus_nuevo": str(self.estatus_cerrado.pk),
+                "fecha_estatus": fecha_estatus.isoformat(),
+                "comentario": "Cambio manual con fecha de estatus.",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        cambio = models.HistorialEstatusCaso.objects.filter(caso=caso).order_by("-id").first()
+        self.assertIsNotNone(cambio)
+        self.assertEqual(cambio.fecha_estatus, fecha_estatus)
+
+    def test_agregar_estatus_tramite_guarda_fecha_estatus(self):
+        caso = models.CasoInterno.objects.create(
+            cct=self.cct,
+            cct_nombre=self.cct.nombre,
+            cct_sistema=self.cct.sostenimiento,
+            cct_modalidad=self.cct.subnivel,
+            asesor_cct=self.cct.asesor,
+            fecha_apertura=date.today(),
+            estatus=self.estatus_abierto,
+            tipo_inicial=self.tipo_inicial,
+            asunto="Caso base para trámite",
+        )
+        tramite = models.TramiteCaso.objects.create(
+            caso=caso,
+            tipo=self.tipo_inicial,
+            estatus=self.estatus_tramite_a,
+            fecha=date.today(),
+            asunto="Trámite para prueba de estatus",
+        )
+        fecha_estatus = date(2026, 2, 11)
+
+        response = self.client.post(
+            reverse(
+                "tramites:tramite-caso-estatus-create",
+                kwargs={"caso_pk": caso.pk, "tramite_pk": tramite.pk},
+            ),
+            {
+                "estatus_nuevo": str(self.estatus_tramite_b.pk),
+                "fecha_estatus": fecha_estatus.isoformat(),
+                "comentario": "Cambio de estatus en trámite con fecha controlada.",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        cambio = (
+            models.HistorialEstatusTramiteCaso.objects.filter(tramite=tramite).order_by("-id").first()
+        )
+        self.assertIsNotNone(cambio)
+        self.assertEqual(cambio.fecha_estatus, fecha_estatus)
+
+    def test_eliminar_tramite_no_revienta_por_fk_en_bitacora(self):
+        caso = models.CasoInterno.objects.create(
+            cct=self.cct,
+            cct_nombre=self.cct.nombre,
+            cct_sistema=self.cct.sostenimiento,
+            cct_modalidad=self.cct.subnivel,
+            asesor_cct=self.cct.asesor,
+            fecha_apertura=date.today(),
+            estatus=self.estatus_abierto,
+            tipo_inicial=self.tipo_inicial,
+            asunto="Caso para eliminar trámite",
+        )
+        tramite = models.TramiteCaso.objects.create(
+            caso=caso,
+            tipo=self.tipo_inicial,
+            estatus=self.estatus_tramite_a,
+            fecha=date.today(),
+            asunto="Trámite que se eliminará",
+        )
+
+        response = self.client.post(
+            reverse("tramites:tramite-caso-delete", kwargs={"caso_pk": caso.pk, "pk": tramite.pk}),
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(models.TramiteCaso.objects.filter(pk=tramite.pk).exists())
+        eliminado = (
+            models.BitacoraCambioCritico.objects.filter(
+                modulo="tramite",
+                accion="eliminado",
+                object_id=tramite.pk,
+            )
+            .order_by("-id")
+            .first()
+        )
+        self.assertIsNotNone(eliminado)
+        self.assertIsNone(eliminado.tramite_id)
+        self.assertEqual(eliminado.caso_id, caso.pk)

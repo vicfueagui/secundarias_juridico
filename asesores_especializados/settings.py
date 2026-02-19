@@ -58,6 +58,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "tramites.middleware.RequestUserLoggingMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
@@ -77,6 +78,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "tramites.context_processors.bandeja_unread_count",
             ],
         },
     },
@@ -111,6 +113,103 @@ STATICFILES_DIRS = [BASE_DIR / "tramites" / "static"]
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Logging con usuario y ruta
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "request_user": {
+            "()": "tramites.logging_utils.RequestUserLogFilter",
+        },
+        "module_name": {
+            "()": "tramites.logging_utils.ModuleNameLogFilter",
+        },
+        "only_info": {
+            "()": "tramites.logging_utils.ExactLevelFilter",
+            "level_name": "INFO",
+        },
+        "only_error": {
+            "()": "tramites.logging_utils.ExactLevelFilter",
+            "level_name": "ERROR",
+        },
+    },
+    "formatters": {
+        "verbose": {
+            "format": "[{asctime}] {levelname} module={module_name} logger={name} user={user} user_id={user_id} ip={client_ip} method={method} status={status_code} duration_ms={duration_ms} request_id={request_id} path={path} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "filters": ["request_user", "module_name"],
+            "formatter": "verbose",
+        },
+        "file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(BASE_DIR / "logs" / "app.log"),
+            "maxBytes": 5 * 1024 * 1024,
+            "backupCount": 5,
+            "filters": ["request_user", "module_name"],
+            "formatter": "verbose",
+        },
+        "file_info": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(BASE_DIR / "logs" / "app-info.log"),
+            "maxBytes": 5 * 1024 * 1024,
+            "backupCount": 5,
+            "filters": ["request_user", "module_name", "only_info"],
+            "formatter": "verbose",
+        },
+        "file_error": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(BASE_DIR / "logs" / "app-error.log"),
+            "maxBytes": 5 * 1024 * 1024,
+            "backupCount": 5,
+            "filters": ["request_user", "module_name", "only_error"],
+            "formatter": "verbose",
+        },
+        "file_tramites": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(BASE_DIR / "logs" / "tramites.log"),
+            "maxBytes": 5 * 1024 * 1024,
+            "backupCount": 5,
+            "filters": ["request_user", "module_name"],
+            "formatter": "verbose",
+        },
+        "file_licencias": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(BASE_DIR / "logs" / "licencias.log"),
+            "maxBytes": 5 * 1024 * 1024,
+            "backupCount": 5,
+            "filters": ["request_user", "module_name"],
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "django.request": {
+            "handlers": ["console", "file", "file_info", "file_error"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.server": {
+            "handlers": ["console", "file", "file_info", "file_error"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "tramites": {
+            "handlers": ["console", "file", "file_tramites", "file_info", "file_error"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "licencias": {
+            "handlers": ["console", "file", "file_licencias", "file_info", "file_error"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
+
 # DRF + SimpleJWT
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -143,8 +242,20 @@ SIMPLE_JWT = {
 # Internacionalización de fechas
 FORMAT_MODULE_PATH = ["tramites.formats"]
 
+# Correo electrónico (Gmail SMTP)
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get("SMTP_USER", "enlacejuridico.secundarias@gmail.com")
+EMAIL_HOST_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
 # Configuraciones varias
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+X_FRAME_OPTIONS = "SAMEORIGIN"
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
 LOGIN_REDIRECT_URL = "tramites:casointerno-list"
 LOGOUT_REDIRECT_URL = "login"

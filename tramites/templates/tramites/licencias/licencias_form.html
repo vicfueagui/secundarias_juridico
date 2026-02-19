@@ -1,0 +1,384 @@
+{% extends "tramites/base.html" %}
+
+{% block title %}{{ form.instance.pk|yesno:"Editar licencia,Nueva licencia" }} | SEGEY Trámites{% endblock %}
+
+{% block content %}
+{% url 'tramites:licencia-list' as licencia_list_url %}
+<section class="module-shell">
+    <div class="module-shell__header">
+        <div class="module-shell__intro module-shell__intro--spaced">
+            <p class="module-shell__eyebrow">Jurídico · Licencias</p>
+            <h1 class="module-shell__title">{{ form.instance.pk|yesno:"Editar licencia,Registrar licencia" }}</h1>
+            <p class="module-shell__lead">Completa el flujo completo del trámite y su estatus actual.</p>
+        </div>
+        <div class="module-shell__actions module-shell__actions--stacked">
+            <a class="btn btn--ghost btn--lg" href="{{ request.GET.from_list|default:licencia_list_url }}">Volver</a>
+        </div>
+    </div>
+
+    <form method="post" class="module-panel">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="form-errors">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Datos del trabajador</h2>
+            <p class="module-panel__subtitle">Selecciona al trabajador desde plantilla y valida sus datos.</p>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-field">
+                <label for="{{ form.trabajador_nombre.id_for_label }}">Nombre del trabajador</label>
+                {{ form.trabajador_nombre }}
+                {{ form.trabajador }}
+                <div class="field-actions">
+                    <button type="button" class="btn btn--ghost btn--sm" data-empleado-picker-open>
+                        Gestionar trabajadores
+                    </button>
+                </div>
+                <datalist id="trabajador-options"></datalist>
+                <p class="help-text">{{ form.trabajador_nombre.help_text }}</p>
+            </div>
+            <div class="form-field">
+                <label for="{{ form.trabajador_correo.id_for_label }}">Correo trabajador</label>
+                {{ form.trabajador_correo }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.trabajador_celular.id_for_label }}">Celular trabajador</label>
+                {{ form.trabajador_celular }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.trabajador_sistema.id_for_label }}">Federal/Estatal</label>
+                {{ form.trabajador_sistema }}
+            </div>
+        </div>
+
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Tipo de trámite</h2>
+        </div>
+        <div class="form-grid">
+            <div class="form-field">
+                <label for="{{ form.tipo_tramite.id_for_label }}">Licencia o trámite</label>
+                {{ form.tipo_tramite }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.tipo_prorroga.id_for_label }}">Trámite inicial o prórroga</label>
+                {{ form.tipo_prorroga }}
+            </div>
+        </div>
+
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Solicitud inicial del sindicato o trabajador</h2>
+            <p class="module-panel__subtitle">Primera validación del proceso.</p>
+        </div>
+        <div class="form-grid">
+            <div class="form-field">
+                <label for="{{ form.sindicato.id_for_label }}">Nombre del sindicato</label>
+                {{ form.sindicato }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.fecha_tramite.id_for_label }}">Fecha del trámite</label>
+                {{ form.fecha_tramite }}
+            </div>
+            <div class="form-field" data-prefijo-scope>
+                <label for="{{ form.numero_expediente.id_for_label }}">Número de expediente</label>
+                {{ form.numero_expediente }}
+                <div class="field-actions">
+                    <label for="prefijo-oficio-select-inicial">Prefijos sugeridos</label>
+                    <select id="prefijo-oficio-select-inicial" data-prefijo-select>
+                        <option value="">Selecciona un prefijo para usarlo o editarlo</option>
+                        {% for prefijo in prefijos_oficio %}
+                        <option value="{{ prefijo.id }}">{{ prefijo.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="field-actions__buttons">
+                        <button type="button" class="btn btn--ghost btn--sm" data-prefijo-open>Nuevo prefijo</button>
+                        <button type="button" class="btn btn--ghost btn--sm" data-prefijo-edit>Editar seleccionado</button>
+                        <button type="button" class="btn btn--danger btn--sm" data-prefijo-delete>Eliminar seleccionado</button>
+                    </div>
+                </div>
+                <p class="help-text">Al seleccionar un prefijo se colocará en el campo de número de expediente y podrás modificarlo.</p>
+            </div>
+        </div>
+
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Respuesta de la solicitud inicial</h2>
+            <p class="module-panel__subtitle">Segunda validación.</p>
+        </div>
+        <div class="form-grid">
+            <div class="form-field">
+                <label for="{{ form.respuesta_oficio.id_for_label }}">Respuesta de oficio a</label>
+                {{ form.respuesta_oficio }}
+            </div>
+            <div class="form-field" data-prefijo-scope>
+                <label for="{{ form.respuesta_numero_expediente.id_for_label }}">Número de expediente</label>
+                {{ form.respuesta_numero_expediente }}
+                <div class="field-actions">
+                    <label for="prefijo-oficio-select-respuesta">Prefijos sugeridos</label>
+                    <select id="prefijo-oficio-select-respuesta" data-prefijo-select>
+                        <option value="">Selecciona un prefijo para usarlo o editarlo</option>
+                        {% for prefijo in prefijos_oficio %}
+                        <option value="{{ prefijo.id }}">{{ prefijo.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="field-actions__buttons">
+                        <button type="button" class="btn btn--ghost btn--sm" data-prefijo-open>Nuevo prefijo</button>
+                        <button type="button" class="btn btn--ghost btn--sm" data-prefijo-edit>Editar seleccionado</button>
+                        <button type="button" class="btn btn--danger btn--sm" data-prefijo-delete>Eliminar seleccionado</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-field">
+                <label for="{{ form.respuesta_fecha_recepcion.id_for_label }}">Fecha de recepción</label>
+                {{ form.respuesta_fecha_recepcion }}
+            </div>
+        </div>
+
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Validación SEB / Asesoría Técnica</h2>
+            <p class="module-panel__subtitle">Tercera validación.</p>
+        </div>
+        <div class="form-grid">
+            <div class="form-field">
+                <label for="{{ form.visto_bueno.id_for_label }}">Visto bueno por</label>
+                {{ form.visto_bueno }}
+            </div>
+            <div class="form-field" data-prefijo-scope>
+                <label for="{{ form.visto_bueno_numero_expediente.id_for_label }}">Número de expediente</label>
+                {{ form.visto_bueno_numero_expediente }}
+                <div class="field-actions">
+                    <label for="prefijo-oficio-select-visto">Prefijos sugeridos</label>
+                    <select id="prefijo-oficio-select-visto" data-prefijo-select>
+                        <option value="">Selecciona un prefijo para usarlo o editarlo</option>
+                        {% for prefijo in prefijos_oficio %}
+                        <option value="{{ prefijo.id }}">{{ prefijo.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="field-actions__buttons">
+                        <button type="button" class="btn btn--ghost btn--sm" data-prefijo-open>Nuevo prefijo</button>
+                        <button type="button" class="btn btn--ghost btn--sm" data-prefijo-edit>Editar seleccionado</button>
+                        <button type="button" class="btn btn--danger btn--sm" data-prefijo-delete>Eliminar seleccionado</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-field">
+                <label for="{{ form.visto_bueno_fecha.id_for_label }}">Fecha de visto bueno</label>
+                {{ form.visto_bueno_fecha }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.fecha_recepcion_daf.id_for_label }}">Fecha de recepción por la DAF</label>
+                {{ form.fecha_recepcion_daf }}
+            </div>
+        </div>
+
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Trámites estatales / prórrogas</h2>
+            <p class="module-panel__subtitle">Validación opcional.</p>
+        </div>
+        <div class="form-grid">
+            <div class="form-field">
+                <label for="{{ form.aplica_estatal.id_for_label }}">Aplica</label>
+                {{ form.aplica_estatal }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.cita_valoracion.id_for_label }}">Cita de valoración o incidencia</label>
+                {{ form.cita_valoracion }}
+            </div>
+            <div class="form-field" data-prefijo-scope>
+                <label for="{{ form.cita_valoracion_numero_expediente.id_for_label }}">Número de expediente</label>
+                {{ form.cita_valoracion_numero_expediente }}
+                <div class="field-actions">
+                    <label for="prefijo-oficio-select-cita">Prefijos sugeridos</label>
+                    <select id="prefijo-oficio-select-cita" data-prefijo-select>
+                        <option value="">Selecciona un prefijo para usarlo o editarlo</option>
+                        {% for prefijo in prefijos_oficio %}
+                        <option value="{{ prefijo.id }}">{{ prefijo.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="field-actions__buttons">
+                        <button type="button" class="btn btn--ghost btn--sm" data-prefijo-open>Nuevo prefijo</button>
+                        <button type="button" class="btn btn--ghost btn--sm" data-prefijo-edit>Editar seleccionado</button>
+                        <button type="button" class="btn btn--danger btn--sm" data-prefijo-delete>Eliminar seleccionado</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-field">
+                <label for="{{ form.cita_valoracion_fecha.id_for_label }}">Fecha de la cita de valoración</label>
+                {{ form.cita_valoracion_fecha }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.fecha_contacto.id_for_label }}">Fecha de contacto</label>
+                {{ form.fecha_contacto }}
+            </div>
+        </div>
+
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Dictamen DAF</h2>
+            <p class="module-panel__subtitle">Cuarta validación.</p>
+        </div>
+        <div class="form-grid">
+            <div class="form-field" data-prefijo-scope>
+                <label for="{{ form.dictamen_numero_expediente.id_for_label }}">Número de expediente del dictamen</label>
+                {{ form.dictamen_numero_expediente }}
+                <div class="field-actions">
+                    <label for="prefijo-oficio-select-dictamen">Prefijos sugeridos</label>
+                    <select id="prefijo-oficio-select-dictamen" data-prefijo-select>
+                        <option value="">Selecciona un prefijo para usarlo o editarlo</option>
+                        {% for prefijo in prefijos_oficio %}
+                        <option value="{{ prefijo.id }}">{{ prefijo.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="field-actions__buttons">
+                        <button type="button" class="btn btn--ghost btn--sm" data-prefijo-open>Nuevo prefijo</button>
+                        <button type="button" class="btn btn--ghost btn--sm" data-prefijo-edit>Editar seleccionado</button>
+                        <button type="button" class="btn btn--danger btn--sm" data-prefijo-delete>Eliminar seleccionado</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-field">
+                <label for="{{ form.dictamen_fecha.id_for_label }}">Fecha del dictamen</label>
+                {{ form.dictamen_fecha }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.dictamen_periodo_de.id_for_label }}">Periodo de</label>
+                {{ form.dictamen_periodo_de }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.dictamen_periodo_hasta.id_for_label }}">Periodo hasta</label>
+                {{ form.dictamen_periodo_hasta }}
+            </div>
+        </div>
+
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Notificación al sindicato o trabajador</h2>
+            <p class="module-panel__subtitle">Quinta validación.</p>
+        </div>
+        <div class="form-grid">
+            <div class="form-field" data-prefijo-scope>
+                <label for="{{ form.notificacion_numero_expediente.id_for_label }}">Número de expediente de la notificación</label>
+                {{ form.notificacion_numero_expediente }}
+                <div class="field-actions">
+                    <label for="prefijo-oficio-select-noti">Prefijos sugeridos</label>
+                    <select id="prefijo-oficio-select-noti" data-prefijo-select>
+                        <option value="">Selecciona un prefijo para usarlo o editarlo</option>
+                        {% for prefijo in prefijos_oficio %}
+                        <option value="{{ prefijo.id }}">{{ prefijo.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="field-actions__buttons">
+                        <button type="button" class="btn btn--ghost btn--sm" data-prefijo-open>Nuevo prefijo</button>
+                        <button type="button" class="btn btn--ghost btn--sm" data-prefijo-edit>Editar seleccionado</button>
+                        <button type="button" class="btn btn--danger btn--sm" data-prefijo-delete>Eliminar seleccionado</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-field">
+                <label for="{{ form.notificacion_fecha.id_for_label }}">Fecha de la notificación</label>
+                {{ form.notificacion_fecha }}
+            </div>
+        </div>
+
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Estatus actual</h2>
+        </div>
+        <div class="form-grid">
+            <div class="form-field">
+                <label for="{{ form.estatus.id_for_label }}">Estatus</label>
+                {{ form.estatus }}
+            </div>
+        </div>
+
+        <div class="module-panel__footer">
+            <button type="submit" class="btn btn--primary btn--lg">Guardar licencia</button>
+            <a href="{{ request.GET.from_list|default:licencia_list_url }}" class="btn btn--ghost btn--lg">Cancelar</a>
+        </div>
+    </form>
+</section>
+
+<datalist id="prefijo-oficio-options-licencias">
+    {% for prefijo in prefijos_oficio %}
+    <option value="{{ prefijo.nombre }}"></option>
+    {% endfor %}
+</datalist>
+
+<div class="modal" id="prefijo-oficio-modal" hidden role="dialog" aria-modal="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <header class="modal-header">
+                <h3 class="modal-title" data-modal-title>Agregar prefijo de oficio</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">×</button>
+            </header>
+            <form id="prefijo-oficio-form" class="modal-form">
+                <fieldset id="prefijo-oficio-fields">
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="prefijo-oficio-nombre">Prefijo</label>
+                            <input type="text" id="prefijo-oficio-nombre" name="nombre" required maxlength="255" placeholder="Ej. SE/SEB/DES-EESP">
+                        </div>
+                        <div class="form-field">
+                            <label for="prefijo-oficio-descripcion">Descripción (opcional)</label>
+                            <textarea id="prefijo-oficio-descripcion" name="descripcion" maxlength="500" rows="3" placeholder="Notas internas para identificar el prefijo."></textarea>
+                        </div>
+                    </div>
+                </fieldset>
+                <p class="modal-message" data-modal-message></p>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn--ghost btn--md" data-modal-close>Cancelar</button>
+                    <button type="submit" class="btn btn--primary btn--md" data-prefijo-oficio-save>Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="empleado-picker-modal" hidden role="dialog" aria-modal="true">
+    <div class="modal-dialog modal-dialog--lg">
+        <div class="modal-content">
+            <header class="modal-header">
+                <h3 class="modal-title">Gestionar trabajadores</h3>
+                <button type="button" class="modal-close" data-empleado-picker-close aria-label="Cerrar">×</button>
+            </header>
+            <div class="modal-body" data-empleado-picker-body>
+                <p class="text-muted">Cargando trabajadores...</p>
+            </div>
+            <footer class="modal-actions">
+                <button type="button" class="btn btn--ghost btn--md" data-empleado-picker-close>Cancelar</button>
+            </footer>
+        </div>
+    </div>
+</div>
+
+<script>
+    const trabajadorInput = document.getElementById("{{ form.trabajador_nombre.id_for_label }}");
+    if (trabajadorInput) {
+        trabajadorInput.setAttribute("data-trabajador-lookup", "true");
+        trabajadorInput.setAttribute("list", "trabajador-options");
+        trabajadorInput.setAttribute("data-lookup-url", "{{ empleado_lookup_url }}");
+        trabajadorInput.setAttribute("data-empleado-picker-url", "{{ empleado_picker_url }}");
+    }
+    const trabajadorId = document.getElementById("{{ form.trabajador.id_for_label }}");
+    if (trabajadorId) {
+        trabajadorId.setAttribute("data-trabajador-id", "true");
+    }
+    const correoField = document.getElementById("{{ form.trabajador_correo.id_for_label }}");
+    if (correoField) {
+        correoField.setAttribute("data-trabajador-correo", "true");
+    }
+    const celularField = document.getElementById("{{ form.trabajador_celular.id_for_label }}");
+    if (celularField) {
+        celularField.setAttribute("data-trabajador-celular", "true");
+    }
+    const sistemaField = document.getElementById("{{ form.trabajador_sistema.id_for_label }}");
+    if (sistemaField) {
+        sistemaField.setAttribute("data-trabajador-sistema", "true");
+    }
+    document.querySelectorAll("[data-prefijo-scope] input").forEach((input) => {
+        if (input.name && input.name.includes("numero")) {
+            input.setAttribute("data-prefijo-input", "true");
+        }
+    });
+</script>
+{% endblock %}

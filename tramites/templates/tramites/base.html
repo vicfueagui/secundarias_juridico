@@ -9,30 +9,52 @@
     <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     <link rel="stylesheet" href="{% static 'css/components.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
 <body>
     <header class="sg-navbar">
         <div class="sg-navbar__inner">
-            <a href="{% url 'tramites:casointerno-list' %}" class="sg-navbar__brand">
-                <img src="{% static 'img/segey-logo.png' %}" alt="SEGEY Secretaría de Educación">
+            <a href="{% url 'tramites:home' %}" class="sg-navbar__brand">
+                <img src="{% static 'img/segey-logo-main.png' %}" alt="SEGEY Secretaría de Educación">
                 <span>Sistema de Trámites</span>
             </a>
+            {% with path=request.path %}
             <nav class="sg-navbar__nav sg-navbar__nav--primary" aria-label="Secciones principales">
-                {% if perms.licencias.view_casointerno %}
-                <a class="sg-navbar__link" href="{% url 'tramites:casointerno-list' %}">Trámites</a>
+                <a class="sg-navbar__link {% if path == '/' %}sg-navbar__link--active{% endif %}" href="{% url 'tramites:home' %}" {% if path == '/' %}aria-current="page"{% endif %}>Inicio</a>
+                {% if user.is_authenticated %}
+                <a class="sg-navbar__link {% if path|slice:':16' == '/operacion/cola/' %}sg-navbar__link--active{% endif %}" href="{% url 'tramites:mi-cola' %}" {% if path|slice:':16' == '/operacion/cola/' %}aria-current="page"{% endif %}>Agenda</a>
                 {% endif %}
-                <a class="sg-navbar__link" href="{% url 'tramites:herramientas-index' %}">Herramientas</a>
+                {% if perms.licencias.view_casointerno %}
+                <a class="sg-navbar__link {% if path|slice:':10' == '/tramites/' and path|slice:':19' != '/tramites/reportes' and path|slice:':23' != '/tramites/herramientas' %}sg-navbar__link--active{% endif %}" href="{% url 'tramites:casointerno-list' %}" {% if path|slice:':10' == '/tramites/' and path|slice:':19' != '/tramites/reportes' and path|slice:':23' != '/tramites/herramientas' %}aria-current="page"{% endif %}>Trámites</a>
+                {% endif %}
+                {% if perms.licencias.view_licenciaregistro %}
+                <a class="sg-navbar__link {% if path|slice:':11' == '/licencias/' %}sg-navbar__link--active{% endif %}" href="{% url 'tramites:licencia-list' %}" {% if path|slice:':11' == '/licencias/' %}aria-current="page"{% endif %}>Licencias</a>
+                {% endif %}
+                {% if perms.licencias.view_casointerno %}
+                <a class="sg-navbar__link {% if path|slice:':10' == '/reportes/' or path|slice:':19' == '/tramites/reportes' %}sg-navbar__link--active{% endif %}" href="{% url 'tramites:reportes-list' %}" {% if path|slice:':10' == '/reportes/' or path|slice:':19' == '/tramites/reportes' %}aria-current="page"{% endif %}>Reportes</a>
+                {% endif %}
+                <a class="sg-navbar__link {% if path|slice:':14' == '/herramientas/' or path|slice:':23' == '/tramites/herramientas' %}sg-navbar__link--active{% endif %}" href="{% url 'tramites:herramientas-index' %}" {% if path|slice:':14' == '/herramientas/' or path|slice:':23' == '/tramites/herramientas' %}aria-current="page"{% endif %}>Herramientas</a>
             </nav>
             <form method="get" action="{% url 'tramites:casointerno-list' %}" role="search" class="sg-search sg-navbar__search">
-                <svg class="sg-search__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M11.5 5.5a6 6 0 1 1 0 12 6 6 0 0 1 0-12Zm6.75 10.75 4.25 4.25" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                </svg>
+                <button type="submit" class="sg-search__submit" aria-label="Buscar">
+                    <svg class="sg-search__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M11.5 5.5a6 6 0 1 1 0 12 6 6 0 0 1 0-12Zm6.75 10.75 4.25 4.25" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                </button>
                 <label class="visually-hidden" for="navbar-search">Buscar trámites</label>
-                <input id="navbar-search" class="sg-search__input" type="search" name="buscar" placeholder="Buscar trámite, folio o CCT">
+                <input id="navbar-search" class="sg-search__input" type="search" name="buscar" placeholder="Buscar trámite, folio o CCT" value="{{ request.GET.buscar|default:'' }}">
             </form>
             <div class="sg-navbar__nav sg-navbar__nav--secondary" aria-label="Acciones de cuenta">
                 {% if user.is_authenticated %}
+                <a class="sg-navbar__link sg-navbar__link--inbox {% if path|slice:':9' == '/bandeja/' or path|slice:':8' == '/bandeja' %}sg-navbar__link--active{% endif %}" href="{% url 'tramites:bandeja' %}" data-inbox-nav {% if path|slice:':9' == '/bandeja/' or path|slice:':8' == '/bandeja' %}aria-current="page"{% endif %}>
+                    Bandeja
+                    {% if bandeja_unread_count %}
+                    <span class="inbox-badge" aria-label="{{ bandeja_unread_count }} no leídas" data-inbox-count>
+                        {{ bandeja_unread_count }}
+                    </span>
+                    {% endif %}
+                </a>
                 <span class="sg-navbar__link" aria-label="Usuario autenticado">{{ user.username }}</span>
                 {% if perms.licencias.add_casointerno %}
                 <a class="btn btn--primary btn--sm" href="{% url 'tramites:casointerno-create' %}">Registrar trámite</a>
@@ -42,6 +64,7 @@
                 <a class="btn btn--primary btn--sm" href="{% url 'login' %}">Iniciar sesión</a>
                 {% endif %}
             </div>
+            {% endwith %}
         </div>
     </header>
     <main class="container">
@@ -51,6 +74,8 @@
     <footer>
         <small>SEGEY · Sistema de Seguimiento de Trámites · {% now 'Y' %}</small>
     </footer>
-    <script src="{% static 'js/app.js' %}" defer></script>
+    <script src="{% static 'js/tramite_modal_fallback.js' %}?v=20260213-3" defer></script>
+    <script type="module" src="{% static 'js/analizador_core.js' %}?v=20260213-1"></script>
+    <script src="{% static 'js/app.js' %}?v=20260213-4" defer></script>
 </body>
 </html>

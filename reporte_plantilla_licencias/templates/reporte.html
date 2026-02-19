@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="group-head">
+  <div class="group-left">NOMBRE</div>
+  <div class="group-right">DATOS DE LA LICENCIA MÉDICA</div>
+</div>
+
+<table class="data-table">
+  <!-- Anchos basados en el Word (aprox.) -->
+  <colgroup>
+    <col style="width:6.1%">
+    <col style="width:31.0%">
+    <col style="width:13.6%">
+    <col style="width:9.6%">
+    <col style="width:14.3%">
+    <col style="width:6.8%">
+    <col style="width:9.5%">
+    <col style="width:9.2%">
+  </colgroup>
+
+  <thead>
+    <tr>
+      <th>NO.</th>
+      <th>APELLIDO PATERNO,MATERNO,NOMBRES(S)</th>
+      <th>R.F.C<br>FILIACIÓN</th>
+      <th>C.C.T</th>
+      <th>NO.</th>
+      <th>DÍAS</th>
+      <th>DEL:</th>
+      <th>AL:</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td class="center">{{ loop.index }}</td>
+      <td>{{ r.nombre_completo }}</td>
+      <td>{{ r.rfc }}<br>{{ r.filiacion }}</td>
+      <td class="center">{{ r.cct }}</td>
+      <td class="center">{{ r.no_licencia }}</td>
+      <td class="center">{{ r.dias }}</td>
+      <td class="center">{{ r.del }}</td>
+      <td class="center">{{ r.al }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<section class="signature-block avoid-break">
+  <div class="place-date">{{ lugar }}, {{ estado }} a {{ fecha_documento }}</div>
+
+  <div class="attn">ATENTAMENTE</div>
+
+  <div class="sign-name">{{ firmante_nombre }}</div>
+  <div class="sign-role">{{ firmante_cargo_linea1 }}</div>
+  <div class="sign-role">{{ firmante_cargo_linea2 }}</div>
+
+  {% if cc_text %}
+    <div class="cc">{{ cc_text }}</div>
+  {% endif %}
+  {% if initials %}
+    <div class="initials">{{ initials }}</div>
+  {% endif %}
+</section>
+
+{% endblock %}

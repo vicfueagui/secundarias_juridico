@@ -1,0 +1,328 @@
+{% extends "tramites/base.html" %}
+
+{% block title %}Folios | SEGEY Trámites{% endblock %}
+
+{% block content %}
+<section class="module-shell">
+    <div class="module-shell__header">
+        <div class="module-shell__intro">
+            <p class="module-shell__eyebrow">Herramientas</p>
+            <h1 class="module-shell__title">Folios generados</h1>
+            <p class="module-shell__lead">Consulta, edita o desactiva folios y su trazabilidad.</p>
+        </div>
+        {% if perms.licencias.add_folioregistro %}
+        <div class="module-shell__actions">
+            <a class="btn btn--primary btn--md" href="{% url 'tramites:folio-create' %}">Nuevo folio</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <section class="module-panel" style="margin-bottom: 2rem;">
+        <div class="module-panel__header">
+            <h2 class="section-title">Buscar casos o trámites</h2>
+            <p class="module-panel__subtitle">Busca por CCT, expediente, asunto o participantes y asigna un folio con un clic.</p>
+        </div>
+        <form method="get" class="filters__form">
+            <div class="filters__row">
+                <div class="filters__field">
+                    <label for="folio-search">Buscar</label>
+                    <input id="folio-search" type="search" name="q" value="{{ q }}" placeholder="CCT, expediente, asunto, generador o receptor" class="form-input">
+                </div>
+                {% if prefijo_seleccionado %}
+                <input type="hidden" name="prefijo" value="{{ prefijo_seleccionado }}">
+                {% endif %}
+                {% if estado_seleccionado and estado_seleccionado != "todos" %}
+                <input type="hidden" name="estado" value="{{ estado_seleccionado }}">
+                {% endif %}
+                <div class="filters__actions">
+                    <button type="submit" class="btn btn--primary btn--md">Buscar</button>
+                </div>
+            </div>
+        </form>
+        {% if q %}
+        <div class="table-responsive table-responsive--wide table-responsive--mobile" style="margin-top: 1rem;">
+            <table class="table table--interactive table--responsive table--auto">
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Referencia</th>
+                        <th>Expediente</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for caso in casos_resultados %}
+                    <tr>
+                        <td>Caso</td>
+                        <td>Case #{{ caso.pk }} · {{ caso.cct_id }} · {{ caso.descripcion_breve|default:"-" }}</td>
+                        <td>{{ caso.numero_oficio|default:"-" }}</td>
+                        <td>
+                            {% if perms.licencias.add_folioregistro %}
+                                {% if not caso.numero_oficio or caso.numero_oficio|upper == "S/N" or caso.numero_oficio|upper == "SN" %}
+                                <button type="button" class="btn btn--secondary btn--sm" data-folio-open data-tipo="caso" data-id="{{ caso.pk }}" data-next="{% url 'tramites:casointerno-detail' caso.pk %}">Generar folio</button>
+                                {% else %}
+                                <span class="status-chip status-chip--concluido">Con folio</span>
+                                {% endif %}
+                            {% else %}
+                            <span class="status-chip status-chip--concluido">Con folio</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% for tramite in tramites_resultados %}
+                    <tr>
+                        <td>Trámite</td>
+                        <td>Trámite #{{ tramite.pk }} · Caso {{ tramite.caso_id }} · {{ tramite.tipo.nombre|default:"-" }}</td>
+                        <td>{{ tramite.numero_oficio|default:"-" }}</td>
+                        <td>
+                            {% if perms.licencias.add_folioregistro %}
+                                {% if not tramite.numero_oficio or tramite.numero_oficio|upper == "S/N" or tramite.numero_oficio|upper == "SN" %}
+                                <button type="button" class="btn btn--secondary btn--sm" data-folio-open data-tipo="tramite" data-id="{{ tramite.pk }}" data-next="{% url 'tramites:tramite-caso-detail' tramite.caso_id tramite.pk %}">Generar folio</button>
+                                {% else %}
+                                <span class="status-chip status-chip--concluido">Con folio</span>
+                                {% endif %}
+                            {% else %}
+                            <span class="status-chip status-chip--concluido">Con folio</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not casos_resultados and not tramites_resultados %}
+                    <tr><td colspan="4" class="table__empty">Sin resultados para “{{ q }}”.</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </section>
+
+    <section class="module-panel" style="margin-bottom: 1.5rem;">
+        <div class="module-panel__header">
+            <h2 class="section-title">Filtrar folios por prefijo</h2>
+            <p class="module-panel__subtitle">Selecciona el prefijo del foliador que quieres consultar.</p>
+        </div>
+        <form method="get" class="filters__form">
+            <div class="filters__row">
+                <div class="filters__field">
+                    <label for="folio-prefijo-filter">Prefijo</label>
+                    <select id="folio-prefijo-filter" name="prefijo" class="form-input">
+                        <option value="">Todos</option>
+                        {% for prefijo in folio_prefijos %}
+                        <option value="{{ prefijo.nombre }}" {% if prefijo_seleccionado == prefijo.nombre %}selected{% endif %}>
+                            {{ prefijo.nombre }}{% if prefijo.contador %} ({{ prefijo.contador }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filters__field">
+                    <label for="folio-estado-filter">Estado</label>
+                    <select id="folio-estado-filter" name="estado" class="form-input">
+                        <option value="" {% if estado_seleccionado == "todos" %}selected{% endif %}>Todos</option>
+                        <option value="activos" {% if estado_seleccionado == "activos" %}selected{% endif %}>Activos</option>
+                        <option value="inactivos" {% if estado_seleccionado == "inactivos" %}selected{% endif %}>Inactivos</option>
+                    </select>
+                </div>
+                <div class="filters__actions">
+                    <button type="submit" class="btn btn--primary btn--md">Aplicar</button>
+                    <a class="btn btn--ghost btn--md" href="{% url 'tramites:folio-list' %}">Limpiar</a>
+                </div>
+            </div>
+            {% if q %}
+            <input type="hidden" name="q" value="{{ q }}">
+            {% endif %}
+        </form>
+    </section>
+
+    {% if prefijo_seleccionado or estado_seleccionado != "todos" %}
+    <section class="module-panel" style="margin-bottom: 1.5rem;">
+        <div class="module-panel__header">
+            <h2 class="section-title">Filtro activo</h2>
+            <p class="module-panel__subtitle">
+                {% if prefijo_seleccionado %}Prefijo: <strong>{{ prefijo_seleccionado }}</strong>{% endif %}
+                {% if prefijo_seleccionado and estado_seleccionado != "todos" %} · {% endif %}
+                {% if estado_seleccionado != "todos" %}Estado: <strong>{{ estado_seleccionado|title }}</strong>{% endif %}
+            </p>
+        </div>
+    </section>
+    {% endif %}
+
+    <div class="table-responsive table-responsive--wide table-responsive--mobile">
+        <table class="table table--interactive table--responsive table--auto">
+            <thead>
+                <tr>
+                    <th>Folio</th>
+                    {% if not prefijo_seleccionado %}
+                    <th>Prefijo</th>
+                    {% endif %}
+                    <th>Tipo</th>
+                    <th>Asociado(s)</th>
+                    <th>Creado por</th>
+                    <th>Creado en</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for folio in folios %}
+                <tr>
+                    <td><a class="table-actions__link" href="{% url 'tramites:folio-detail' folio.pk %}"><strong>{{ folio.folio }}</strong></a></td>
+                    {% if not prefijo_seleccionado %}
+                    <td>{{ folio.prefijo|default:"-" }}</td>
+                    {% endif %}
+                    <td>{{ folio.get_tipo_display }}</td>
+                    <td>
+                        {% if folio.tramites_asociados %}
+                        {% with tramites=folio.tramites_asociados %}
+                        <div class="help-text">Trámites asociados ({{ tramites|length }})</div>
+                        <div class="chip-group">
+                            {% for tramite in tramites %}
+                            <a class="chip chip--strong" href="{% url 'tramites:tramite-caso-detail' tramite.caso_id tramite.pk %}" target="_blank" rel="noopener">Trámite #{{ tramite.pk }} (Caso #{{ tramite.caso_id }})</a>
+                            {% endfor %}
+                        </div>
+                        {% endwith %}
+                        {% endif %}
+                        {% if folio.casos_relacionados %}
+                        {% with casos=folio.casos_relacionados %}
+                        <div class="help-text">Casos asociados ({{ casos|length }})</div>
+                        <div class="chip-group">
+                            {% for caso in casos %}
+                            <a class="chip" href="{% url 'tramites:casointerno-detail' caso.pk %}" target="_blank" rel="noopener">Caso #{{ caso.pk }}</a>
+                            {% endfor %}
+                        </div>
+                        {% endwith %}
+                        {% endif %}
+                        {% if not folio.tramites_asociados and not folio.casos_relacionados %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>{{ folio.creado_por|default:"-" }}</td>
+                    <td>{{ folio.creado_en|date:"d/m/Y H:i" }}</td>
+                    <td>
+                        {% if folio.activo %}
+                        <span class="status-chip status-chip--concluido">Activo</span>
+                        {% else %}
+                        <span class="status-chip status-chip--pendiente-por-informacion">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="table-actions">
+                            <button type="button" class="table-actions__link" data-copy-folio="{{ folio.folio }}">Copiar folio</button>
+                            {% if perms.licencias.change_folioregistro %}
+                            <a class="table-actions__link" href="{% url 'tramites:folio-update' folio.pk %}">Editar</a>
+                            {% endif %}
+                            {% if perms.licencias.delete_folioregistro %}
+                            <a class="table-actions__link table-actions__link--danger" href="{% url 'tramites:folio-delete' folio.pk %}">Desactivar</a>
+                            {% endif %}
+                            {% if perms.licencias.change_folioregistro and not folio.activo %}
+                            <form method="post" action="{% url 'tramites:folio-reactivar' folio.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="table-actions__link">Reactivar</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{% if not prefijo_seleccionado %}8{% else %}7{% endif %}" class="table__empty">No hay folios registrados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if is_paginated %}
+    <div class="pagination pagination--inset">
+        {% if page_obj.has_previous %}
+        <a class="pagination__button" href="?{% if folios_query %}{{ folios_query }}&{% endif %}page={{ page_obj.previous_page_number }}">&larr;</a>
+        {% endif %}
+        <span class="pagination__page pagination__page--current">Página {{ page_obj.number }} de {{ paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a class="pagination__button" href="?{% if folios_query %}{{ folios_query }}&{% endif %}page={{ page_obj.next_page_number }}">&rarr;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</section>
+
+<div class="modal" id="folio-generar-modal" hidden role="dialog" aria-modal="true">
+    <div class="modal-overlay" data-modal-close></div>
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3 class="modal-title">Generar folio</h3>
+            <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form method="post" action="{% url 'tramites:folio-generar' %}" id="folio-generar-form" data-folio-preview-url="{% url 'tramites:folio-generar-preview' %}" data-folio-cancel-url="{% url 'tramites:folio-generar-cancelar' %}">
+                {% csrf_token %}
+                <input type="hidden" name="tipo" id="folio-tipo">
+                <input type="hidden" name="caso_id" id="folio-caso-id">
+                <input type="hidden" name="tramite_id" id="folio-tramite-id">
+                <input type="hidden" name="next" id="folio-next">
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label>Año</label>
+                        <input type="text" class="form-input" value="{% now 'Y' %}" readonly>
+                    </div>
+                    <div class="form-field form-field--full">
+                        <label for="folio-prefijo">Prefijo</label>
+                        <select id="folio-prefijo" name="prefijo_id" class="form-input">
+                            <option value="">Selecciona un prefijo</option>
+                            {% for prefijo in folio_prefijos %}
+                            <option value="{{ prefijo.id }}">{{ prefijo.nombre }}{% if prefijo.descripcion %} · {{ prefijo.descripcion }}{% endif %}</option>
+                            {% endfor %}
+                        </select>
+                        {% if not folio_prefijos %}
+                        <p class="help-text help-text--warning">No hay prefijos activos. Agrega uno con “Nuevo prefijo”.</p>
+                        {% endif %}
+                        <div class="field-actions">
+                            <button type="button" class="btn btn--ghost btn--sm" data-crud-open="prefijo-folio" data-crud-target="folio-prefijo">Nuevo prefijo</button>
+                            <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="prefijo-folio" data-crud-target="folio-prefijo">Editar seleccionado</button>
+                            <button type="button" class="btn btn--danger btn--sm" data-crud-delete="prefijo-folio" data-crud-target="folio-prefijo">Eliminar seleccionado</button>
+                        </div>
+                        <p class="help-text">Se generará el consecutivo automáticamente.</p>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn--primary btn--md">Generar folio</button>
+                    <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="prefijo-folio-modal" hidden role="dialog" aria-modal="true">
+    <div class="modal-overlay" data-modal-close></div>
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3 class="modal-title" data-modal-title>Agregar prefijo de folio</h3>
+            <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="prefijo-folio-form" class="modal-form">
+                <fieldset id="prefijo-folio-fields">
+                    <div class="modal-field">
+                        <label for="prefijo-folio-nombre">Prefijo</label>
+                        <input type="text" id="prefijo-folio-nombre" name="nombre" required maxlength="255">
+                    </div>
+                    <div class="modal-field">
+                        <label for="prefijo-folio-descripcion">Descripción</label>
+                        <textarea id="prefijo-folio-descripcion" name="descripcion" maxlength="500" rows="3"></textarea>
+                    </div>
+                    <div class="modal-field">
+                        <label>
+                            <input type="checkbox" id="prefijo-folio-activo" name="esta_activo" checked>
+                            Activo
+                        </label>
+                    </div>
+                </fieldset>
+                <div class="modal-message" data-modal-message role="alert"></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn--primary btn--md" data-prefijo-folio-save>Guardar</button>
+                    <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

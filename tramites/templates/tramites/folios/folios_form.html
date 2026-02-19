@@ -1,0 +1,146 @@
+{% extends "tramites/base.html" %}
+
+{% block title %}{{ form.instance.pk|yesno:"Editar folio,Nuevo folio" }} | SEGEY Trámites{% endblock %}
+
+{% block content %}
+<section class="module-shell module-shell--form">
+    <div class="module-shell__header">
+        <div class="module-shell__intro">
+            <p class="module-shell__eyebrow">Folios</p>
+            <h1 class="module-shell__title">{{ form.instance.pk|yesno:"Editar folio,Crear folio" }}</h1>
+            <p class="module-shell__lead">Configura el folio y su asociación al caso o trámite anexo.</p>
+        </div>
+        <div class="module-shell__actions">
+            <a class="btn btn--ghost btn--md" href="{% url 'tramites:folio-list' %}">Volver</a>
+        </div>
+    </div>
+
+    <form method="post" class="tramite-form" style="max-width: 820px; margin: 0 auto;">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="form-errors">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+        <div class="form-subsection">
+            <h2 class="section-title">Datos del folio</h2>
+            <p class="module-panel__subtitle">El número se asigna automáticamente y se reinicia cada año.</p>
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="{{ form.prefijo.id_for_label }}">{{ form.prefijo.label }}</label>
+                    {{ form.prefijo }}
+                    {% if not folio_prefijos %}
+                    <p class="help-text help-text--warning">No hay prefijos activos. Agrega uno con “Nuevo prefijo”.</p>
+                    {% endif %}
+                    <div class="field-actions">
+                        <button type="button" class="btn btn--ghost btn--sm" data-crud-open="prefijo-folio" data-crud-target="{{ form.prefijo.id_for_label }}">Nuevo prefijo</button>
+                        <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="prefijo-folio" data-crud-target="{{ form.prefijo.id_for_label }}">Editar seleccionado</button>
+                        <button type="button" class="btn btn--danger btn--sm" data-crud-delete="prefijo-folio" data-crud-target="{{ form.prefijo.id_for_label }}">Eliminar seleccionado</button>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label>Año</label>
+                    <input type="text" class="form-input" value="{% now 'Y' %}" readonly>
+                </div>
+                <div class="form-field" style="display: none;">
+                    <label for="{{ form.casos.id_for_label }}">{{ form.casos.label }}</label>
+                    {{ form.casos }}
+                </div>
+                {{ form.tipo }}
+                <div class="form-field" style="display: none;">
+                    <label for="{{ form.tramite.id_for_label }}">{{ form.tramite.label }}</label>
+                    {{ form.tramite }}
+                </div>
+                <div class="form-field form-field--full">
+                    <label for="{{ form.notas.id_for_label }}">{{ form.notas.label }}</label>
+                    {{ form.notas }}
+                </div>
+            </div>
+        </div>
+        <div class="form-subsection">
+            <h2 class="section-title">Asignar a caso o trámite</h2>
+            <p class="module-panel__subtitle">Busca y selecciona el registro al que se asignará el folio.</p>
+            <div class="form-grid">
+                <div class="form-field form-field--full">
+                    <label for="folio-buscar-q">Buscar caso o trámite</label>
+                    <input id="folio-buscar-q" type="search" class="form-input" placeholder="CCT, expediente, asunto, generador o receptor" data-folio-buscar data-folio-buscar-url="{% url 'tramites:folio-buscar' %}">
+                    <p class="help-text">Se muestran hasta 25 resultados por tipo.</p>
+                    <p class="help-text">Puedes seleccionar múltiples casos. Seleccionar un trámite reemplaza los casos.</p>
+                    <p class="help-text" id="folio-buscar-id-hint" hidden>Buscando por ID</p>
+                    {% for error in form.casos.errors %}
+                    <p class="error-text">{{ error }}</p>
+                    {% endfor %}
+                    {% for error in form.tramite.errors %}
+                    <p class="error-text">{{ error }}</p>
+                    {% endfor %}
+                    {% for error in form.tipo.errors %}
+                    <p class="error-text">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="filters__quick" data-folio-filtros>
+                <button type="button" class="pill pill--active" data-folio-filter="all" data-filter-label="Todos">Todos</button>
+                <button type="button" class="pill" data-folio-filter="casos" data-filter-label="Solo casos">Solo casos</button>
+                <button type="button" class="pill" data-folio-filter="tramites" data-filter-label="Solo trámites">Solo trámites</button>
+            </div>
+            <div class="table-responsive table-responsive--mobile">
+                <table class="table table--interactive table--auto table--stack-mobile" id="folio-buscar-resultados">
+                    <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Referencia</th>
+                            <th>Expediente</th>
+                            <th>Asignar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="4" class="table__empty">Busca para mostrar resultados.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="help-text" id="folio-buscar-seleccion"></div>
+            <div class="chip-group" id="folio-casos-seleccionados"></div>
+            <div class="help-text" id="folio-tramite-seleccion"></div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn--primary btn--md">Guardar</button>
+            <a class="btn btn--ghost btn--md" href="{% url 'tramites:folio-list' %}">Cancelar</a>
+        </div>
+    </form>
+</section>
+
+<div class="modal" id="prefijo-folio-modal" hidden role="dialog" aria-modal="true">
+    <div class="modal-overlay" data-modal-close></div>
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3 class="modal-title" data-modal-title>Agregar prefijo de folio</h3>
+            <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="prefijo-folio-form" class="modal-form">
+                <fieldset id="prefijo-folio-fields">
+                    <div class="modal-field">
+                        <label for="prefijo-folio-nombre">Prefijo</label>
+                        <input type="text" id="prefijo-folio-nombre" name="nombre" required maxlength="255">
+                    </div>
+                    <div class="modal-field">
+                        <label for="prefijo-folio-descripcion">Descripción</label>
+                        <textarea id="prefijo-folio-descripcion" name="descripcion" maxlength="500" rows="3"></textarea>
+                    </div>
+                    <div class="modal-field">
+                        <label>
+                            <input type="checkbox" id="prefijo-folio-activo" name="esta_activo" checked>
+                            Activo
+                        </label>
+                    </div>
+                </fieldset>
+                <div class="modal-message" data-modal-message role="alert"></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn--primary btn--md" data-prefijo-folio-save>Guardar</button>
+                    <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "tramites/base.html" %}
+
+{% block title %}Consulta de plantillas{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <span class="chip">Consulta</span>
+        <h1 class="page-title">Plantillas de secundarias</h1>
+        <p>Busca empleados y centros de trabajo por ciclo escolar para validar la última aparición registrada.</p>
+    </div>
+</div>
+
+<section class="card">
+    <div class="card__body">
+        <h2 class="section-title">Filtros de búsqueda</h2>
+        <form method="get"
+              class="form-grid"
+              data-plantillas-search
+              data-plantillas-target="#plantillas-resultados"
+              data-plantillas-indicator="#plantillas-loading"
+              hx-get="{% url 'tramites:plantillas-secundarias' %}"
+              hx-target="#plantillas-resultados"
+              hx-swap="outerHTML"
+              hx-trigger="keyup changed delay:400ms, search"
+              hx-include="#q,#cct,#ciclo"
+              hx-indicator="#plantillas-loading">
+            <div class="form-field">
+                <label for="q">Empleado (nombre, RFC o CURP)</label>
+                <input id="q" name="q" type="text" class="form-input" value="{{ query }}" placeholder="Ej. AYALA MENA ROMAN DARIO">
+            </div>
+            <div class="form-field">
+                <label for="cct">Centro de trabajo (CCT o nombre)</label>
+                <input id="cct" name="cct" type="text" class="form-input" value="{{ cct_query }}" placeholder="Ej. 31DES0001I">
+            </div>
+            <div class="form-field">
+                <label for="ciclo">Ciclo escolar</label>
+                <input id="ciclo" name="ciclo" type="text" class="form-input" value="{{ ciclo_query }}" placeholder="Ej. 2019-2020">
+            </div>
+            <div class="form-field">
+                <label>&nbsp;</label>
+                <button type="submit" class="btn btn--primary">Buscar</button>
+            </div>
+        </form>
+        <p class="help-text">Usa uno o más filtros para reducir resultados. La búsqueda se ejecuta sobre plantillas importadas desde el CSV.</p>
+        <div id="plantillas-loading" class="help-text" aria-live="polite" style="display:none;">Buscando...</div>
+    </div>
+</section>
+
+{% include "tramites/herramientas/partials/plantillas_resultados.html" %}
+{% endblock %}

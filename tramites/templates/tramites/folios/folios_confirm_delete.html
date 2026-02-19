@@ -1,0 +1,27 @@
+{% extends "tramites/base.html" %}
+
+{% block title %}Desactivar folio | SEGEY Trámites{% endblock %}
+
+{% block content %}
+<section class="module-shell module-shell--form">
+    <div class="module-shell__header">
+        <div class="module-shell__intro">
+            <p class="module-shell__eyebrow">Folios</p>
+            <h1 class="module-shell__title">Desactivar folio</h1>
+            <p class="module-shell__lead">El folio quedará marcado como inactivo, pero no se elimina el historial.</p>
+        </div>
+    </div>
+
+    <form method="post" class="tramite-form" style="max-width: 640px; margin: 0 auto;">
+        {% csrf_token %}
+        <div class="form-subsection">
+            <h2 class="section-title">{{ object.folio }}</h2>
+            <p>¿Confirmas que deseas desactivar este folio?</p>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn--danger btn--md">Desactivar</button>
+            <a class="btn btn--ghost btn--md" href="{% url 'tramites:folio-list' %}">Cancelar</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

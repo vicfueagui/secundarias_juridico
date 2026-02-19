@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>{{ title or "Reporte" }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="static/css/print.css">
+</head>
+<body>
+
+  <!-- RUNNING HEADER: WeasyPrint lo puede repetir en cada página -->
+  <header class="doc-header">
+    {% if header_image_path %}
+      <img class="header-image" src="{{ header_image_path }}" alt="Encabezado" />
+    {% endif %}
+
+    <div class="header-text">
+      <div class="h1">DIRECCIÓN DE EDUCACIÓN SECUNDARIA</div>
+      <div class="h1">ASESORES TÉCNICOS ESPECIALIZADOS</div>
+
+      <div class="title">
+        <div>RELACIÓN DE LICENCIAS MÉDICAS CORRESPONDIENTES AL</div>
+        <div>PERSONAL DE BASE A DISPOSICIÓN (PROTOCOLO)</div>
+        <div class="month">{{ periodo }}</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenido -->
+  <main class="doc-body">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- RUNNING FOOTER: dirección institucional -->
+  <footer class="doc-footer">
+    {% if footer_address %}
+      <div class="footer-address">{{ footer_address }}</div>
+    {% endif %}
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,109 @@
+{% extends "tramites/base.html" %}
+
+{% block title %}Folio {{ folio.folio }} | SEGEY Trámites{% endblock %}
+
+{% block content %}
+<section class="module-shell module-shell--form">
+    <div class="module-shell__header">
+        <div class="module-shell__intro">
+            <p class="module-shell__eyebrow">Folios</p>
+            <h1 class="module-shell__title">{{ folio.folio }}</h1>
+            <p class="module-shell__lead">Detalle y actividad del folio.</p>
+        </div>
+        <div class="module-shell__actions">
+            <a class="btn btn--ghost btn--md" href="{% url 'tramites:folio-list' %}">Volver</a>
+            {% if perms.licencias.change_folioregistro %}
+            <a class="btn btn--primary btn--md" href="{% url 'tramites:folio-update' folio.pk %}">Editar</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="tramite-form-container">
+        <div class="tramite-form">
+            <div class="data-grid">
+                <div class="data-item">
+                    <span class="data-label">Folio</span>
+                    <span class="data-value">{{ folio.folio }}</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Tipo</span>
+                    <span class="data-value">{{ folio.get_tipo_display }}</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Asociado(s)</span>
+                    <span class="data-value">
+                        {% if tramites_asociados %}
+                        {% with tramites=tramites_asociados %}
+                        <div class="help-text">Trámites asociados ({{ tramites|length }})</div>
+                        <div class="chip-group">
+                            {% for tramite in tramites %}
+                            <a class="chip chip--strong" href="{% url 'tramites:tramite-caso-detail' tramite.caso_id tramite.pk %}" target="_blank" rel="noopener">Trámite #{{ tramite.pk }} (Caso #{{ tramite.caso_id }})</a>
+                            {% endfor %}
+                        </div>
+                        {% endwith %}
+                        {% endif %}
+                        {% if casos_asociados %}
+                        {% with casos=casos_asociados %}
+                        <div class="help-text">Casos asociados ({{ casos|length }})</div>
+                        <div class="chip-group">
+                            {% for caso in casos %}
+                            <a class="chip" href="{% url 'tramites:casointerno-detail' caso.pk %}" target="_blank" rel="noopener">Caso #{{ caso.pk }}</a>
+                            {% endfor %}
+                        </div>
+                        {% endwith %}
+                        {% endif %}
+                        {% if not tramites_asociados and not casos_asociados %}
+                        -
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Creado por</span>
+                    <span class="data-value">{{ folio.creado_por|default:"-" }}</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Creado en</span>
+                    <span class="data-value">{{ folio.creado_en|date:"d/m/Y H:i" }}</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Estado</span>
+                    <span class="data-value">{% if folio.activo %}Activo{% else %}Inactivo{% endif %}</span>
+                </div>
+            </div>
+
+            {% if folio.notas %}
+            <section class="form-subsection">
+                <h2 class="section-title">Notas</h2>
+                <p>{{ folio.notas }}</p>
+            </section>
+            {% endif %}
+
+            <section class="form-subsection">
+                <h2 class="section-title">Historial de actividades</h2>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Acción</th>
+                            <th>Usuario</th>
+                            <th>Fecha</th>
+                            <th>Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for act in actividades %}
+                        <tr>
+                            <td>{{ act.get_accion_display }}</td>
+                            <td>{{ act.usuario|default:"-" }}</td>
+                            <td>{{ act.creado_en|date:"d/m/Y H:i" }}</td>
+                            <td>{{ act.detalle|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="table__empty">Sin actividades registradas.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+        </div>
+    </div>
+</section>
+{% endblock %}

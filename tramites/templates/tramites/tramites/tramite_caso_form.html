@@ -1,8 +1,70 @@
 {% extends "tramites/base.html" %}
+{% load static %}
 
 {% block title %}{{ form.instance.pk|yesno:"Editar trámite del caso,Agregar trámite al caso" }} | SEGEY Trámites{% endblock %}
 
 {% block content %}
+<style>
+    .incidencias-card {
+        background: var(--white);
+        border: 1px solid rgba(91, 15, 40, 0.08);
+        border-radius: 16px;
+        box-shadow: var(--shadow-sm);
+        padding: 1.1rem 1.2rem;
+    }
+    .incidencias-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    .incidencias-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .incidencias-body {
+        margin-top: 0.75rem;
+        display: grid;
+        gap: 1rem;
+    }
+    .incidencias-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+    .incidencias-summary {
+        background: var(--neutral-50);
+        border: 1px dashed rgba(91, 15, 40, 0.12);
+        border-radius: 12px;
+        padding: 0.9rem 1rem;
+        color: var(--neutral-700);
+    }
+    .captura-guiada__summary {
+        background: var(--neutral-50);
+        border: 1px solid rgba(91, 15, 40, 0.12);
+        border-radius: 12px;
+        padding: 0.85rem 1rem;
+        color: var(--neutral-700);
+        margin-bottom: 0.8rem;
+    }
+    .captura-guiada__critical {
+        display: inline-block;
+        padding: 0.2rem 0.45rem;
+        border-radius: 999px;
+        background: #fef2f2;
+        color: #991b1b;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+    }
+    .captura-guiada__ok {
+        color: #065f46;
+        font-weight: 600;
+    }
+    .captura-guiada__warn {
+        color: #991b1b;
+        font-weight: 600;
+    }
+</style>
 <section class="module-shell module-shell--form">
     <div class="module-shell__header">
         <div class="module-shell__intro">
@@ -22,20 +84,329 @@
         </div>
     </div>
 
-    <form method="post" class="tramite-form" data-tramite-caso-form>
+    <form method="post" enctype="multipart/form-data" class="tramite-form" data-tramite-caso-form data-captura-guiada-form="true" data-captura-config-script="captura-guiada-config-tramite" data-captura-tipo-field="{{ form.tipo.id_for_label }}" data-captura-estatus-field="{{ form.estatus.id_for_label }}" data-captura-checklist-input="{{ form.checklist_documental_payload.id_for_label }}" data-captura-model-input="{{ form.checklist_documental.id_for_label }}" data-captura-enforce-critical="false" data-trabajadores-editable="true" data-empleado-lookup="{{ empleado_lookup_url }}" data-centro-can-delete="{% if perms.licencias.delete_plantillaregistro %}true{% else %}false{% endif %}" data-lookup-url="{{ cct_lookup_url }}" data-cct-api="{{ cct_api_url }}" data-cct-can-create="{% if perms.licencias.add_plantillacentrotrabajo %}true{% else %}false{% endif %}" data-cct-can-edit="{% if perms.licencias.change_plantillacentrotrabajo %}true{% else %}false{% endif %}" data-cct-can-delete="{% if perms.licencias.delete_plantillacentrotrabajo %}true{% else %}false{% endif %}" data-duplicados-form data-duplicados-type="tramite" data-duplicados-id="{{ form.instance.pk|default:'' }}">
         {% csrf_token %}
-        {% if form.non_field_errors %}
+        {{ form.cct }}
+        {{ form.checklist_documental }}
+        {{ form.checklist_documental_payload }}
+        {% if form.errors %}
         <div class="alert alert--danger">
-            {{ form.non_field_errors }}
+            <p><strong>No se pudo guardar el trámite.</strong> Revisa los siguientes errores:</p>
+            <ul>
+                {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+                {% for field in form %}
+                    {% for error in field.errors %}
+                    <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
         </div>
         {% endif %}
 
-        <div class="form-subsection">
+        <section class="form-subsection" data-trabajador-summary data-target-form="tramite">
+            <div class="section-header">
+                <h2 class="section-title">Datos del trabajador (heredado editable)</h2>
+                <a class="btn btn--ghost btn--sm" href="{% url 'tramites:casointerno-update' caso.pk %}">Editar en caso</a>
+            </div>
+            <article class="card plantilla-card">
+                <div class="card__body">
+                    <div class="form-grid">
+                        <div class="form-field form-field--full">
+                            <label for="{{ form.trabajador_principal_nombre.id_for_label }}">Nombre del trabajador principal</label>
+                            {{ form.trabajador_principal_nombre }}
+                            {{ form.trabajador_principal }}
+                            {{ form.trabajadores_adicionales }}
+                            {{ form.trabajadores_centros }}
+                            {{ form.trabajadores_manuales }}
+                            <datalist id="trabajador-options"></datalist>
+                            <p class="help-text">{{ form.trabajador_principal_nombre.help_text }}</p>
+                            {% for error in form.trabajador_principal_nombre.errors %}
+                            <span class="error-text">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="form-field form-field--full">
+                            <label for="trabajador-adicional-input">Trabajadores adicionales</label>
+                            <input
+                                type="search"
+                                id="trabajador-adicional-input"
+                                class="form-input"
+                                placeholder="Buscar por nombre, RFC o CURP"
+                                data-trabajador-extra-lookup
+                                data-lookup-url="{{ empleado_lookup_url }}"
+                                list="trabajador-extra-options"
+                            >
+                            <div class="field-actions">
+                                <button type="button" class="btn btn--secondary btn--sm" data-trabajador-extra-add>Agregar trabajador</button>
+                                <button type="button" class="btn btn--secondary btn--sm" data-trabajador-manual-open>Nuevo trabajador</button>
+                                <button type="button" class="btn btn--ghost btn--sm" data-trabajadores-clear>Limpiar trabajadores</button>
+                            </div>
+                            <datalist id="trabajador-extra-options"></datalist>
+                        </div>
+                    </div>
+                    <div class="plantilla-card__section plantilla-card__section--summary">
+                        <p class="plantilla-card__section-title">Centros de trabajo recientes por trabajador</p>
+                        <div data-trabajadores-centros>
+                            <p class="help-text">Selecciona un trabajador para ver sus centros de trabajo recientes.</p>
+                        </div>
+                    </div>
+                    <div class="table-responsive table-responsive--mobile">
+                        <table class="table table--responsive table--auto">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>RFC</th>
+                                    <th>CURP</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody data-trabajadores-extra-rows>
+                                <tr class="table__empty-row">
+                                    <td colspan="4" class="table__empty">No hay trabajadores adicionales.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </article>
+            <article class="card plantilla-card">
+                <div class="card__body">
+                    <div class="plantilla-card__section plantilla-card__section--summary">
+                        <p class="plantilla-card__section-title">Centros de trabajo del caso</p>
+                        <div class="plantilla-centros">
+                            <div class="plantilla-centros__header">
+                                <span>CCT</span>
+                                <span>Nombre CT</span>
+                                <span>Asesor jurídico</span>
+                            </div>
+                            {% if caso.cct_id %}
+                            <div class="plantilla-centros__row">
+                                <span>{{ caso.cct_id }} <span class="chip">Principal</span></span>
+                                <span>{{ caso.cct_nombre|default:"-" }}</span>
+                                <span>{{ caso.asesor_cct|default:"-" }}</span>
+                            </div>
+                            {% endif %}
+                            {% for centro in caso.centros_trabajo_adicionales.all %}
+                            <div class="plantilla-centros__row">
+                                <span>{{ centro.cct }} <span class="chip">Adicional</span></span>
+                                <span>{{ centro.nombre }}</span>
+                                <span>{{ centro.asesor|default:"-" }}</span>
+                            </div>
+                            {% empty %}
+                            {% if not caso.cct_id %}
+                            <div class="plantilla-centros__row">
+                                <span>-</span>
+                                <span>-</span>
+                                <span>-</span>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </article>
+            {% for resumen in trabajadores_resumen %}
+            <article class="card plantilla-card">
+                <div class="card__body">
+                    <div class="plantilla-card__header plantilla-card__header--summary">
+                        <div>
+                            <p class="plantilla-summary__eyebrow">
+                                {% if resumen.es_principal %}Trabajador principal{% else %}Trabajador adicional{% endif %}
+                            </p>
+                            <h3 class="card__title">{{ resumen.trabajador.nombre }}</h3>
+                            <p class="text-small text-muted">
+                                RFC: {{ resumen.trabajador.rfc|default:"Sin RFC" }} · CURP: {{ resumen.trabajador.curp|default:"Sin CURP" }}
+                            </p>
+                        </div>
+                        <div class="plantilla-card__meta">
+                            {% if resumen.ultimo_ciclo %}
+                            <span class="chip chip--strong">Ciclo: {{ resumen.ultimo_ciclo }}</span>
+                            {% endif %}
+                            {% if resumen.ultimo_anio %}
+                            <span class="chip">Año: {{ resumen.ultimo_anio }}</span>
+                            {% endif %}
+                            <div class="field-actions" style="margin-top: 0.5rem;">
+                                <button type="button" class="btn btn--ghost btn--sm" data-trabajador-use="generador" data-trabajador-nombre="{{ resumen.trabajador.nombre }}">
+                                    Usar como generador
+                                </button>
+                                <button type="button" class="btn btn--ghost btn--sm" data-trabajador-use="receptor" data-trabajador-nombre="{{ resumen.trabajador.nombre }}">
+                                    Usar como receptor
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="plantilla-card__section plantilla-card__section--summary">
+                        <p class="plantilla-card__section-title">Centros del último ciclo</p>
+                        <div class="plantilla-centros">
+                            <div class="plantilla-centros__header">
+                                <span>CCT</span>
+                                <span>Nombre CT</span>
+                                <span>Asesor jurídico</span>
+                            </div>
+                            {% for centro in resumen.centros %}
+                            <div class="plantilla-centros__row">
+                                <span>{{ centro.cct }}</span>
+                                <span>{{ centro.nombre }}</span>
+                                <span>{{ centro.asesor|default:"-" }}</span>
+                            </div>
+                            {% empty %}
+                            <div class="plantilla-centros__row">
+                                <span>-</span>
+                                <span>-</span>
+                                <span>-</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </article>
+            {% empty %}
+            <div class="alert alert--warning" role="alert">
+                No hay trabajadores vinculados al caso.
+            </div>
+            {% endfor %}
+        </section>
+
+        <section class="form-subsection cct-section">
+            <div class="section-header">
+                <h2 class="section-title">Centro de trabajo del trámite anexo</h2>
+                <button type="button" class="btn btn--ghost btn--sm" data-toggle-section="#cct-tramite-body">Mostrar</button>
+            </div>
+            <div id="cct-tramite-body" class="toggle-section" data-toggle-default="hidden" hidden>
+                <article class="card plantilla-card">
+                    <div class="card__body">
+                        <p class="help-text">Estos datos aplican solo al trámite anexo y no modifican el caso base.</p>
+                        <div class="form-grid">
+                            <div class="form-field form-field--full">
+                                <label for="{{ form.cct_codigo.id_for_label }}">{{ form.cct_codigo.label }}</label>
+                                {{ form.cct_codigo }}
+                                <div class="cct-suggestions surface-subtle" data-cct-suggestions hidden></div>
+                                <datalist id="cct-options">
+                                    {% for cct in cct_catalogo %}
+                                    <option value="{{ cct.cct }}" data-nombre="{{ cct.nombre }}" data-servicio="{{ cct.servicio }}" data-asesor="{{ cct.asesor }}" data-sostenimiento="{{ cct.sostenimiento }}">{{ cct.cct }} · {{ cct.nombre }}</option>
+                                    {% endfor %}
+                                </datalist>
+                                {% if form.cct_codigo.help_text %}
+                                <p class="help-text">{{ form.cct_codigo.help_text }}</p>
+                                {% endif %}
+                                {% for error in form.cct_codigo.errors %}
+                                <span class="error-text">{{ error }}</span>
+                                {% endfor %}
+                                <div class="field-actions acciones-cct">
+                                    <button type="button" class="btn btn--secondary btn--sm" data-cct-action="search">Buscar</button>
+                                    {% if perms.licencias.add_plantillacentrotrabajo %}
+                                    <button type="button" class="btn btn--ghost btn--sm" data-cct-action="create">Nuevo</button>
+                                    {% endif %}
+                                    {% if perms.licencias.change_plantillacentrotrabajo %}
+                                    <button type="button" class="btn btn--ghost btn--sm" data-cct-action="edit">Editar</button>
+                                    {% endif %}
+                                    {% if perms.licencias.delete_plantillacentrotrabajo %}
+                                    <button type="button" class="btn btn--danger btn--sm" data-cct-action="delete">Eliminar</button>
+                                    {% endif %}
+                                </div>
+                                <div class="cct-feedback" data-cct-feedback role="status" aria-live="polite"></div>
+                            </div>
+                            <div class="form-field">
+                                <label for="{{ form.cct_nombre.id_for_label }}">{{ form.cct_nombre.label }}</label>
+                                {{ form.cct_nombre }}
+                                {% for error in form.cct_nombre.errors %}
+                                <span class="error-text">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            <div class="form-field">
+                                <label for="{{ form.cct_modalidad.id_for_label }}">{{ form.cct_modalidad.label }}</label>
+                                {{ form.cct_modalidad }}
+                                {% for error in form.cct_modalidad.errors %}
+                                <span class="error-text">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            <div class="form-field">
+                                <label for="{{ form.cct_sistema.id_for_label }}">{{ form.cct_sistema.label }}</label>
+                                {{ form.cct_sistema }}
+                                {% for error in form.cct_sistema.errors %}
+                                <span class="error-text">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            <div class="form-field">
+                                <label for="{{ form.asesor_cct.id_for_label }}">{{ form.asesor_cct.label }}</label>
+                                {{ form.asesor_cct }}
+                                <p class="help-text">Puedes cambiar el asesor para este trámite anexo sin afectar el caso base.</p>
+                                {% for error in form.asesor_cct.errors %}
+                                <span class="error-text">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="form-subsection usuarios-involucrados">
+            <div class="usuarios-involucrados__card">
+                <div class="usuarios-involucrados__header">
+                    <h2 class="section-title">Usuarios involucrados</h2>
+                    <p class="usuarios-involucrados__subtitle">Selecciona a los usuarios que deben recibir avisos en la bandeja.</p>
+                </div>
+                <div class="usuarios-involucrados__body">
+                    <label class="usuarios-involucrados__label" for="{{ form.usuarios_involucrados.id_for_label }}">
+                        {{ form.usuarios_involucrados.label }}
+                    </label>
+                    {% with selected=form.usuarios_involucrados.value %}
+                    <ul class="usuarios-involucrados__grid">
+                        {% for user in form.usuarios_involucrados.field.queryset %}
+                        {% with checkbox_id="id_usuarios_involucrados_"|add:forloop.counter0|stringformat:"s" %}
+                        <li class="usuarios-involucrados__item">
+                            <label class="usuarios-involucrados__option" for="{{ checkbox_id }}">
+                                <input
+                                    class="usuarios-involucrados__checkbox"
+                                    type="checkbox"
+                                    name="{{ form.usuarios_involucrados.html_name }}"
+                                    value="{{ user.pk }}"
+                                    id="{{ checkbox_id }}"
+                                    {% if selected and user.pk|stringformat:"s" in selected %}checked{% endif %}
+                                >
+                                <span class="usuarios-involucrados__text">
+                                    <span class="usuarios-involucrados__name">
+                                        {{ user.get_full_name|default:user.username }}
+                                    </span>
+                                    <span class="usuarios-involucrados__email">{{ user.email|default:"sin correo" }}</span>
+                                </span>
+                            </label>
+                        </li>
+                        {% endwith %}
+                        {% empty %}
+                        <li class="usuarios-involucrados__empty">No hay usuarios para seleccionar.</li>
+                        {% endfor %}
+                    </ul>
+                    {% endwith %}
+                    {% for error in form.usuarios_involucrados.errors %}
+                    <span class="error-text">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <section class="form-subsection">
             <h2 class="section-title">Datos del trámite</h2>
             <div class="form-grid">
                 <div class="form-field">
-                    <label for="{{ form.tipo.id_for_label }}">{{ form.tipo.label }}</label>
-                    {{ form.tipo }}
+                    <label for="tramite-caso-tipo-typeahead">{{ form.tipo.label }}</label>
+                    <input
+                        type="search"
+                        id="tramite-caso-tipo-typeahead"
+                        name="tramite_caso_tipo_busqueda"
+                        class="form-input"
+                        placeholder="Escribe para buscar tipo..."
+                        data-select-typeahead
+                        data-typeahead-target="#{{ form.tipo.id_for_label }}"
+                        data-typeahead-results="#tipo-tramite-suggestions"
+                    >
+                    <p class="help-text">Escribe para buscar y selecciona una opción de la lista.</p>
+                    <div class="cct-suggestions surface-subtle" id="tipo-tramite-suggestions" hidden></div>
+                    <div class="select-hidden">
+                        {{ form.tipo }}
+                    </div>
                     <div class="field-actions">
                         <button type="button" class="btn btn--ghost btn--sm" data-crud-open="tipo-proceso" data-crud-target="{{ form.tipo.id_for_label }}">Agregar tipo</button>
                         <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="tipo-proceso" data-crud-target="{{ form.tipo.id_for_label }}">Editar seleccionado</button>
@@ -46,61 +417,86 @@
                     <label for="{{ form.fecha.id_for_label }}">{{ form.fecha.label }}</label>
                     {{ form.fecha }}
                 </div>
-                <div class="form-field">
-                    <label for="{{ form.fecha_termino.id_for_label }}">{{ form.fecha_termino.label }}</label>
-                    {{ form.fecha_termino }}
-                    <p class="help-text">Opcional. Define la fecha límite y se calcularán los días restantes.</p>
-                </div>
-                <div class="form-field">
-                    <label>Días restantes</label>
-                    <div class="termino-pill" data-termino-dias-tramite>—</div>
-                    <p class="help-text">Se actualiza automáticamente al elegir la fecha de término.</p>
-                </div>
-                <div class="form-field">
-                    <label for="{{ form.numero_oficio.id_for_label }}">{{ form.numero_oficio.label }}</label>
-                    {{ form.numero_oficio }}
-                    <p class="help-text">Selecciona un prefijo sugerido o escribe el número completo.</p>
-                </div>
-                <div class="form-field">
-                    <label for="prefijo-oficio-select">Prefijos sugeridos</label>
-                    <select id="prefijo-oficio-select" data-prefijo-oficio-select>
-                        <option value="">Selecciona un prefijo para usarlo o editarlo</option>
-                        {% for prefijo in prefijos_oficio %}
-                        <option value="{{ prefijo.id }}">{{ prefijo.nombre }}</option>
-                        {% endfor %}
-                    </select>
-                    <div class="field-actions">
-                        <button type="button" class="btn btn--ghost btn--sm" data-prefijo-oficio-modal-open>Nuevo prefijo</button>
-                        <button type="button" class="btn btn--ghost btn--sm" data-prefijo-oficio-modal-edit>Editar seleccionado</button>
-                        <button type="button" class="btn btn--danger btn--sm" data-prefijo-oficio-modal-delete>Eliminar seleccionado</button>
-                    </div>
-                    <p class="help-text">Al seleccionar un prefijo se colocará en el campo de número de oficio y podrás modificarlo.</p>
-                    <datalist id="prefijo-oficio-options">
-                        {% for prefijo in prefijos_oficio %}
-                        <option value="{{ prefijo.nombre }}"></option>
-                        {% endfor %}
-                    </datalist>
-                </div>
-                <div class="form-field">
-                    <label for="{{ form.estatus.id_for_label }}">{{ form.estatus.label }}</label>
-                    {{ form.estatus }}
-                    <div class="field-actions">
-                        <button type="button" class="btn btn--ghost btn--sm" data-crud-open="estatus-tramite" data-crud-target="{{ form.estatus.id_for_label }}">Agregar estatus</button>
-                        <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="estatus-tramite" data-crud-target="{{ form.estatus.id_for_label }}">Editar seleccionado</button>
-                        <button type="button" class="btn btn--danger btn--sm" data-crud-delete="estatus-tramite" data-crud-target="{{ form.estatus.id_for_label }}">Eliminar seleccionado</button>
-                    </div>
-                </div>
-                <div class="form-field form-field--full">
-                    <label for="comentario-estatus">{{ "Comentario de estatus (opcional)" }}</label>
-                    <textarea id="comentario-estatus" name="comentario_estatus" rows="2" class="form-input" placeholder="Ej. Se recibe documentación o se turna a otra área."></textarea>
-                </div>
                 <div class="form-field form-field--full">
                     <label for="{{ form.asunto.id_for_label }}">{{ form.asunto.label }}</label>
                     {{ form.asunto }}
+                    <p class="help-text">Redacción libre del asunto del trámite.</p>
                 </div>
+            </div>
+        </section>
+
+        <section class="form-subsection">
+            <h2 class="section-title">Número de expediente</h2>
+            <section class="expediente-block">
+                <div class="expediente-block__header">
+                    <h3 class="subsection-title">Número de expediente</h3>
+                    <p class="help-text">Selecciona un prefijo sugerido o escribe el número completo.</p>
+                </div>
+                <div class="form-grid expediente-block__grid">
+                    <div class="form-field form-field--full">
+                        <label for="{{ form.numero_oficio.id_for_label }}">{{ form.numero_oficio.label }}</label>
+                        {{ form.numero_oficio }}
+                        <div class="field-actions">
+                            <button
+                                type="button"
+                                class="btn btn--secondary btn--sm"
+                                data-folio-modal-open
+                                data-folio-tipo="tramite"
+                                data-folio-input="#{{ form.numero_oficio.id_for_label }}"
+                                data-folio-id-input="#{{ form.prefix }}-folio-generado-id"
+                            >
+                                Generar folio
+                            </button>
+                        </div>
+                        <input type="hidden" name="{{ form.prefix }}-folio_generado_id" id="{{ form.prefix }}-folio-generado-id">
+                        <p class="help-text folio-preview-hint" data-folio-preview-hint>El folio generado se confirma al guardar el registro. Si sales sin guardar, se cancelará automáticamente.</p>
+                    </div>
+                    <div class="form-field form-field--full">
+                        <div class="duplicate-alert" data-duplicados-output-expediente hidden></div>
+                    </div>
+                    <div class="form-field form-field--full">
+                        <label for="prefijo-oficio-select">Prefijos sugeridos</label>
+                        <select id="prefijo-oficio-select" data-prefijo-oficio-select>
+                            <option value="">Selecciona un prefijo para usarlo o editarlo</option>
+                            {% for prefijo in prefijos_oficio %}
+                            <option value="{{ prefijo.id }}">{{ prefijo.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="field-actions">
+                            <button type="button" class="btn btn--ghost btn--sm" data-prefijo-oficio-modal-open>Nuevo prefijo</button>
+                            <button type="button" class="btn btn--ghost btn--sm" data-prefijo-oficio-modal-edit>Editar seleccionado</button>
+                            <button type="button" class="btn btn--danger btn--sm" data-prefijo-oficio-modal-delete>Eliminar seleccionado</button>
+                        </div>
+                        <p class="help-text">Al seleccionar un prefijo se colocará en el campo de número de oficio y podrás modificarlo.</p>
+                        <datalist id="prefijo-oficio-options">
+                            {% for prefijo in prefijos_oficio %}
+                            <option value="{{ prefijo.nombre }}"></option>
+                            {% endfor %}
+                        </datalist>
+                    </div>
+                </div>
+            </section>
+        </section>
+
+        <section class="form-subsection">
+            <h2 class="section-title">Solicitante y destinatario</h2>
+            <div class="form-grid">
                 <div class="form-field">
-                    <label for="{{ form.solicitante.id_for_label }}">{{ form.solicitante.label }}</label>
-                    {{ form.solicitante }}
+                    <label for="tramite-caso-solicitante-typeahead">{{ form.solicitante.label }}</label>
+                    <input
+                        type="search"
+                        id="tramite-caso-solicitante-typeahead"
+                        name="tramite_caso_solicitante_busqueda"
+                        class="form-input"
+                        placeholder="Escribe para buscar solicitante..."
+                        data-select-typeahead
+                        data-typeahead-target="#{{ form.solicitante.id_for_label }}"
+                        data-typeahead-results="#solicitante-tramite-suggestions"
+                    >
+                    <div class="cct-suggestions surface-subtle" id="solicitante-tramite-suggestions" hidden></div>
+                    <div class="select-hidden">
+                        {{ form.solicitante }}
+                    </div>
                     <div class="field-actions">
                         <button type="button" class="btn btn--ghost btn--sm" data-crud-open="solicitante" data-crud-target="{{ form.solicitante.id_for_label }}">Nuevo</button>
                         <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="solicitante" data-crud-target="{{ form.solicitante.id_for_label }}">Editar seleccionado</button>
@@ -112,8 +508,21 @@
                     </div>
                 </div>
                 <div class="form-field">
-                    <label for="{{ form.dirigido_a.id_for_label }}">{{ form.dirigido_a.label }}</label>
-                    {{ form.dirigido_a }}
+                    <label for="tramite-caso-destinatario-typeahead">{{ form.dirigido_a.label }}</label>
+                    <input
+                        type="search"
+                        id="tramite-caso-destinatario-typeahead"
+                        name="tramite_caso_destinatario_busqueda"
+                        class="form-input"
+                        placeholder="Escribe para buscar destinatario..."
+                        data-select-typeahead
+                        data-typeahead-target="#{{ form.dirigido_a.id_for_label }}"
+                        data-typeahead-results="#destinatario-tramite-suggestions"
+                    >
+                    <div class="cct-suggestions surface-subtle" id="destinatario-tramite-suggestions" hidden></div>
+                    <div class="select-hidden">
+                        {{ form.dirigido_a }}
+                    </div>
                     <div class="field-actions">
                         <button type="button" class="btn btn--ghost btn--sm" data-crud-open="destinatario" data-crud-target="{{ form.dirigido_a.id_for_label }}">Nuevo</button>
                         <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="destinatario" data-crud-target="{{ form.dirigido_a.id_for_label }}">Editar seleccionado</button>
@@ -124,25 +533,307 @@
                         <span class="label-stack__secondary" data-funcion-detalle></span>
                     </div>
                 </div>
-                <div class="form-field">
-                    <label for="{{ form.tipo_violencia.id_for_label }}">{{ form.tipo_violencia.label }}</label>
-                    {{ form.tipo_violencia }}
-                    <div class="field-actions">
-                        <button type="button" class="btn btn--ghost btn--sm" data-crud-open="tipo-violencia" data-crud-target="{{ form.tipo_violencia.id_for_label }}">Nuevo</button>
-                        <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="tipo-violencia" data-crud-target="{{ form.tipo_violencia.id_for_label }}">Editar seleccionado</button>
-                        <button type="button" class="btn btn--danger btn--sm" data-crud-delete="tipo-violencia" data-crud-target="{{ form.tipo_violencia.id_for_label }}">Eliminar seleccionado</button>
+            </div>
+        </section>
+
+        <section class="form-subsection form-subsection--highlight">
+            <div class="section-header">
+                <h3 class="section-title">Documentos del trámite</h3>
+                <button type="button" class="btn btn--ghost btn--sm" data-toggle-section="#documentos-tramite-body">Mostrar</button>
+            </div>
+            <div id="documentos-tramite-body" class="toggle-section" data-toggle-default="hidden" hidden>
+                <div class="form-grid">
+                    <div class="form-field form-field--full">
+                        <label for="{{ form.minuta.id_for_label }}">{{ form.minuta.label }}</label>
+                        {{ form.minuta }}
+                        {% if form.minuta.help_text %}
+                        <p class="help-text">{{ form.minuta.help_text }}</p>
+                        {% endif %}
+                        <p class="help-text">
+                            Documento actual:
+                            {% if form.instance.pk and form.instance.minuta %}
+                            <a href="{{ form.instance.minuta.url }}" target="_blank" rel="noopener">{{ form.instance.minuta.name }}</a>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </p>
+                        {% if form.instance.pk and form.instance.minuta %}
+                        <div class="help-text">
+                            <button
+                                type="submit"
+                                class="btn btn--danger btn--sm"
+                                formnovalidate
+                                formaction="{% url 'tramites:tramite-caso-minuta-clear' caso.pk form.instance.pk %}"
+                                formmethod="post"
+                            >
+                                Eliminar ahora
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-field form-field--full">
+                        <label for="{{ form.minutas.id_for_label }}">{{ form.minutas.label }}</label>
+                        {{ form.minutas }}
+                        {% if form.minutas.help_text %}
+                        <p class="help-text">{{ form.minutas.help_text }}</p>
+                        {% endif %}
+                        {% if form.instance.pk and form.instance.minutas_adjuntas.all %}
+                        <p class="help-text">Adjuntos actuales:</p>
+                        <ul class="help-text">
+                            {% for minuta in form.instance.minutas_adjuntas.all %}
+                            <li><a href="{{ minuta.archivo.url }}" target="_blank" rel="noopener">{{ minuta.archivo.name }}</a></li>
+                            {% empty %}
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
                     </div>
                 </div>
-                <div class="form-field form-field--full">
-                    <label for="{{ form.observaciones.id_for_label }}">{{ form.observaciones.label }}</label>
-                    {{ form.observaciones }}
+            </div>
+        </section>
+
+        <section class="form-subsection captura-guiada">
+            <div class="section-header">
+                <h2 class="section-title">Checklist documental por etapa</h2>
+                <button type="button" class="btn btn--ghost btn--sm" data-toggle-section="#captura-guiada-tramite-body">Mostrar</button>
+            </div>
+            <div id="captura-guiada-tramite-body" data-toggle-default="show">
+                <p class="module-panel__subtitle">La guía cambia según tipo y estatus. Por ahora es opcional y no bloquea el guardado.</p>
+                <div class="captura-guiada__summary" data-captura-summary role="status" aria-live="polite"></div>
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label for="captura-guiada-etapa-tramite">Etapa documental</label>
+                        <select id="captura-guiada-etapa-tramite" class="form-input" data-captura-stage></select>
+                    </div>
+                </div>
+                <div class="table-responsive table-responsive--mobile">
+                    <table class="table table--responsive table--auto">
+                        <thead>
+                            <tr>
+                                <th>Documento</th>
+                                <th>Crítico</th>
+                                <th>Completado</th>
+                                <th>Notas</th>
+                            </tr>
+                        </thead>
+                        <tbody data-captura-docs-rows>
+                            <tr class="table__empty-row">
+                                <td colspan="4" class="table__empty">Selecciona tipo y estatus para cargar el checklist.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="help-text" data-captura-checklist-help></p>
+                <div class="form-alert" data-captura-alert role="alert" hidden></div>
+            </div>
+        </section>
+
+        <div class="form-subsection">
+            <div class="section-header">
+                <h2 class="section-title">Licencias y cambios de actividad / función</h2>
+                <button type="button" class="btn btn--ghost btn--sm" data-toggle-section="#licencias-tramite-body">Mostrar</button>
+            </div>
+            <div id="licencias-tramite-body" class="toggle-section" data-toggle-default="hidden" hidden>
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label for="{{ form.tipo_prorroga.id_for_label }}">{{ form.tipo_prorroga.label }}</label>
+                        {{ form.tipo_prorroga }}
+                        {% for error in form.tipo_prorroga.errors %}
+                        <span class="error-text">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ form.sindicato.id_for_label }}">{{ form.sindicato.label }}</label>
+                        {{ form.sindicato }}
+                        {% for error in form.sindicato.errors %}
+                        <span class="error-text">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="form-field form-field--full">
+                        <label for="{{ form.diagnostico.id_for_label }}">{{ form.diagnostico.label }}</label>
+                        {{ form.diagnostico }}
+                        <p class="help-text">Describe el diagnóstico médico si aplica.</p>
+                        {% for error in form.diagnostico.errors %}
+                        <span class="error-text">{{ error }}</span>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="form-subsection">
-            <h2 class="section-title">Participantes</h2>
+        <section class="form-subsection">
+            <h2 class="section-title">Término del trámite</h2>
             <div class="form-grid">
+                <div class="form-field">
+                    <label for="{{ form.fecha_termino.id_for_label }}">{{ form.fecha_termino.label }}</label>
+                    {{ form.fecha_termino }}
+                    <p class="help-text">Opcional. Define la fecha límite y se calcularán los días restantes.</p>
+                </div>
+                <div class="form-field">
+                    <label for="{{ form.fecha_termino.id_for_label }}">Días restantes</label>
+                    <div class="termino-pill" data-termino-dias-tramite>—</div>
+                    <p class="help-text">Se actualiza automáticamente al elegir la fecha de término.</p>
+                </div>
+            </div>
+        </section>
+
+        <div class="form-subsection" data-incidencias>
+            <div class="incidencias-card rango-fechas-card">
+                <div class="incidencias-header">
+                    <div>
+                        <h2 class="section-title">Rango de fechas</h2>
+                        <p class="module-panel__subtitle">Indica la fecha de inicio y término que aplican para este trámite.</p>
+                    </div>
+                    <div class="incidencias-actions">
+                        <button type="button" class="btn btn--ghost btn--sm" data-incidencias-toggle>Mostrar/Ocultar</button>
+                        <button type="button" class="btn btn--ghost btn--sm" data-incidencias-clear>Limpiar rango</button>
+                    </div>
+                </div>
+                <div class="incidencias-body" data-incidencias-body hidden>
+                    {{ form.incidencia_nombre_docente }}
+                    {{ form.rangos_fechas_adicionales }}
+                    <div class="form-grid incidencias-grid">
+                        <div class="form-field" data-incidencia-worker-field>
+                            <label for="incidencia-trabajador-select-tramite">Trabajador del rango principal</label>
+                            <select id="incidencia-trabajador-select-tramite" class="form-input" data-incidencia-worker-select>
+                                <option value="">Selecciona un trabajador</option>
+                                {% for resumen in trabajadores_resumen %}
+                                <option value="{{ resumen.trabajador.nombre }}">{{ resumen.trabajador.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            <p class="help-text">Primero selecciona un trabajador registrado en Datos del trabajador.</p>
+                        </div>
+                        <div class="form-field">
+                            <label for="{{ form.incidencia_afiliacion.id_for_label }}">{{ form.incidencia_afiliacion.label }}</label>
+                            {{ form.incidencia_afiliacion }}
+                            <p class="help-text">IMSS calcula la fecha de término; ISSSTE calcula los días.</p>
+                            {% for error in form.incidencia_afiliacion.errors %}
+                            <span class="error-text">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="form-field">
+                            <label for="{{ form.incidencia_fecha_inicio.id_for_label }}">{{ form.incidencia_fecha_inicio.label }}</label>
+                            {{ form.incidencia_fecha_inicio }}
+                            {% for error in form.incidencia_fecha_inicio.errors %}
+                            <span class="error-text">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="form-field">
+                            <label for="{{ form.incidencia_fecha_termino.id_for_label }}">{{ form.incidencia_fecha_termino.label }}</label>
+                            {{ form.incidencia_fecha_termino }}
+                            <p class="help-text">Para IMSS se calcula automáticamente.</p>
+                            {% for error in form.incidencia_fecha_termino.errors %}
+                            <span class="error-text">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="form-field">
+                            <label for="{{ form.incidencia_dias_otorgados.id_for_label }}">{{ form.incidencia_dias_otorgados.label }}</label>
+                            {{ form.incidencia_dias_otorgados }}
+                            <p class="help-text">Para ISSSTE se calcula automáticamente con las fechas.</p>
+                            {% for error in form.incidencia_dias_otorgados.errors %}
+                            <span class="error-text">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="incidencias-summary" data-incidencias-summary>
+                        Selecciona un trabajador para activar el rango principal.
+                    </div>
+
+                    <div class="plantilla-card__section plantilla-card__section--summary rango-fechas-extra">
+                        <div class="field-actions">
+                            <span class="section-subtitle">Rangos de fechas adicionales</span>
+                            <button type="button" class="btn btn--ghost btn--sm" data-rango-fecha-add>Agregar rango</button>
+                        </div>
+                        <p class="help-text">Estos rangos aplican solo al trámite anexo actual.</p>
+                        <div class="table-responsive table-responsive--mobile">
+                            <table class="table table--responsive table--auto">
+                                <thead>
+                                    <tr>
+                                        <th>Trabajador</th>
+                                        <th>Afiliación</th>
+                                        <th>Inicio</th>
+                                        <th>Término</th>
+                                        <th>Días</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody data-rangos-fechas-rows>
+                                    <tr class="table__empty-row">
+                                        <td colspan="6" class="table__empty">No hay rangos de fechas adicionales.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="modal" data-rango-fecha-modal hidden role="dialog" aria-modal="true">
+                        <div class="modal-overlay" data-rango-fecha-close></div>
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-header">
+                                <h3 class="modal-title" data-rango-fecha-title>Agregar rango de fechas</h3>
+                                <button type="button" class="modal-close" data-rango-fecha-close aria-label="Cerrar">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="modal-form" data-rango-fecha-form>
+                                    <input type="hidden" data-rango-fecha-id>
+                                    <div class="modal-field">
+                                        <label for="rango-fecha-worker-tramite">Trabajador</label>
+                                        <select id="rango-fecha-worker-tramite" class="form-input" data-rango-fechas-worker-select>
+                                            <option value="">Selecciona un trabajador</option>
+                                            {% for resumen in trabajadores_resumen %}
+                                            <option value="{{ resumen.trabajador.nombre }}">{{ resumen.trabajador.nombre }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="modal-field">
+                                        <label for="rango-fecha-afiliacion-tramite">Afiliación</label>
+                                        <select id="rango-fecha-afiliacion-tramite" class="form-input" data-rango-fecha-afiliacion>
+                                            <option value="">Selecciona afiliación</option>
+                                            <option value="IMSS">IMSS</option>
+                                            <option value="ISSSTE">ISSSTE</option>
+                                        </select>
+                                    </div>
+                                    <div class="modal-field">
+                                        <label for="rango-fecha-inicio-tramite">Fecha de inicio</label>
+                                        <input type="date" id="rango-fecha-inicio-tramite" class="form-input" data-rango-fecha-inicio>
+                                    </div>
+                                    <div class="modal-field">
+                                        <label for="rango-fecha-termino-tramite">Fecha de término</label>
+                                        <input type="date" id="rango-fecha-termino-tramite" class="form-input" data-rango-fecha-termino>
+                                    </div>
+                                    <div class="modal-field">
+                                        <label for="rango-fecha-dias-tramite">Días otorgados</label>
+                                        <input type="number" id="rango-fecha-dias-tramite" class="form-input" min="1" data-rango-fecha-dias>
+                                    </div>
+                                    <div class="modal-message" data-rango-fecha-message role="alert"></div>
+                                    <div class="modal-actions">
+                                        <button type="button" class="btn btn--primary btn--md" data-rango-fecha-save>Guardar rango</button>
+                                        <button type="button" class="btn btn--secondary btn--md" data-rango-fecha-close>Cancelar</button>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+
+        <div class="form-subsection">
+            <div class="section-header">
+                <h2 class="section-title">Participantes</h2>
+                <button type="button" class="btn btn--ghost btn--sm" data-toggle-section="#participantes-tramite-body">Mostrar</button>
+            </div>
+            <div id="participantes-tramite-body" data-toggle-default="hidden" hidden>
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="participante-generador-select-tramite">Seleccionar trabajador (generador)</label>
+                    <select id="participante-generador-select-tramite" class="form-input" data-trabajador-select data-trabajador-role="generador">
+                        <option value="">Selecciona un trabajador</option>
+                        {% for resumen in trabajadores_resumen %}
+                        <option value="{{ resumen.trabajador.nombre }}">{{ resumen.trabajador.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="help-text">Al elegir, se autocompletan el nombre e iniciales.</p>
+                </div>
                 <div class="form-field">
                     <label for="{{ form.generador_nombre.id_for_label }}">{{ form.generador_nombre.label }}</label>
                     {{ form.generador_nombre }}
@@ -156,6 +847,16 @@
                     {{ form.generador_sexo }}
                 </div>
                 <div class="form-field">
+                    <label for="participante-receptor-select-tramite">Seleccionar trabajador (receptor)</label>
+                    <select id="participante-receptor-select-tramite" class="form-input" data-trabajador-select data-trabajador-role="receptor">
+                        <option value="">Selecciona un trabajador</option>
+                        {% for resumen in trabajadores_resumen %}
+                        <option value="{{ resumen.trabajador.nombre }}">{{ resumen.trabajador.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="help-text">Al elegir, se autocompletan el nombre e iniciales.</p>
+                </div>
+                <div class="form-field">
                     <label for="{{ form.receptor_nombre.id_for_label }}">{{ form.receptor_nombre.label }}</label>
                     {{ form.receptor_nombre }}
                 </div>
@@ -167,6 +868,29 @@
                     <label for="{{ form.receptor_sexo.id_for_label }}">{{ form.receptor_sexo.label }}</label>
                     {{ form.receptor_sexo }}
                 </div>
+            </div>
+            <div class="form-field form-field--full" style="margin-top: 0.5rem;">
+                <div class="duplicate-alert" data-duplicados-output-participantes hidden></div>
+            </div>
+            <div class="form-field form-field--full">
+                <div class="field-actions">
+                    <span class="section-subtitle">Generadores adicionales</span>
+                    <button type="button" class="btn btn--ghost btn--sm" data-generador-adicional-add>Agregar generador</button>
+                </div>
+                <table class="table table--interactive">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Iniciales NNA</th>
+                            <th>Sexo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody data-generadores-rows>
+                        <tr class="table__empty-row"><td colspan="4" class="table__empty">No hay generadores adicionales.</td></tr>
+                    </tbody>
+                </table>
+                {{ form.generadores_adicionales }}
             </div>
             <div class="form-field form-field--full">
                 <div class="field-actions">
@@ -188,7 +912,85 @@
                 </table>
                 {{ form.receptores_adicionales }}
             </div>
+            </div>
         </div>
+
+        <div class="form-subsection form-subsection--highlight">
+            <div class="section-header">
+                <h2 class="section-title">Tipo de violencia</h2>
+                <button type="button" class="btn btn--ghost btn--sm" data-toggle-section="#violencia-tramite-body">Mostrar</button>
+            </div>
+            <div id="violencia-tramite-body" class="toggle-section" data-toggle-default="hidden" hidden>
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="{{ form.tipo_violencia.id_for_label }}">{{ form.tipo_violencia.label }}</label>
+                    {{ form.tipo_violencia }}
+                    <div class="field-actions">
+                        <button type="button" class="btn btn--ghost btn--sm" data-crud-open="tipo-violencia" data-crud-target="{{ form.tipo_violencia.id_for_label }}">Nuevo</button>
+                        <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="tipo-violencia" data-crud-target="{{ form.tipo_violencia.id_for_label }}">Editar seleccionado</button>
+                        <button type="button" class="btn btn--danger btn--sm" data-crud-delete="tipo-violencia" data-crud-target="{{ form.tipo_violencia.id_for_label }}">Eliminar seleccionado</button>
+                    </div>
+                    <p class="help-text">Opcional. Selecciona un tipo y si no existe, créalo desde aquí.</p>
+                </div>
+                <div class="form-field form-field--full card-participante">
+                    <div class="field-actions">
+                        <span class="section-subtitle">Tipos de violencia adicionales</span>
+                        <button type="button" class="btn btn--ghost btn--sm" data-violencia-adicional-add>Agregar tipo</button>
+                    </div>
+                    {{ form.tipos_violencia_adicionales }}
+                    <table class="table table--interactive">
+                        <thead>
+                            <tr>
+                                <th>Tipo de violencia</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody data-violencias-rows>
+                            <tr class="table__empty-row"><td colspan="2" class="table__empty">No hay tipos adicionales.</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="help-text">Usa el selector principal y agrega todos los tipos extra que apliquen.</p>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <section class="form-subsection form-subsection--highlight status-management">
+            <h2 class="section-title">Observaciones y estatus del trámite</h2>
+            <div class="form-grid">
+                <div class="form-field form-field--full">
+                    <label for="{{ form.observaciones.id_for_label }}">{{ form.observaciones.label }}</label>
+                    {{ form.observaciones }}
+                </div>
+                <div class="form-field status-management">
+                    <label for="tramite-caso-estatus-typeahead">{{ form.estatus.label }}</label>
+                    <input
+                        type="search"
+                        id="tramite-caso-estatus-typeahead"
+                        name="tramite_caso_estatus_busqueda"
+                        class="form-input"
+                        placeholder="Escribe para buscar estatus..."
+                        data-select-typeahead
+                        data-typeahead-target="#{{ form.estatus.id_for_label }}"
+                        data-typeahead-results="#estatus-tramite-suggestions"
+                    >
+                    <p class="help-text">Selecciona un estatus existente; no escribas uno nuevo aquí.</p>
+                    <div class="cct-suggestions surface-subtle" id="estatus-tramite-suggestions" hidden></div>
+                    <div class="select-hidden">
+                        {{ form.estatus }}
+                    </div>
+                    <div class="field-actions" data-estatus-actions>
+                        <button type="button" class="btn btn--ghost btn--sm" data-crud-open="estatus-tramite" data-crud-target="{{ form.estatus.id_for_label }}">Agregar estatus</button>
+                        <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="estatus-tramite" data-crud-target="{{ form.estatus.id_for_label }}">Editar seleccionado</button>
+                        <button type="button" class="btn btn--danger btn--sm" data-crud-delete="estatus-tramite" data-crud-target="{{ form.estatus.id_for_label }}">Eliminar seleccionado</button>
+                    </div>
+                </div>
+                <div class="form-field form-field--full">
+                    <label for="comentario-estatus">{{ "Comentario de estatus (opcional)" }}</label>
+                    <textarea id="comentario-estatus" name="comentario_estatus" rows="2" class="form-input" placeholder="Ej. Se recibe documentación o se turna a otra área."></textarea>
+                </div>
+            </div>
+        </section>
 
         <div class="form-actions">
             <button type="submit" class="btn btn--primary btn--md">
@@ -205,6 +1007,38 @@
     </form>
 </section>
 
+<div class="modal" data-trabajador-manual-modal hidden role="dialog" aria-modal="true">
+    <div class="modal-overlay" data-trabajador-manual-close></div>
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3 class="modal-title" data-trabajador-manual-title>Agregar trabajador nuevo</h3>
+            <button type="button" class="modal-close" data-trabajador-manual-close aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form class="modal-form" data-trabajador-manual-form>
+                <input type="hidden" name="id" data-trabajador-manual-id>
+                <div class="modal-field">
+                    <label for="tramite-trabajador-manual-nombre">Nombre completo</label>
+                    <input type="text" id="tramite-trabajador-manual-nombre" name="nombre" maxlength="255" required>
+                </div>
+                <div class="modal-field">
+                    <label for="tramite-trabajador-manual-rfc">RFC (opcional)</label>
+                    <input type="text" id="tramite-trabajador-manual-rfc" name="rfc" maxlength="13" placeholder="Ej. ABCD900101XXX">
+                </div>
+                <div class="modal-field">
+                    <label for="tramite-trabajador-manual-curp">CURP (opcional)</label>
+                    <input type="text" id="tramite-trabajador-manual-curp" name="curp" maxlength="18" placeholder="Ej. ABCD900101HYNXXX00">
+                </div>
+                <div class="modal-message" data-trabajador-manual-message role="alert"></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn--primary btn--md">Guardar trabajador</button>
+                    <button type="button" class="btn btn--secondary btn--md" data-trabajador-manual-close>Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div class="modal" id="receptor-adicional-modal" hidden role="dialog" aria-modal="true">
     <div class="modal-overlay" data-modal-close></div>
     <div class="modal-dialog" role="document">
@@ -212,7 +1046,7 @@
             <h3 class="modal-title" data-modal-title>Agregar receptor adicional</h3>
             <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
         </div>
-        <div class="modal-body">
+            <div class="modal-body">
             <form id="receptor-adicional-form" class="modal-form">
                 <fieldset id="receptor-adicional-fields">
                     <div class="modal-field">
@@ -235,6 +1069,96 @@
                 <div class="modal-message" data-modal-message role="alert"></div>
                 <div class="modal-actions">
                     <button type="submit" class="btn btn--primary btn--md" data-receptor-adicional-save>Guardar</button>
+                    <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="generador-adicional-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title" data-modal-title>Agregar generador adicional</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="generador-adicional-form" class="modal-form">
+                    <fieldset id="generador-adicional-fields">
+                        <div class="form-field">
+                            <label for="generador-adicional-nombre">Nombre</label>
+                            <input type="text" id="generador-adicional-nombre" name="nombre" maxlength="255">
+                        </div>
+                        <div class="form-field">
+                            <label for="generador-adicional-iniciales">Iniciales del NNA (Ej. A.B.C.D.)</label>
+                            <input type="text" id="generador-adicional-iniciales" name="iniciales" maxlength="50" placeholder="Ej. A.B.C.D.">
+                        </div>
+                        <div class="form-field">
+                            <label for="generador-adicional-sexo">Sexo del NNA</label>
+                            <select id="generador-adicional-sexo" name="sexo">
+                                <option value="">Selecciona</option>
+                                <option value="M">Mujer</option>
+                                <option value="H">Hombre</option>
+                            </select>
+                        </div>
+                    </fieldset>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn--ghost btn--md" data-modal-close>Cancelar</button>
+                        <button type="submit" class="btn btn--primary btn--md" data-generador-adicional-save>Guardar</button>
+                    </div>
+                </form>
+                <p class="modal-message" data-modal-message style="display: none;"></p>
+            </div>
+        </div>
+    </div>
+
+<div class="modal" id="cct-modal" hidden role="dialog" aria-modal="true">
+    <div class="modal-overlay" data-modal-close></div>
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3 class="modal-title" data-modal-title>Registrar CCT</h3>
+            <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body modal-body--stack">
+            <section class="modal-section">
+                <label for="cct-search">Buscar en el catálogo</label>
+                <input type="search" id="cct-search" placeholder="Escribe CCT, nombre o municipio" data-cct-search>
+                <p class="modal-hint" data-cct-hint>Escribe al menos un carácter para ver resultados del catálogo.</p>
+                <div class="modal-results" data-cct-results></div>
+            </section>
+            <form id="cct-form" class="modal-form">
+                <div class="modal-field">
+                    <label for="cct-codigo">CCT</label>
+                    <input type="text" id="cct-codigo" name="cct" required maxlength="12">
+                </div>
+                <div class="modal-field">
+                    <label for="cct-nombre">Nombre</label>
+                    <input type="text" id="cct-nombre" name="nombre" required maxlength="255">
+                </div>
+                <div class="modal-field">
+                    <label for="cct-servicio">Modalidad</label>
+                    <input type="text" id="cct-servicio" name="servicio" maxlength="255">
+                </div>
+                <div class="modal-field">
+                    <label for="cct-sostenimiento">Sistema</label>
+                    <input type="text" id="cct-sostenimiento" name="sostenimiento" maxlength="255">
+                </div>
+                <div class="modal-field">
+                    <label for="cct-asesor">Asesor</label>
+                    <input type="text" id="cct-asesor" name="asesor" maxlength="255">
+                </div>
+                <div class="modal-field">
+                    <label for="cct-municipio">Municipio</label>
+                    <input type="text" id="cct-municipio" name="municipio" maxlength="255">
+                </div>
+                <div class="modal-field">
+                    <label for="cct-turno">Turno</label>
+                    <input type="text" id="cct-turno" name="turno" maxlength="255">
+                </div>
+                <div class="modal-message" data-modal-message role="alert"></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn--primary btn--md" data-cct-save>Guardar</button>
                     <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
                 </div>
             </form>
@@ -427,4 +1351,86 @@
         </div>
     </div>
 </div>
+<div class="modal" id="folio-generar-modal" hidden role="dialog" aria-modal="true">
+    <div class="modal-overlay" data-modal-close></div>
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3 class="modal-title">Generar folio</h3>
+            <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form method="post" action="{% url 'tramites:folio-generar' %}" id="folio-generar-form" data-folio-preview-url="{% url 'tramites:folio-generar-preview' %}" data-folio-cancel-url="{% url 'tramites:folio-generar-cancelar' %}">
+                {% csrf_token %}
+                <input type="hidden" name="tipo" id="folio-tipo">
+                <input type="hidden" name="caso_id" id="folio-caso-id">
+                <input type="hidden" name="tramite_id" id="folio-tramite-id">
+                <input type="hidden" name="next" id="folio-next">
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label for="folio-anio-display">Año</label>
+                        <input type="text" id="folio-anio-display" name="anio_display" class="form-input" value="{% now 'Y' %}" readonly>
+                    </div>
+                    <div class="form-field form-field--full">
+                        <label for="folio-prefijo">Prefijo</label>
+                        <select id="folio-prefijo" name="prefijo_id" class="form-input">
+                            <option value="">Selecciona un prefijo</option>
+                            {% for prefijo in folio_prefijos %}
+                            <option value="{{ prefijo.id }}">{{ prefijo.nombre }}{% if prefijo.descripcion %} · {{ prefijo.descripcion }}{% endif %}</option>
+                            {% endfor %}
+                        </select>
+                        {% if not folio_prefijos %}
+                        <p class="help-text help-text--warning">No hay prefijos activos. Agrega uno con “Nuevo prefijo”.</p>
+                        {% endif %}
+                        <div class="field-actions">
+                            <button type="button" class="btn btn--ghost btn--sm" data-crud-open="prefijo-folio" data-crud-target="folio-prefijo">Nuevo prefijo</button>
+                            <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="prefijo-folio" data-crud-target="folio-prefijo">Editar seleccionado</button>
+                            <button type="button" class="btn btn--danger btn--sm" data-crud-delete="prefijo-folio" data-crud-target="folio-prefijo">Eliminar seleccionado</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn--primary btn--md">Generar folio</button>
+                    <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="prefijo-folio-modal" hidden role="dialog" aria-modal="true">
+    <div class="modal-overlay" data-modal-close></div>
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3 class="modal-title" data-modal-title>Agregar prefijo de folio</h3>
+            <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="prefijo-folio-form" class="modal-form">
+                <fieldset id="prefijo-folio-fields">
+                    <div class="modal-field">
+                        <label for="prefijo-folio-nombre">Prefijo</label>
+                        <input type="text" id="prefijo-folio-nombre" name="nombre" required maxlength="255">
+                    </div>
+                    <div class="modal-field">
+                        <label for="prefijo-folio-descripcion">Descripción</label>
+                        <textarea id="prefijo-folio-descripcion" name="descripcion" maxlength="500" rows="3"></textarea>
+                    </div>
+                    <div class="modal-field">
+                        <label>
+                            <input type="checkbox" id="prefijo-folio-activo" name="esta_activo" checked>
+                            Activo
+                        </label>
+                    </div>
+                </fieldset>
+                <div class="modal-message" data-modal-message role="alert"></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn--primary btn--md" data-prefijo-folio-save>Guardar</button>
+                    <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{{ captura_guiada_config|json_script:"captura-guiada-config-tramite" }}
+<script src="{% static 'js/captura_guiada.js' %}?v=20260218-3" defer></script>
 {% endblock %}

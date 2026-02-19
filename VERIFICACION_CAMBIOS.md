@@ -172,6 +172,8 @@ print(form.is_valid())  # Debe ser True
 
 ### Antes de Desplegar (obligatoria - Definition of Done)
 
+- [ ] Tailwind compilado (`npm run tailwind:build`) y `tramites/static/css/tailwind.css` actualizado
+- [ ] La base de templates carga `{% static 'css/tailwind.css' %}` sin regressiones visuales
 - [ ] Test 1: Crear trámite - ✅ PASÓ
 - [ ] Test 2: Filtrar trámites - ✅ PASÓ
 - [ ] Test 3: Editar trámite y cambiar estatus - ✅ PASÓ

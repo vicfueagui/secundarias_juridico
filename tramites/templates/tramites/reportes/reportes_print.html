@@ -1,0 +1,234 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Reporte de trámites</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{% static 'css/reportes_print.css' %}">
+</head>
+<body>
+    <header class="report-header">
+        <div class="report-header__title">Reporte de trámites filtrados</div>
+        <div class="report-header__meta">
+            <span>Fecha de impresión: {% now "d/m/Y H:i" %}</span>
+            <span>Total de casos: {{ casos|length }}</span>
+        </div>
+    </header>
+
+    <section class="filters-summary">
+        <h2>Filtros aplicados</h2>
+        <ul>
+            {% for field in filter.form.visible_fields %}
+                {% if field.value %}
+                <li><strong>{{ field.label }}:</strong> {{ field.value }}</li>
+                {% endif %}
+            {% endfor %}
+            {% if not has_filters %}
+            <li>Sin filtros aplicados.</li>
+            {% endif %}
+        </ul>
+    </section>
+
+    <div class="print-actions no-print">
+        <button type="button" class="btn-print" onclick="window.print()">Imprimir</button>
+    </div>
+
+    <table class="report-table">
+        <thead>
+            <tr>
+                <th>Identificación</th>
+                <th>Trámite principal</th>
+                <th>Detalle, estatus y anexos</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for caso in casos %}
+            <tr>
+                <td>
+                    <div><strong>CCT:</strong> {{ caso.cct_id }}</div>
+                    <div>{{ caso.cct_nombre }}</div>
+                    <div><strong>Sistema:</strong> {{ caso.cct_sistema|default:"-" }}</div>
+                    <div><strong>Modalidad:</strong> {{ caso.cct_modalidad|default:"-" }}</div>
+                    <div><strong>Asesor:</strong> {{ caso.asesor_cct|default:"-" }}</div>
+                    <div>
+                        <strong>Centros adicionales:</strong>
+                        {% with adicionales=caso.centros_trabajo_adicionales.all %}
+                        {% if adicionales %}
+                            {{ adicionales|length }} ·
+                            {% for centro in adicionales %}
+                                {{ centro.cct }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            -
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+                    <div>
+                        <strong>Trabajadores:</strong>
+                        {{ caso.trabajador_listado|default:"-" }}
+                    </div>
+                </td>
+                <td>
+                    <div><strong>Fecha:</strong> {{ caso.fecha_apertura|date:"d/m/Y" }}</div>
+                    <div><strong>Tipo:</strong> {{ caso.tipo_inicial.nombre }}</div>
+                    <div><strong>Estatus actual:</strong> {{ caso.estatus.nombre|default:"-" }}</div>
+                    <div><strong>Expediente:</strong> {{ caso.numero_oficio|default:"-" }}</div>
+                    <div><strong>Folio inicial:</strong> {{ caso.folio_inicial|default:"-" }}</div>
+                    <div><strong>Área de origen:</strong> {{ caso.area_origen_inicial.nombre|default:"-" }}</div>
+                    <div><strong>Fecha oficio inicial:</strong> {{ caso.fecha_oficio_inicial|date:"d/m/Y"|default:"-" }}</div>
+                    <div><strong>Asunto inicial:</strong> {{ caso.asunto_inicial|default:"-" }}</div>
+                    <div><strong>Fecha término:</strong> {{ caso.fecha_termino|date:"d/m/Y"|default:"-" }}</div>
+                </td>
+                <td>
+                    <div><strong>Asunto:</strong> {{ caso.asunto|default:"-" }}</div>
+                    <div><strong>Descripción:</strong> {{ caso.descripcion_breve|default:"-" }}</div>
+                    <div><strong>Solicitante:</strong> {{ caso.solicitante.nombre|default:"-" }}</div>
+                    <div><strong>Dirigido a:</strong> {{ caso.dirigido_a.nombre|default:"-" }}</div>
+                    <div><strong>Tipo de violencia:</strong> {{ caso.tipo_violencia.nombre|default:"-" }}</div>
+                    <div>
+                        <strong>Generador:</strong>
+                        {{ caso.generador_nombre|default:"-" }}
+                        {% if caso.generador_iniciales %} ({{ caso.generador_iniciales }}){% endif %}
+                    </div>
+                    {% if caso.generadores_adicionales %}
+                    <div>
+                        <strong>Generadores adicionales:</strong>
+                        {% for gen in caso.generadores_adicionales %}
+                            {{ gen.nombre|default:"-" }}{% if gen.iniciales %} ({{ gen.iniciales }}){% endif %}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <div>
+                        <strong>Receptor:</strong>
+                        {{ caso.receptor_nombre|default:"-" }}
+                        {% if caso.receptor_iniciales %} ({{ caso.receptor_iniciales }}){% endif %}
+                    </div>
+                    <div>
+                        <strong>Incidencia:</strong>
+                        {{ caso.incidencia_nombre_docente|default:"-" }}
+                        {% if caso.incidencia_afiliacion %} · {{ caso.get_incidencia_afiliacion_display }}{% endif %}
+                        {% if caso.incidencia_fecha_inicio %}
+                            · {{ caso.incidencia_fecha_inicio|date:"d/m/Y" }}
+                        {% endif %}
+                        {% if caso.incidencia_fecha_termino %}
+                            – {{ caso.incidencia_fecha_termino|date:"d/m/Y" }}
+                        {% endif %}
+                        {% if caso.incidencia_dias_otorgados %}
+                            · {{ caso.incidencia_dias_otorgados }} días
+                        {% endif %}
+                    </div>
+                    <div><strong>Observaciones:</strong> {{ caso.observaciones_iniciales|default:"-" }}</div>
+                    <div class="case-section">
+                        <div class="case-section__title">Historial de estatus del caso</div>
+                        {% if caso.historial_estatus.all %}
+                        <ul class="case-list">
+                            {% for cambio in caso.historial_estatus.all %}
+                            <li>
+                                {{ cambio.fecha_estatus_resuelta|date:"d/m/Y"|default:"-" }} (registro {{ cambio.fecha_cambio|date:"d/m/Y H:i" }}):
+                                {{ cambio.estatus_anterior.nombre|default:"-" }} → {{ cambio.estatus_nuevo.nombre|default:"-" }}
+                                {% if cambio.usuario %} ({{ cambio.usuario }}){% endif %}
+                                {% if cambio.comentario %} · {{ cambio.comentario }}{% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <div class="case-muted">Sin cambios de estatus registrados.</div>
+                        {% endif %}
+                    </div>
+                    <div class="case-section">
+                        <div class="case-section__title">Trámites anexos</div>
+                        {% if caso.tramites_relacionados.all %}
+                        <div class="case-muted">Total: {{ caso.tramites_relacionados.count }}</div>
+                        {% for tramite in caso.tramites_relacionados.all %}
+                        <div class="tramite-card">
+                            <div><strong>Fecha:</strong> {{ tramite.fecha|date:"d/m/Y" }}</div>
+                            <div><strong>Tipo:</strong> {{ tramite.tipo.nombre|default:"-" }}</div>
+                            <div><strong>Estatus actual:</strong> {{ tramite.estatus.nombre|default:"-" }}</div>
+                            <div><strong>Expediente:</strong> {{ tramite.numero_oficio|default:"-" }}</div>
+                            <div><strong>Asunto:</strong> {{ tramite.asunto|default:"-" }}</div>
+                            <div><strong>Trabajador:</strong> {{ tramite.trabajador_listado|default:"-" }}</div>
+                            <div>
+                                <strong>Centros adicionales del caso:</strong>
+                                {% with adicionales=caso.centros_trabajo_adicionales.all %}
+                                {% if adicionales %}
+                                    {{ adicionales|length }} ·
+                                    {% for centro in adicionales %}
+                                        {{ centro.cct }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    -
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                            <div><strong>Solicitante:</strong> {{ tramite.solicitante.nombre|default:"-" }}</div>
+                            <div><strong>Dirigido a:</strong> {{ tramite.dirigido_a.nombre|default:"-" }}</div>
+                            <div><strong>Tipo de violencia:</strong> {{ tramite.tipo_violencia.nombre|default:"-" }}</div>
+                            <div><strong>Fecha término:</strong> {{ tramite.fecha_termino|date:"d/m/Y"|default:"-" }}</div>
+                            <div>
+                                <strong>Generador:</strong>
+                                {{ tramite.generador_nombre|default:"-" }}
+                                {% if tramite.generador_iniciales %} ({{ tramite.generador_iniciales }}){% endif %}
+                            </div>
+                            {% if tramite.generadores_adicionales %}
+                            <div>
+                                <strong>Generadores adicionales:</strong>
+                                {% for gen in tramite.generadores_adicionales %}
+                                    {{ gen.nombre|default:"-" }}{% if gen.iniciales %} ({{ gen.iniciales }}){% endif %}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div>
+                                <strong>Receptor:</strong>
+                                {{ tramite.receptor_nombre|default:"-" }}
+                                {% if tramite.receptor_iniciales %} ({{ tramite.receptor_iniciales }}){% endif %}
+                            </div>
+                            <div>
+                                <strong>Incidencia:</strong>
+                                {{ tramite.incidencia_nombre_docente|default:"-" }}
+                                {% if tramite.incidencia_afiliacion %} · {{ tramite.get_incidencia_afiliacion_display }}{% endif %}
+                                {% if tramite.incidencia_fecha_inicio %}
+                                    · {{ tramite.incidencia_fecha_inicio|date:"d/m/Y" }}
+                                {% endif %}
+                                {% if tramite.incidencia_fecha_termino %}
+                                    – {{ tramite.incidencia_fecha_termino|date:"d/m/Y" }}
+                                {% endif %}
+                                {% if tramite.incidencia_dias_otorgados %}
+                                    · {{ tramite.incidencia_dias_otorgados }} días
+                                {% endif %}
+                            </div>
+                            <div><strong>Observaciones:</strong> {{ tramite.observaciones|default:"-" }}</div>
+                            <div class="case-section">
+                                <div class="case-section__title">Historial de estatus del trámite</div>
+                                {% if tramite.historial_estatus.all %}
+                                <ul class="case-list">
+                                    {% for cambio in tramite.historial_estatus.all %}
+                                    <li>
+                                        {{ cambio.fecha_estatus_resuelta|date:"d/m/Y"|default:"-" }} (registro {{ cambio.fecha_cambio|date:"d/m/Y H:i" }}):
+                                        {{ cambio.estatus_anterior.nombre|default:"-" }} → {{ cambio.estatus_nuevo.nombre|default:"-" }}
+                                        {% if cambio.usuario %} ({{ cambio.usuario }}){% endif %}
+                                        {% if cambio.comentario %} · {{ cambio.comentario }}{% endif %}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                                {% else %}
+                                <div class="case-muted">Sin cambios de estatus registrados.</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="case-muted">Sin trámites anexos.</div>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="empty-state">No se encontraron trámites con los filtros actuales.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

@@ -1,0 +1,329 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Reporte ejecutivo juridico - Caso #{{ caso.pk }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{% static 'css/reporte_ejecutivo_print.css' %}">
+</head>
+<body>
+    <header class="exec-header">
+        <div class="exec-header__kicker">SEGEY · Seguimiento juridico interno</div>
+        <h1 class="exec-header__title">Reporte Ejecutivo Juridico del Caso #{{ caso.pk }}</h1>
+        <p class="exec-header__subtitle">
+            Documento de analisis para seguimiento directivo del expediente y sus tramites anexos.
+        </p>
+        <div class="exec-meta-grid">
+            <div class="exec-meta-item">
+                <span class="exec-meta-label">Fecha de emision</span>
+                <span class="exec-meta-value">{{ reporte_generado_en|date:"d/m/Y H:i" }}</span>
+            </div>
+            <div class="exec-meta-item">
+                <span class="exec-meta-label">Expediente</span>
+                <span class="exec-meta-value">{{ caso.numero_oficio|default:"Sin expediente" }}</span>
+            </div>
+            <div class="exec-meta-item">
+                <span class="exec-meta-label">Estatus actual del caso</span>
+                <span class="exec-meta-value">{{ caso.estatus.nombre|default:"Sin estatus" }}</span>
+            </div>
+            <div class="exec-meta-item">
+                <span class="exec-meta-label">Origen del reporte</span>
+                <span class="exec-meta-value">
+                    {% if tramite_foco %}
+                    Resumen de tramite anexo #{{ tramite_foco.pk }}
+                    {% else %}
+                    Resumen general del caso
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <div class="exec-actions no-print">
+        <button type="button" class="btn-print" onclick="window.print()">Imprimir reporte</button>
+        {% if tramite_foco %}
+        <a class="btn-link" href="{% url 'tramites:tramite-caso-detail' caso.pk tramite_foco.pk %}">Volver al tramite anexo</a>
+        {% else %}
+        <a class="btn-link" href="{% url 'tramites:casointerno-detail' caso.pk %}">Volver al caso</a>
+        {% endif %}
+    </div>
+
+    <section class="exec-section">
+        <h2>1. Sintesis ejecutiva</h2>
+        <div class="exec-metrics">
+            <article class="metric">
+                <div class="metric__label">Tramites anexos vinculados</div>
+                <div class="metric__value">{{ total_tramites_relacionados }}</div>
+            </article>
+            <article class="metric">
+                <div class="metric__label">Tramites con estatus definido</div>
+                <div class="metric__value">{{ tramites_con_estatus }}</div>
+            </article>
+            <article class="metric">
+                <div class="metric__label">Usuarios involucrados</div>
+                <div class="metric__value">{{ usuarios_caso|length }}</div>
+            </article>
+            <article class="metric">
+                <div class="metric__label">Minutas del caso</div>
+                <div class="metric__value">{{ minutas_caso|length }}</div>
+            </article>
+        </div>
+        <p class="exec-note">
+            El presente reporte organiza la construccion del caso, su historial de estatus y el seguimiento integral de los tramites anexos para facilitar el analisis juridico directivo.
+        </p>
+    </section>
+
+    <section class="exec-section">
+        <h2>2. Informacion general del caso</h2>
+        <table class="info-table">
+            <tbody>
+                <tr>
+                    <th>Descripcion del caso</th>
+                    <td>{{ caso.descripcion_breve|default:"-" }}</td>
+                    <th>Tipo inicial</th>
+                    <td>{{ caso.tipo_inicial.nombre|default:"-" }}</td>
+                </tr>
+                <tr>
+                    <th>CCT base</th>
+                    <td>{{ caso.cct_id|default:"-" }} · {{ caso.cct_nombre|default:"-" }}</td>
+                    <th>Sistema / Modalidad</th>
+                    <td>{{ caso.cct_sistema|default:"-" }} · {{ caso.cct_modalidad|default:"-" }}</td>
+                </tr>
+                <tr>
+                    <th>Asesor juridico</th>
+                    <td>{{ caso.asesor_cct|default:"-" }}</td>
+                    <th>Fecha de apertura</th>
+                    <td>{{ caso.fecha_apertura|date:"d/m/Y"|default:"-" }}</td>
+                </tr>
+                <tr>
+                    <th>Fecha de termino</th>
+                    <td>{{ caso.fecha_termino|date:"d/m/Y"|default:"-" }}</td>
+                    <th>Asunto</th>
+                    <td>{{ caso.asunto|default:"-" }}</td>
+                </tr>
+                <tr>
+                    <th>Solicitante</th>
+                    <td>{{ caso.solicitante.nombre|default:"-" }}</td>
+                    <th>Dirigido a</th>
+                    <td>{{ caso.dirigido_a.nombre|default:"-" }}</td>
+                </tr>
+                <tr>
+                    <th>Tipo de violencia</th>
+                    <td>{{ caso.tipo_violencia.nombre|default:"-" }}</td>
+                    <th>Tipos de violencia adicionales</th>
+                    <td>
+                        {% if caso.tipos_violencia_adicionales %}
+                            {% for tipo in caso.tipos_violencia_adicionales %}
+                                {{ tipo }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Generador / Receptor</th>
+                    <td>
+                        {{ caso.generador_nombre|default:"-" }}
+                        {% if caso.generador_iniciales %} ({{ caso.generador_iniciales }}){% endif %}
+                        /
+                        {{ caso.receptor_nombre|default:"-" }}
+                        {% if caso.receptor_iniciales %} ({{ caso.receptor_iniciales }}){% endif %}
+                    </td>
+                    <th>Trabajador(es)</th>
+                    <td>
+                        {% if trabajadores_resumen %}
+                            {% for resumen in trabajadores_resumen %}
+                                {{ resumen.trabajador.nombre }}{% if resumen.es_principal %} (principal){% endif %}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            {{ trabajador_listado_caso|default:"-" }}
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Usuarios involucrados</th>
+                    <td colspan="3">
+                        {% if usuarios_caso %}
+                            {% for usuario in usuarios_caso %}
+                                {{ usuario.get_full_name|default:usuario.username }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        {% else %}
+                        Sin usuarios involucrados.
+                        {% endif %}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="exec-section">
+        <h2>3. Construccion cronologica del caso</h2>
+        <table class="timeline-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Etapa</th>
+                    <th>Detalle</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for evento in cronologia_caso %}
+                <tr{% if tramite_foco and evento.tramite_id == tramite_foco.pk %} class="row-focus"{% endif %}>
+                    <td>
+                        {% if evento.categoria == "tramite" or evento.categoria == "caso" %}
+                        {{ evento.fecha|date:"d/m/Y" }}
+                        {% else %}
+                        {{ evento.fecha|date:"d/m/Y H:i" }}
+                        {% endif %}
+                    </td>
+                    <td>{{ evento.etapa }}</td>
+                    <td>{{ evento.detalle }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="table-empty">No hay eventos cronologicos registrados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="exec-section">
+        <h2>4. Historial de estatus del caso</h2>
+        <table class="timeline-table">
+            <thead>
+                <tr>
+                    <th>Fecha del estatus</th>
+                    <th>Fecha de registro</th>
+                    <th>Estatus anterior</th>
+                    <th>Estatus nuevo</th>
+                    <th>Registro</th>
+                    <th>Comentario</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cambio in historial_estatus_caso %}
+                <tr>
+                    <td>{{ cambio.fecha_estatus_resuelta|date:"d/m/Y"|default:"-" }}</td>
+                    <td>{{ cambio.fecha_cambio|date:"d/m/Y H:i" }}</td>
+                    <td>{{ cambio.estatus_anterior.nombre|default:"-" }}</td>
+                    <td>{{ cambio.estatus_nuevo.nombre|default:"-" }}</td>
+                    <td>{{ cambio.usuario|default:"-" }}</td>
+                    <td>{{ cambio.comentario|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="table-empty">Sin cambios de estatus en el caso.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="exec-section">
+        <h2>5. Tramites anexos, estatus e historial</h2>
+        {% for tramite in tramites_relacionados %}
+        <article class="tramite-card{% if tramite_foco and tramite.pk == tramite_foco.pk %} tramite-card--focus{% endif %}">
+            <header class="tramite-card__header">
+                <h3>Tramite #{{ tramite.pk }} · {{ tramite.tipo.nombre|default:"Sin tipo" }}</h3>
+                <div class="badge-row">
+                    <span class="badge">Estatus: {{ tramite.estatus.nombre|default:"Sin estatus" }}</span>
+                    <span class="badge">{% if tramite.es_iniciador %}Iniciador{% else %}Anexo{% endif %}</span>
+                    {% if tramite_foco and tramite.pk == tramite_foco.pk %}
+                    <span class="badge badge--focus">Tramite del resumen actual</span>
+                    {% endif %}
+                </div>
+            </header>
+
+            <table class="info-table info-table--compact">
+                <tbody>
+                    <tr>
+                        <th>Fecha de tramite</th>
+                        <td>{{ tramite.fecha|date:"d/m/Y" }}</td>
+                        <th>Fecha de termino</th>
+                        <td>{{ tramite.fecha_termino|date:"d/m/Y"|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Numero de expediente</th>
+                        <td>{{ tramite.numero_oficio|default:"-" }}</td>
+                        <th>CCT del tramite</th>
+                        <td>{{ tramite.cct_id|default:caso.cct_id }} · {{ tramite.cct_nombre|default:caso.cct_nombre }}</td>
+                    </tr>
+                    <tr>
+                        <th>Asunto</th>
+                        <td>{{ tramite.asunto|default:"-" }}</td>
+                        <th>Observaciones</th>
+                        <td>{{ tramite.observaciones|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Solicitante / Dirigido a</th>
+                        <td>{{ tramite.solicitante.nombre|default:"-" }} / {{ tramite.dirigido_a.nombre|default:"-" }}</td>
+                        <th>Trabajador(es)</th>
+                        <td>{{ tramite.trabajador_listado|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Usuarios involucrados del tramite</th>
+                        <td colspan="3">
+                            {% if tramite.usuarios_involucrados_list %}
+                                {% for usuario in tramite.usuarios_involucrados_list %}
+                                    {{ usuario.get_full_name|default:usuario.username }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            {% else %}
+                            Sin usuarios involucrados en este tramite.
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4 class="subsection-title">Historial de estatus del tramite</h4>
+            <table class="timeline-table">
+                <thead>
+                    <tr>
+                        <th>Fecha del estatus</th>
+                        <th>Fecha de registro</th>
+                        <th>Estatus anterior</th>
+                        <th>Estatus nuevo</th>
+                        <th>Registro</th>
+                        <th>Comentario</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cambio in tramite.historial_estatus_list %}
+                    <tr>
+                        <td>{{ cambio.fecha_estatus_resuelta|date:"d/m/Y"|default:"-" }}</td>
+                        <td>{{ cambio.fecha_cambio|date:"d/m/Y H:i" }}</td>
+                        <td>{{ cambio.estatus_anterior.nombre|default:"-" }}</td>
+                        <td>{{ cambio.estatus_nuevo.nombre|default:"-" }}</td>
+                        <td>{{ cambio.usuario|default:"-" }}</td>
+                        <td>{{ cambio.comentario|default:"-" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="table-empty">Sin historial de estatus para este tramite.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </article>
+        {% empty %}
+        <p class="table-empty">No existen tramites anexos vinculados a este caso.</p>
+        {% endfor %}
+    </section>
+
+    <section class="exec-section">
+        <h2>6. Minutas y anexos documentales</h2>
+        <p><strong>Minutas del caso:</strong> {{ minutas_caso|length }}</p>
+        {% if minutas_caso %}
+        <ul class="doc-list">
+            {% for minuta in minutas_caso %}
+            <li>{{ minuta.archivo.name }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <p class="exec-note">Los documentos asociados a cada tramite anexo pueden revisarse desde su ficha individual en el sistema.</p>
+    </section>
+</body>
+</html>

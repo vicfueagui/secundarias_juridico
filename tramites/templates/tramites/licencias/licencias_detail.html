@@ -1,0 +1,176 @@
+{% extends "tramites/base.html" %}
+
+{% block title %}Licencia {{ licencia.id }} | SEGEY Trámites{% endblock %}
+
+{% block content %}
+{% url 'tramites:licencia-list' as licencia_list_url %}
+<section class="module-shell">
+    <div class="module-shell__header">
+        <div class="module-shell__intro module-shell__intro--spaced">
+            <p class="module-shell__eyebrow">Jurídico · Licencias</p>
+            <h1 class="module-shell__title">Detalle de licencia</h1>
+            <p class="module-shell__lead">Seguimiento completo del trámite y sus validaciones.</p>
+        </div>
+        <div class="module-shell__actions module-shell__actions--stacked">
+            <a class="btn btn--ghost btn--lg" href="{{ request.GET.from_list|default:licencia_list_url }}">Volver</a>
+            {% if perms.licencias.change_licenciaregistro %}
+            <a class="btn btn--primary btn--lg" href="{% url 'tramites:licencia-update' licencia.pk %}?from_list={{ request.get_full_path|urlencode }}">Editar</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="module-panel">
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Resumen del trabajador</h2>
+        </div>
+        <div class="summary-grid">
+            <div>
+                <span class="summary-label">Trabajador</span>
+                <span class="summary-value">{{ licencia.trabajador.nombre }}</span>
+            </div>
+            <div>
+                <span class="summary-label">RFC</span>
+                <span class="summary-value">{{ licencia.trabajador.rfc|default:"-" }}</span>
+            </div>
+            <div>
+                <span class="summary-label">Correo</span>
+                <span class="summary-value">{{ licencia.trabajador_correo|default:"-" }}</span>
+            </div>
+            <div>
+                <span class="summary-label">Celular</span>
+                <span class="summary-value">{{ licencia.trabajador_celular|default:"-" }}</span>
+            </div>
+            <div>
+                <span class="summary-label">Sistema</span>
+                <span class="summary-value">{{ licencia.trabajador_sistema|default:"-" }}</span>
+            </div>
+            <div>
+                <span class="summary-label">Estatus actual</span>
+                <span class="summary-value">
+                    {% if licencia.estatus %}
+                    <span class="status-chip status-chip--{{ licencia.estatus.nombre|slugify }}">{{ licencia.estatus.nombre }}</span>
+                    {% else %}
+                    <span class="status-chip status-chip--default">Sin estatus</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="module-panel">
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Detalle del trámite</h2>
+        </div>
+        <div class="summary-grid">
+            <div>
+                <span class="summary-label">Tipo de trámite</span>
+                <span class="summary-value">{{ licencia.get_tipo_tramite_display }}</span>
+            </div>
+            <div>
+                <span class="summary-label">Prórroga</span>
+                <span class="summary-value">{{ licencia.get_tipo_prorroga_display }}</span>
+            </div>
+            <div>
+                <span class="summary-label">Sindicato</span>
+                <span class="summary-value">{{ licencia.get_sindicato_display }}</span>
+            </div>
+            <div>
+                <span class="summary-label">Fecha del trámite</span>
+                <span class="summary-value">{{ licencia.fecha_tramite|date:"d/m/Y" }}</span>
+            </div>
+            <div>
+                <span class="summary-label">Expediente inicial</span>
+                <span class="summary-value">{{ licencia.numero_expediente|default:"-" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="module-panel">
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Etapas y validaciones</h2>
+        </div>
+        <div class="summary-grid">
+            <div>
+                <span class="summary-label">Respuesta de oficio</span>
+                <span class="summary-value">{{ licencia.get_respuesta_oficio_display|default:"-" }}</span>
+                <span class="summary-value">{{ licencia.respuesta_numero_expediente|default:"-" }}</span>
+                <span class="summary-value">{{ licencia.respuesta_fecha_recepcion|date:"d/m/Y"|default:"-" }}</span>
+            </div>
+            <div>
+                <span class="summary-label">Visto bueno</span>
+                <span class="summary-value">{{ licencia.get_visto_bueno_display|default:"-" }}</span>
+                <span class="summary-value">{{ licencia.visto_bueno_numero_expediente|default:"-" }}</span>
+                <span class="summary-value">{{ licencia.visto_bueno_fecha|date:"d/m/Y"|default:"-" }}</span>
+            </div>
+            <div>
+                <span class="summary-label">Recepción DAF</span>
+                <span class="summary-value">{{ licencia.fecha_recepcion_daf|date:"d/m/Y"|default:"-" }}</span>
+            </div>
+            <div>
+                <span class="summary-label">Cita / incidencia</span>
+                <span class="summary-value">{{ licencia.get_cita_valoracion_display|default:"-" }}</span>
+                <span class="summary-value">{{ licencia.cita_valoracion_numero_expediente|default:"-" }}</span>
+                <span class="summary-value">{{ licencia.cita_valoracion_fecha|date:"d/m/Y"|default:"-" }}</span>
+                <span class="summary-value">{{ licencia.fecha_contacto|date:"d/m/Y"|default:"-" }}</span>
+            </div>
+            <div>
+                <span class="summary-label">Dictamen</span>
+                <span class="summary-value">{{ licencia.dictamen_numero_expediente|default:"-" }}</span>
+                <span class="summary-value">{{ licencia.dictamen_fecha|date:"d/m/Y"|default:"-" }}</span>
+                <span class="summary-value">{{ licencia.dictamen_periodo_de|date:"d/m/Y"|default:"-" }} - {{ licencia.dictamen_periodo_hasta|date:"d/m/Y"|default:"-" }}</span>
+            </div>
+            <div>
+                <span class="summary-label">Notificación</span>
+                <span class="summary-value">{{ licencia.notificacion_numero_expediente|default:"-" }}</span>
+                <span class="summary-value">{{ licencia.notificacion_fecha|date:"d/m/Y"|default:"-" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="module-panel">
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Actualizar estatus</h2>
+        </div>
+        <form method="post" action="{% url 'tramites:licencia-estatus-create' licencia.pk %}">
+            {% csrf_token %}
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="{{ estatus_licencia_form.estatus_nuevo.id_for_label }}">Nuevo estatus</label>
+                    {{ estatus_licencia_form.estatus_nuevo }}
+                </div>
+                <div class="form-field">
+                    <label for="{{ estatus_licencia_form.comentario.id_for_label }}">Comentario</label>
+                    {{ estatus_licencia_form.comentario }}
+                </div>
+            </div>
+            <div class="module-panel__footer">
+                <button type="submit" class="btn btn--primary btn--sm">Guardar estatus</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="module-panel">
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Historial de estatus</h2>
+        </div>
+        <div class="timeline">
+            {% for item in historial_estatus %}
+            <div class="timeline__item">
+                <div class="timeline__meta">
+                    <span>{{ item.fecha_cambio|date:"d/m/Y H:i" }}</span>
+                    <span>{{ item.usuario.username|default:"Sistema" }}</span>
+                </div>
+                <div class="timeline__body">
+                    <strong>{{ item.estatus_anterior|default:"—" }} → {{ item.estatus_nuevo }}</strong>
+                    {% if item.comentario %}
+                    <p>{{ item.comentario }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-muted">Sin cambios de estatus registrados.</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

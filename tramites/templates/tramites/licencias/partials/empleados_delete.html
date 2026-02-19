@@ -1,0 +1,12 @@
+<div class="module-panel__header">
+    <h3 class="module-panel__title">Eliminar trabajador</h3>
+    <p class="module-panel__subtitle">{{ empleado.nombre }}</p>
+</div>
+<form method="post" action="{% url 'tramites:empleado-picker-delete' empleado.pk %}" data-empleado-picker-form>
+    {% csrf_token %}
+    <p>¿Seguro que deseas eliminar este trabajador? Esta acción no se puede deshacer.</p>
+    <div class="module-panel__footer">
+        <button type="submit" class="btn btn--danger btn--md">Eliminar</button>
+        <button type="button" class="btn btn--ghost btn--md" data-empleado-picker-back>Volver</button>
+    </div>
+</form>

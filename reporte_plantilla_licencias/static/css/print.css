@@ -1,0 +1,146 @@
+/* =========================
+   CONFIGURACIÓN DE PÁGINA
+   ========================= */
+@page {
+  size: letter;                    /* Formato del Word: 8.5 x 11 in */
+  margin: 18mm 18mm 18mm 18mm;     /* Ajusta para calcar tu Word */
+  @top-center { content: element(docHeader); }
+  @bottom-center { content: element(docFooter); }
+}
+
+/* Necesario para running elements */
+.doc-header { position: running(docHeader); }
+.doc-footer { position: running(docFooter); }
+
+/* =========================
+   TIPOGRAFÍA / BASE
+   ========================= */
+html, body {
+  font-family: Arial, sans-serif;
+  font-size: 11pt;
+  line-height: 1.25;
+  color: #000;
+}
+* { box-sizing: border-box; }
+
+/* =========================
+   HEADER
+   ========================= */
+.header-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 0 4mm 0;
+}
+
+.header-text { text-align: center; }
+.header-text .h1 {
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: .2pt;
+}
+.header-text .title {
+  margin-top: 4mm;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+.header-text .title .month { margin-top: 2mm; }
+
+/* =========================
+   "GRUPOS" ARRIBA DE LA TABLA
+   ========================= */
+.group-head {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+  margin: 6mm 0 2mm 0;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+.group-left, .group-right {
+  display: table-cell;
+  text-align: center;
+  vertical-align: middle;
+}
+.group-left { width: 60%; }
+.group-right { width: 40%; }
+
+/* =========================
+   TABLA
+   ========================= */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 9.5pt; /* en Word suele verse compacto */
+}
+
+.data-table th, .data-table td {
+  border: 1px solid #000;
+  padding: 2mm 2mm;
+  vertical-align: top;
+}
+
+.data-table th {
+  font-weight: bold;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* Repite encabezado en cada página */
+thead { display: table-header-group; }
+tfoot { display: table-footer-group; }
+
+/* Evita cortes feos */
+tr, td, th { break-inside: avoid; page-break-inside: avoid; }
+
+.center { text-align: center; }
+
+/* =========================
+   FIRMA
+   ========================= */
+.signature-block {
+  margin-top: 10mm;
+  text-align: center;
+}
+
+.place-date {
+  text-align: right;
+  margin: 0 0 8mm 0;
+}
+
+.attn {
+  margin: 0 0 10mm 0;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.sign-name {
+  margin-top: 8mm;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.sign-role {
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.cc, .initials {
+  margin-top: 8mm;
+  text-align: left;
+  font-size: 9pt;
+}
+
+/* Bloque que NO queremos partir en páginas */
+.avoid-break { break-inside: avoid; page-break-inside: avoid; }
+
+/* =========================
+   FOOTER (dirección)
+   ========================= */
+.footer-address {
+  font-size: 8.5pt;
+  text-align: center;
+  border-top: 1px solid #000;
+  padding-top: 2mm;
+}

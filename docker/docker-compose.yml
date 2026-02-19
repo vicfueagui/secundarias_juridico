@@ -3,20 +3,65 @@ version: "3.9"
 services:
   postgres:
     image: postgres:15
-    container_name: cejei_postgres
+    container_name: cejei_postgres_5532
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: cejei_licencias
-      POSTGRES_USER: cejei
-      POSTGRES_PASSWORD: cejei
+      POSTGRES_DB: ${POSTGRES_DB:-cejei_licencias}
+      POSTGRES_USER: ${POSTGRES_USER:-cejei}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cejei}
     ports:
       - "5532:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "cejei" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cejei} -d ${POSTGRES_DB:-cejei_licencias}" ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 6
+
+  web:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: cejei_django_8000
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - ../.env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,0.0.0.0
+    volumes:
+      - ..:/app
+    ports:
+      - "8000:8000"
+    command: [ "/bin/bash", "docker/entrypoint.sh" ]
+
+  initdb:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: cejei_initdb
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - ../.env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    volumes:
+      - ..:/app
+    command:
+      [
+        "/bin/bash",
+        "-lc",
+        "python manage.py migrate --noinput && python manage.py import_ccts --path $${DJANGO_CCTS_PATH:-cct_secundarias.csv}",
+      ]
+    restart: "no"
 
 volumes:
   postgres_data:

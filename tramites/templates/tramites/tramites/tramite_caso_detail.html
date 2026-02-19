@@ -16,6 +16,14 @@
             {% if perms.licencias.change_tramitecaso %}
             <a class="btn btn--primary btn--md" href="{% url 'tramites:tramite-caso-update' tramite.caso_id tramite.pk %}">Editar trámite</a>
             {% endif %}
+            {% if perms.licencias.add_folioregistro %}
+                {% if not tramite.numero_oficio or tramite.numero_oficio|upper == "S/N" or tramite.numero_oficio|upper == "SN" %}
+                <button type="button" class="btn btn--secondary btn--md" data-folio-open data-tipo="tramite" data-id="{{ tramite.pk }}" data-next="{% url 'tramites:tramite-caso-detail' tramite.caso_id tramite.pk %}">Generar folio</button>
+                {% endif %}
+            {% endif %}
+            {% if perms.licencias.change_tramitecaso %}
+            <button type="button" class="btn btn--ghost btn--md" data-promover-tramite-modal-open>Convertir a caso base</button>
+            {% endif %}
             {% if perms.licencias.delete_tramitecaso %}
             <a class="btn btn--danger btn--md" href="{% url 'tramites:tramite-caso-delete' tramite.caso_id tramite.pk %}">Eliminar</a>
             {% endif %}
@@ -27,12 +35,60 @@
         <div class="tramite-form">
             <div class="data-grid">
                 <div class="data-item">
+                    <span class="data-label">ID del trámite</span>
+                    <span class="data-value">#{{ tramite.pk }}</span>
+                </div>
+                <div class="data-item">
                     <span class="data-label">Caso</span>
-                    <span class="data-value">{{ tramite.caso.descripcion_breve }} · {{ tramite.caso.cct_id }}</span>
+                    <span class="data-value">{{ tramite.caso.descripcion_breve }} · {{ tramite.cct_id|default:tramite.caso.cct_id }}</span>
                 </div>
                 <div class="data-item">
                     <span class="data-label">Fecha</span>
                     <span class="data-value">{{ tramite.fecha|date:"d/m/Y" }}</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Fecha de término</span>
+                    <span class="data-value">{{ tramite.fecha_termino|date:"d/m/Y"|default:"-" }}</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Días restantes</span>
+                    {% if tramite.dias_para_termino is not None %}
+                    <span class="termino-pill">
+                        {% if tramite.dias_para_termino >= 0 %}
+                        {{ tramite.dias_para_termino }} día{% if tramite.dias_para_termino != 1 %}s{% endif %} restantes
+                        {% else %}
+                        Vencido hace {{ tramite.dias_para_termino_abs }} día{% if tramite.dias_para_termino_abs != 1 %}s{% endif %}
+                        {% endif %}
+                    </span>
+                    {% else %}
+                    <span class="data-value">—</span>
+                    {% endif %}
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Semáforo SLA</span>
+                    <span class="data-value">
+                        <span class="status-chip status-chip--sla-{{ tramite_sla.semaforo_class|default:'gris' }}">
+                            {{ tramite_sla.semaforo_label|default:"Sin SLA" }}
+                        </span>
+                        <span class="table__secondary">Riesgo {{ tramite_sla.riesgo_label|default:"Bajo" }}</span>
+                    </span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Vencimiento SLA</span>
+                    <span class="data-value">
+                        {% if tramite_sla.fecha_vencimiento %}
+                        {{ tramite_sla.fecha_vencimiento|date:"d/m/Y" }}
+                        {% if tramite_sla.dias_restantes is not None %}
+                            {% if tramite_sla.dias_restantes < 0 %}
+                            · Atraso {{ tramite_sla.dias_vencido }} día(s)
+                            {% else %}
+                            · {{ tramite_sla.dias_restantes }} día(s) restantes
+                            {% endif %}
+                        {% endif %}
+                        {% else %}
+                        Sin vencimiento configurado
+                        {% endif %}
+                    </span>
                 </div>
                 <div class="data-item">
                     <span class="data-label">Estatus</span>
@@ -47,6 +103,12 @@
                 <div class="data-item">
                     <span class="data-label">Tipo de trámite</span>
                     <span class="data-value">{{ tramite.tipo.nombre }}</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Jerarquía</span>
+                    <span class="data-value">
+                        {% if tramite.es_iniciador %}Trámite iniciador{% else %}Trámite anexo{% endif %}
+                    </span>
                 </div>
                 <div class="data-item">
                     <span class="data-label">Número de expediente</span>
@@ -81,6 +143,285 @@
             </div>
 
             <section class="form-subsection">
+                <div class="section-header">
+                    <h2 class="section-title">Resumen del trabajador</h2>
+                    <span class="chip">Centros adicionales: {{ tramite.caso.centros_trabajo_adicionales.all|length }}</span>
+                    <a
+                        class="btn btn--secondary btn--sm"
+                        href="{% url 'tramites:tramite-caso-reporte-ejecutivo' tramite.caso_id tramite.pk %}"
+                        target="_blank"
+                        rel="noopener"
+                    >
+                        Reporte ejecutivo
+                    </a>
+                    <a class="btn btn--ghost btn--sm" href="{% url 'tramites:casointerno-detail' tramite.caso_id %}">Ver caso</a>
+                </div>
+
+                <article class="card plantilla-card">
+                    <div class="card__body">
+                        <div class="plantilla-card__section plantilla-card__section--summary">
+                            <p class="plantilla-card__section-title">Centro de trabajo del trámite anexo</p>
+                            <div class="plantilla-centros">
+                                <div class="plantilla-centros__header">
+                                    <span>CCT</span>
+                                    <span>Nombre CT</span>
+                                    <span>Asesor jurídico</span>
+                                </div>
+                                {% if tramite.cct_id or tramite.caso.cct_id %}
+                                <div class="plantilla-centros__row">
+                                    <span>{{ tramite.cct_id|default:tramite.caso.cct_id }} <span class="chip">Principal</span></span>
+                                    <span>{{ tramite.cct_nombre|default:tramite.caso.cct_nombre|default:"-" }}</span>
+                                    <span>{{ tramite.asesor_cct|default:tramite.caso.asesor_cct|default:"-" }}</span>
+                                </div>
+                                {% endif %}
+                                {% for centro in tramite.caso.centros_trabajo_adicionales.all %}
+                                <div class="plantilla-centros__row">
+                                    <span>{{ centro.cct }} <span class="chip">Adicional</span></span>
+                                    <span>{{ centro.nombre }}</span>
+                                    <span>{{ centro.asesor|default:"-" }}</span>
+                                </div>
+                                {% empty %}
+                                {% if not tramite.cct_id and not tramite.caso.cct_id %}
+                                <div class="plantilla-centros__row">
+                                    <span>-</span>
+                                    <span>-</span>
+                                    <span>-</span>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                {% for resumen in trabajadores_resumen %}
+                <article class="card plantilla-card">
+                    <div class="card__body">
+                        <div class="plantilla-card__header plantilla-card__header--summary">
+                            <div>
+                                <p class="plantilla-summary__eyebrow">
+                                    {% if resumen.es_principal %}Trabajador principal{% else %}Trabajador adicional{% endif %}
+                                </p>
+                                <h3 class="card__title">{{ resumen.trabajador.nombre }}</h3>
+                                <p class="text-small text-muted">
+                                    RFC: {{ resumen.trabajador.rfc|default:"Sin RFC" }} · CURP: {{ resumen.trabajador.curp|default:"Sin CURP" }}
+                                </p>
+                            </div>
+                            <div class="plantilla-card__meta">
+                                {% if resumen.ultimo_ciclo %}
+                                <span class="chip chip--strong">Ciclo: {{ resumen.ultimo_ciclo }}</span>
+                                {% endif %}
+                                {% if resumen.ultimo_anio %}
+                                <span class="chip">Año: {{ resumen.ultimo_anio }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="plantilla-card__section plantilla-card__section--summary">
+                            <p class="plantilla-card__section-title">Centros del último ciclo</p>
+                            <div class="plantilla-centros">
+                                <div class="plantilla-centros__header">
+                                    <span>CCT</span>
+                                    <span>Nombre CT</span>
+                                    <span>Asesor jurídico</span>
+                                </div>
+                                {% for centro in resumen.centros %}
+                                <div class="plantilla-centros__row">
+                                    <span>{{ centro.cct }}</span>
+                                    <span>{{ centro.nombre }}</span>
+                                    <span>{{ centro.asesor|default:"-" }}</span>
+                                </div>
+                                {% empty %}
+                                <div class="plantilla-centros__row">
+                                    <span>-</span>
+                                    <span>-</span>
+                                    <span>-</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                {% empty %}
+                <div class="alert alert--warning" role="alert">
+                    No hay trabajadores vinculados al caso.
+                </div>
+                {% endfor %}
+            </section>
+
+            <section class="form-subsection">
+                <div class="section-header">
+                    <h2 class="section-title">Usuarios involucrados</h2>
+                    <button type="button" class="btn btn--ghost btn--sm" data-toggle-section="#usuarios-involucrados-tramite">
+                        Mostrar
+                    </button>
+                </div>
+                <div id="usuarios-involucrados-tramite" class="toggle-section" data-toggle-default="hidden" data-toggle-count="{{ usuarios_aviso_estado|length }}" hidden>
+                <form method="get" class="filters__form" style="margin-bottom: 1rem;">
+                    <label for="usuario-filtro">Filtrar por usuario</label>
+                    <select name="usuario" id="usuario-filtro">
+                        <option value="">Todos</option>
+                        {% for usuario in usuarios_involucrados_lista %}
+                        <option value="{{ usuario.pk }}" {% if usuario_filtro == usuario.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ usuario.get_full_name|default:usuario.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn--ghost btn--sm">Filtrar</button>
+                </form>
+                {% if usuarios_aviso_estado %}
+                <div class="table-responsive table-responsive--mobile">
+                    <table class="table table--stack-mobile usuarios-aviso-table">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Correo</th>
+                                <th>Estado</th>
+                                <th>Recibidos</th>
+                                <th>No leídos</th>
+                                <th>Último envío</th>
+                                <th>Última lectura</th>
+                                <th>Último aviso</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in usuarios_aviso_estado %}
+                            <tr>
+                                <td data-label="Usuario">{{ item.usuario.get_full_name|default:item.usuario.username }}</td>
+                                <td data-label="Correo">{{ item.usuario.email|default:"sin correo" }}</td>
+                                <td data-label="Estado">
+                                    {% if item.total == 0 %}
+                                    <span class="status-chip">Sin avisos</span>
+                                    {% elif item.unread > 0 %}
+                                    <span class="status-chip status-chip--pendiente-por-informacion">No leído</span>
+                                    {% else %}
+                                    <span class="status-chip status-chip--concluido">Leído</span>
+                                    {% endif %}
+                                </td>
+                                <td data-label="Recibidos">{{ item.total }}</td>
+                                <td data-label="No leídos">{{ item.unread }}</td>
+                                <td data-label="Último envío">{{ item.last_sent|date:"d/m/Y H:i"|default:"-" }}</td>
+                                <td data-label="Última lectura">
+                                    {% if item.last_read %}
+                                    Leído hace {{ item.last_read|timesince }}
+                                    {% else %}
+                                    No leído
+                                    {% endif %}
+                                </td>
+                                <td data-label="Último aviso">
+                                    {% if item.last_notificacion and item.last_notificacion.tramite_id %}
+                                    <a href="{% url 'tramites:tramite-caso-detail' item.last_notificacion.tramite.caso_id item.last_notificacion.tramite_id %}">
+                                        <strong>{{ item.last_title|default:"-" }}</strong>
+                                    </a>
+                                    {% elif item.last_notificacion and item.last_notificacion.caso_id %}
+                                    <a href="{% url 'tramites:casointerno-detail' item.last_notificacion.caso_id %}">
+                                        <strong>{{ item.last_title|default:"-" }}</strong>
+                                    </a>
+                                    {% else %}
+                                    <strong>{{ item.last_title|default:"-" }}</strong>
+                                    {% endif %}
+                                    {% if item.last_message %}<div class="table__secondary">{{ item.last_message }}</div>{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="incidencias-card">
+                    <p class="module-panel__subtitle">No hay usuarios asignados para este trámite; hereda los del caso.</p>
+                </div>
+                {% endif %}
+                </div>
+            </section>
+
+            {% if tramite.minuta or minutas_adjuntas %}
+            <section class="form-subsection">
+                <h2 class="section-title">Documento (PDF)</h2>
+                {% if tramite.minuta %}
+                <p class="module-panel__subtitle">
+                    <a href="{{ tramite.minuta.url }}" target="_blank" rel="noopener">Abrir documento en otra pestaña</a>
+                </p>
+                <div class="pdf-preview">
+                    <object data="{{ tramite.minuta.url }}#toolbar=1&navpanes=0" type="application/pdf">
+                        <iframe
+                            src="{{ tramite.minuta.url }}#toolbar=1&navpanes=0"
+                            title="Vista previa del documento"
+                            loading="lazy"
+                        ></iframe>
+                    </object>
+                </div>
+                {% endif %}
+                {% if minutas_adjuntas %}
+                <h3 class="subsection-title" style="margin-top: 1rem;">Minutas (PDF) adjuntas</h3>
+                {% endif %}
+                {% for minuta in minutas_adjuntas %}
+                <p class="module-panel__subtitle">
+                    <a href="{{ minuta.archivo.url }}" target="_blank" rel="noopener">Abrir minuta adjunta en otra pestaña</a>
+                </p>
+                <div class="pdf-preview">
+                    <object data="{{ minuta.archivo.url }}#toolbar=1&navpanes=0" type="application/pdf">
+                        <iframe
+                            src="{{ minuta.archivo.url }}#toolbar=1&navpanes=0"
+                            title="Vista previa de la minuta adjunta"
+                            loading="lazy"
+                        ></iframe>
+                    </object>
+                </div>
+                {% empty %}
+                {% endfor %}
+                <p class="help-text">
+                    Si no ves la vista previa, usa el enlace para abrir el archivo.
+                </p>
+            </section>
+            {% endif %}
+
+            <div class="form-subsection">
+                <h2 class="section-title">Rango de fechas</h2>
+                {% if tramite.incidencia_afiliacion or tramite.incidencia_fecha_inicio or tramite.incidencia_fecha_termino or tramite.incidencia_dias_otorgados or tramite.incidencia_nombre_docente or tramite.rangos_fechas_adicionales %}
+                <div class="data-grid">
+                    <div class="data-item">
+                        <span class="data-label">Trabajador (rango principal)</span>
+                        <span class="data-value">{{ tramite.incidencia_nombre_docente|default:"-" }}</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Afiliación</span>
+                        <span class="data-value">{{ tramite.incidencia_afiliacion|default:"-" }}</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Fecha de inicio</span>
+                        <span class="data-value">{{ tramite.incidencia_fecha_inicio|date:"d/m/Y"|default:"-" }}</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Fecha término</span>
+                        <span class="data-value">{{ tramite.incidencia_fecha_termino|date:"d/m/Y"|default:"-" }}</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Días otorgados</span>
+                        <span class="data-value">{{ tramite.incidencia_dias_otorgados|default:"-" }}</span>
+                    </div>
+                    {% if tramite.rangos_fechas_adicionales %}
+                    <div class="data-item">
+                        <span class="data-label">Rangos adicionales</span>
+                        <span class="data-value">
+                            {% for rango in tramite.rangos_fechas_adicionales %}
+                                {{ rango.trabajador_nombre|default:"-" }} · {{ rango.incidencia_afiliacion|default:"-" }} ·
+                                {{ rango.incidencia_fecha_inicio|default:"-" }} → {{ rango.incidencia_fecha_termino|default:"-" }}
+                                {% if rango.incidencia_dias_otorgados %} · {{ rango.incidencia_dias_otorgados }} día(s){% endif %}
+                                {% if not forloop.last %}<br>{% endif %}
+                            {% endfor %}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="incidencias-card">
+                    <p class="module-panel__subtitle">Sin rangos de fechas capturados para este trámite.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <section class="form-subsection">
                 <h2 class="section-title">Participantes</h2>
                 <div class="data-grid">
                     <div class="data-item">
@@ -100,7 +441,33 @@
                         </span>
                     </div>
                 </div>
+                {% if tramite.generadores_adicionales %}
+                <h3 class="section-title">Generadores adicionales</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Iniciales</th>
+                            <th>Sexo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for gen in tramite.generadores_adicionales %}
+                        <tr>
+                            <td>{{ gen.nombre|default:"-" }}</td>
+                            <td>{{ gen.iniciales|default:"-" }}</td>
+                            <td>
+                                {% if gen.sexo == "M" %}Mujer{% elif gen.sexo == "H" %}Hombre{% else %}-{% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="table__empty">No hay generadores adicionales.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
                 {% if tramite.receptores_adicionales %}
+                <h3 class="section-title">Receptores adicionales</h3>
                 <table class="table">
                     <thead>
                         <tr>
@@ -125,59 +492,303 @@
                 </table>
                 {% endif %}
             </section>
+            {% if tramite.folios_generados.all %}
+            <section class="form-subsection">
+                <h2 class="section-title">Folios generados</h2>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Folio</th>
+                            <th>Creado por</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for folio in tramite.folios_generados.all %}
+                        <tr>
+                            <td>{{ folio.folio }}</td>
+                            <td>{{ folio.creado_por|default:"-" }}</td>
+                            <td>{{ folio.creado_en|date:"d/m/Y H:i" }}</td>
+                            <td>{% if folio.activo %}Activo{% else %}Inactivo{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="table__empty">Sin folios registrados.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+            {% endif %}
         </div>
     </div>
 
-    <div class="module-table-card">
-        <div class="module-table-card__header">
-            <h2 class="module-table-card__title">Historial de estatus</h2>
-            <p class="module-table-card__meta">Consulta cuándo se ha cambiado el estatus y quién lo registró.</p>
-        </div>
-        <div class="module-table-card__actions">
-            <form method="post" action="{% url 'tramites:tramite-caso-estatus-create' tramite.caso_id tramite.pk %}" class="form-inline">
+    <div class="history-card history-card--status">
+        <div class="history-card__header">
+            <div>
+                <span class="history-card__kicker">Estatus del trámite anexo</span>
+                <h2 class="history-card__title">Historial de estatus</h2>
+                <p class="history-card__subtitle">Consulta y gestiona los cambios de estatus del trámite anexo.</p>
+            </div>
+            <form method="post" action="{% url 'tramites:tramite-caso-estatus-create' tramite.caso_id tramite.pk %}" class="history-card__form">
                 {% csrf_token %}
-                {{ estatus_tramite_form.estatus_nuevo }}
-                {{ estatus_tramite_form.comentario }}
-                <button type="submit" class="btn btn--primary btn--sm">Agregar estatus</button>
+                <div class="history-card__fields">
+                    <div class="form-field">
+                        <label class="visually-hidden" for="tramite-estatus-typeahead-detail">{{ estatus_tramite_form.estatus_nuevo.label }}</label>
+                        <input
+                            type="search"
+                            id="tramite-estatus-typeahead-detail"
+                            name="tramite_estatus_busqueda"
+                            class="form-input"
+                            placeholder="Escribe para buscar estatus..."
+                            data-select-typeahead
+                            data-typeahead-target="#{{ estatus_tramite_form.estatus_nuevo.id_for_label }}"
+                            data-typeahead-results="#estatus-tramite-detail-suggestions"
+                        >
+                        <p class="help-text">Selecciona un estatus existente; no escribas uno nuevo aquí.</p>
+                        <div class="cct-suggestions surface-subtle" id="estatus-tramite-detail-suggestions" hidden></div>
+                        <div class="select-hidden">
+                            {{ estatus_tramite_form.estatus_nuevo }}
+                        </div>
+                        <div class="field-actions" data-estatus-actions>
+                            <button type="button" class="btn btn--ghost btn--sm" data-crud-open="estatus-tramite" data-crud-target="{{ estatus_tramite_form.estatus_nuevo.id_for_label }}">Agregar estatus</button>
+                            <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="estatus-tramite" data-crud-target="{{ estatus_tramite_form.estatus_nuevo.id_for_label }}">Editar seleccionado</button>
+                            <button type="button" class="btn btn--danger btn--sm" data-crud-delete="estatus-tramite" data-crud-target="{{ estatus_tramite_form.estatus_nuevo.id_for_label }}">Eliminar seleccionado</button>
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ estatus_tramite_form.fecha_estatus.id_for_label }}">{{ estatus_tramite_form.fecha_estatus.label }}</label>
+                        {{ estatus_tramite_form.fecha_estatus }}
+                    </div>
+                    <div class="form-field form-field--full">
+                        <label for="{{ estatus_tramite_form.comentario.id_for_label }}">{{ estatus_tramite_form.comentario.label }}</label>
+                        {{ estatus_tramite_form.comentario }}
+                    </div>
+                </div>
+                <button type="submit" class="btn btn--primary btn--pill btn--sm">Agregar estatus</button>
             </form>
         </div>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Estatus anterior</th>
-                    <th>Estatus nuevo</th>
-                    <th>Registró</th>
-                    <th>Comentario</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for cambio in historial_estatus %}
-                <tr>
-                    <td>{{ cambio.fecha_cambio|date:"d/m/Y H:i" }}</td>
-                    <td>{{ cambio.estatus_anterior.nombre|default:"-" }}</td>
-                    <td>{{ cambio.estatus_nuevo.nombre|default:"-" }}</td>
-                    <td>{{ cambio.usuario|default:"-" }}</td>
-                    <td>{{ cambio.comentario|default:"-" }}</td>
-                    <td class="table-actions">
-                        {% if forloop.first %}
-                            {% if perms.licencias.change_tramitecaso %}
-                            <a class="table-actions__link" href="{% url 'tramites:tramite-caso-estatus-update' tramite.caso_id tramite.pk cambio.pk %}">Editar</a>
+        <div class="table-responsive table-responsive--wide table-responsive--mobile">
+            <table class="table table--interactive table--responsive table--auto table--stack-mobile table--listado-main table--listado-estatus">
+                <thead>
+                    <tr>
+                        <th class="col-fecha">Fecha del estatus</th>
+                        <th class="col-fecha">Fecha de registro</th>
+                        <th class="col-estatus">Estatus anterior</th>
+                        <th class="col-estatus">Estatus nuevo</th>
+                        <th class="col-registro">Registró</th>
+                        <th class="col-comentario">Comentario</th>
+                        <th class="col-acciones">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cambio in historial_estatus %}
+                    <tr>
+                        <td data-label="Fecha del estatus">
+                            <span class="table__primary">{{ cambio.fecha_estatus_resuelta|date:"d/m/Y"|default:"-" }}</span>
+                        </td>
+                        <td data-label="Fecha de registro">
+                            <span class="table__primary">{{ cambio.fecha_cambio|date:"d/m/Y H:i" }}</span>
+                        </td>
+                        <td data-label="Estatus anterior">
+                            {% if cambio.estatus_anterior %}
+                            <span class="status-chip status-chip--{{ cambio.estatus_anterior.nombre|slugify }}">{{ cambio.estatus_anterior.nombre }}</span>
+                            {% else %}
+                            <span class="status-chip status-chip--default">-</span>
                             {% endif %}
-                            {% if perms.licencias.change_tramitecaso %}
-                            <a class="table-actions__link table-actions__link--danger" href="{% url 'tramites:tramite-caso-estatus-delete' tramite.caso_id tramite.pk cambio.pk %}">Eliminar</a>
+                        </td>
+                        <td data-label="Estatus nuevo">
+                            {% if cambio.estatus_nuevo %}
+                            <span class="status-chip status-chip--{{ cambio.estatus_nuevo.nombre|slugify }}">{{ cambio.estatus_nuevo.nombre }}</span>
+                            {% else %}
+                            <span class="status-chip status-chip--default">-</span>
                             {% endif %}
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="table__empty">No hay cambios de estatus registrados.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        </td>
+                        <td data-label="Registró">
+                            <span class="table__primary">{{ cambio.usuario|default:"-" }}</span>
+                        </td>
+                        <td data-label="Comentario">
+                            <span class="table__primary">{{ cambio.comentario|default:"-" }}</span>
+                        </td>
+                        <td data-label="Acciones">
+                            <div class="table-actions table-actions--compact">
+                                {% if forloop.first %}
+                                    {% if perms.licencias.change_tramitecaso %}
+                                    <a class="table-actions__link table-actions__link--edit" href="{% url 'tramites:tramite-caso-estatus-update' tramite.caso_id tramite.pk cambio.pk %}">Editar</a>
+                                    {% endif %}
+                                    {% if perms.licencias.change_tramitecaso %}
+                                    <a class="table-actions__link table-actions__link--danger" href="{% url 'tramites:tramite-caso-estatus-delete' tramite.caso_id tramite.pk cambio.pk %}">Eliminar</a>
+                                    {% endif %}
+                                {% else %}
+                                <span class="table__secondary">Sin acciones</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="table__empty">No hay cambios de estatus registrados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </section>
+
+<div class="modal" id="estatus-tramite-modal" hidden role="dialog" aria-modal="true">
+    <div class="modal-overlay" data-modal-close></div>
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3 class="modal-title" data-modal-title>Agregar estatus de trámite</h3>
+            <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="estatus-tramite-form" class="modal-form">
+                <fieldset id="estatus-tramite-fields">
+                    <div class="modal-field">
+                        <label for="estatus-tramite-nombre">Nombre del estatus</label>
+                        <input type="text" id="estatus-tramite-nombre" name="nombre" required maxlength="255">
+                    </div>
+                    <div class="modal-field">
+                        <label for="estatus-tramite-descripcion">Descripción (opcional)</label>
+                        <textarea id="estatus-tramite-descripcion" name="descripcion" maxlength="500" rows="3"></textarea>
+                    </div>
+                    <div class="modal-field">
+                        <label for="estatus-tramite-orden">Orden</label>
+                        <input type="number" id="estatus-tramite-orden" name="orden" min="1" step="1" value="1">
+                    </div>
+                </fieldset>
+                <div class="modal-message" data-modal-message role="alert"></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn--primary btn--md" data-estatus-tramite-save>Guardar</button>
+                    <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+    <div class="modal" id="promover-tramite-modal" hidden role="dialog" aria-modal="true">
+    <div class="modal-overlay" data-modal-close></div>
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3 class="modal-title">Convertir trámite en caso base</h3>
+            <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form method="post" action="{% url 'tramites:tramite-caso-promover' tramite.caso_id tramite.pk %}">
+                {% csrf_token %}
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label for="{{ promover_tramite_form.estatus_caso.id_for_label }}">{{ promover_tramite_form.estatus_caso.label }}</label>
+                        {{ promover_tramite_form.estatus_caso }}
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ promover_tramite_form.tipo_inicial.id_for_label }}">{{ promover_tramite_form.tipo_inicial.label }}</label>
+                        {{ promover_tramite_form.tipo_inicial }}
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ promover_tramite_form.fecha_apertura.id_for_label }}">{{ promover_tramite_form.fecha_apertura.label }}</label>
+                        {{ promover_tramite_form.fecha_apertura }}
+                    </div>
+                    <div class="form-field form-field--checkbox">
+                        <label>{{ promover_tramite_form.mover_tramites_relacionados }} {{ promover_tramite_form.mover_tramites_relacionados.label }}</label>
+                    </div>
+                    <div class="form-field form-field--checkbox">
+                        <label>{{ promover_tramite_form.mover_caso_actual_a_anexo }} {{ promover_tramite_form.mover_caso_actual_a_anexo.label }}</label>
+                    </div>
+                    <div class="form-field form-field--checkbox">
+                        <label>{{ promover_tramite_form.eliminar_caso_anterior }} {{ promover_tramite_form.eliminar_caso_anterior.label }}</label>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn--primary btn--md">Convertir</button>
+                    <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="folio-generar-modal" hidden role="dialog" aria-modal="true">
+    <div class="modal-overlay" data-modal-close></div>
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3 class="modal-title">Generar folio</h3>
+            <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form method="post" action="{% url 'tramites:folio-generar' %}" id="folio-generar-form" data-folio-preview-url="{% url 'tramites:folio-generar-preview' %}" data-folio-cancel-url="{% url 'tramites:folio-generar-cancelar' %}">
+                {% csrf_token %}
+                <input type="hidden" name="tipo" id="folio-tipo">
+                <input type="hidden" name="caso_id" id="folio-caso-id">
+                <input type="hidden" name="tramite_id" id="folio-tramite-id">
+                <input type="hidden" name="next" id="folio-next">
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label>Año</label>
+                        <input type="text" class="form-input" value="{% now 'Y' %}" readonly>
+                    </div>
+                    <div class="form-field form-field--full">
+                        <label for="folio-prefijo">Prefijo</label>
+                        <select id="folio-prefijo" name="prefijo_id" class="form-input">
+                            <option value="">Selecciona un prefijo</option>
+                            {% for prefijo in folio_prefijos %}
+                            <option value="{{ prefijo.id }}">{{ prefijo.nombre }}{% if prefijo.descripcion %} · {{ prefijo.descripcion }}{% endif %}</option>
+                            {% endfor %}
+                        </select>
+                        {% if not folio_prefijos %}
+                        <p class="help-text help-text--warning">No hay prefijos activos. Agrega uno con “Nuevo prefijo”.</p>
+                        {% endif %}
+                        <div class="field-actions">
+                            <button type="button" class="btn btn--ghost btn--sm" data-crud-open="prefijo-folio" data-crud-target="folio-prefijo">Nuevo prefijo</button>
+                            <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="prefijo-folio" data-crud-target="folio-prefijo">Editar seleccionado</button>
+                            <button type="button" class="btn btn--danger btn--sm" data-crud-delete="prefijo-folio" data-crud-target="folio-prefijo">Eliminar seleccionado</button>
+                        </div>
+                        <p class="help-text">Se generará el consecutivo automáticamente.</p>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn--primary btn--md">Generar folio</button>
+                    <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="prefijo-folio-modal" hidden role="dialog" aria-modal="true">
+    <div class="modal-overlay" data-modal-close></div>
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3 class="modal-title" data-modal-title>Agregar prefijo de folio</h3>
+            <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="prefijo-folio-form" class="modal-form">
+                <fieldset id="prefijo-folio-fields">
+                    <div class="modal-field">
+                        <label for="prefijo-folio-nombre">Prefijo</label>
+                        <input type="text" id="prefijo-folio-nombre" name="nombre" required maxlength="255">
+                    </div>
+                    <div class="modal-field">
+                        <label for="prefijo-folio-descripcion">Descripción</label>
+                        <textarea id="prefijo-folio-descripcion" name="descripcion" maxlength="500" rows="3"></textarea>
+                    </div>
+                    <div class="modal-field">
+                        <label>
+                            <input type="checkbox" id="prefijo-folio-activo" name="esta_activo" checked>
+                            Activo
+                        </label>
+                    </div>
+                </fieldset>
+                <div class="modal-message" data-modal-message role="alert"></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn--primary btn--md" data-prefijo-folio-save>Guardar</button>
+                    <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

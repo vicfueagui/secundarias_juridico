@@ -1,0 +1,200 @@
+{% extends "tramites/base.html" %}
+
+{% block title %}Bandeja de entrada | SEGEY Trámites{% endblock %}
+
+{% block content %}
+<section class="module-shell">
+    <div class="module-shell__header">
+        <div class="module-shell__intro">
+            <p class="module-shell__eyebrow">Comunicaciones internas</p>
+            <div class="module-shell__headline-group">
+                <h1 class="module-shell__title">Bandeja de entrada</h1>
+                <p class="module-shell__lead">Aquí se listan los cambios y estatus de los registros asignados.</p>
+            </div>
+        </div>
+        <div class="module-shell__actions">
+            <form method="post" action="{% url 'tramites:bandeja-marcar-todo' %}" data-mark-all-form>
+                {% csrf_token %}
+                <button type="submit" class="btn btn--ghost btn--md">Marcar todo como leído</button>
+            </form>
+        </div>
+    </div>
+
+    <section class="inbox-filters">
+        <form method="get" class="inbox-filters__form">
+            <div class="inbox-filters__search">
+                <label class="visually-hidden" for="q">Buscar en bandeja</label>
+                <input type="search" id="q" name="q" placeholder="Buscar por título, mensaje o expediente" value="{{ q }}">
+                <button type="submit" class="btn btn--primary btn--sm">Buscar</button>
+            </div>
+            <div class="inbox-filters__quick">
+                <a class="pill {% if modo == 'todas' %}pill--active{% endif %}" href="{{ inbox_url_todas }}">Todas</a>
+                <a class="pill {% if tipo == 'caso' %}pill--active{% endif %}" href="{{ inbox_url_tipo_caso }}">Casos</a>
+                <a class="pill {% if tipo == 'tramite' %}pill--active{% endif %}" href="{{ inbox_url_tipo_tramite }}">Trámites</a>
+                <a class="pill {% if tipo == 'estatus' %}pill--active{% endif %}" href="{{ inbox_url_tipo_estatus }}">Estatus</a>
+                <a class="pill {% if estado == 'no_leidas' %}pill--active{% endif %}" href="{{ inbox_url_no_leidas }}">Solo no leídas</a>
+                <a class="pill {% if evento == 'caso_creado' or not evento and not tipo and not estado and not q and not desde and not hasta and modo != 'todas' %}pill--active{% endif %}" href="{{ inbox_url_evento_caso_creado }}">Caso creado</a>
+            </div>
+            <div class="inbox-filters__grid">
+                <div class="filter-field">
+                    <label for="estado">Estado</label>
+                    <select name="estado" id="estado">
+                        <option value="">Todas</option>
+                        <option value="no_leidas" {% if estado == "no_leidas" %}selected{% endif %}>Solo no leídas</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label for="evento">Tipo de evento</label>
+                    <select name="evento" id="evento">
+                        <option value="">Todos</option>
+                        {% for value, label in eventos %}
+                        <option value="{{ value }}" {% if evento == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label for="desde">Desde</label>
+                    <input type="date" id="desde" name="desde" value="{{ desde }}">
+                </div>
+                <div class="filter-field">
+                    <label for="hasta">Hasta</label>
+                    <input type="date" id="hasta" name="hasta" value="{{ hasta }}">
+                </div>
+                <div class="filter-field">
+                    <label for="orden">Orden</label>
+                    <select name="orden" id="orden">
+                        <option value="recientes" {% if orden != "antiguas" %}selected{% endif %}>Más recientes primero</option>
+                        <option value="antiguas" {% if orden == "antiguas" %}selected{% endif %}>Más antiguas primero</option>
+                    </select>
+                </div>
+            </div>
+            <div class="inbox-filters__actions">
+                <button type="submit" class="btn btn--primary btn--md">Aplicar</button>
+                <a class="btn btn--ghost btn--md" href="{% url 'tramites:bandeja' %}">Limpiar</a>
+            </div>
+        </form>
+    </section>
+
+    <div class="inbox-list">
+        {% for entrada in entradas %}
+        {% with noti=entrada.notificacion %}
+        <article class="inbox-item {% if not entrada.leido %}inbox-item--unread{% else %}inbox-item--read{% endif %}" data-inbox-item>
+            <div class="inbox-item__status">
+                {% if not entrada.leido %}
+                <span class="status-chip status-chip--pendiente-por-informacion">No leído</span>
+                {% else %}
+                <span class="status-chip status-chip--concluido">Leído</span>
+                {% endif %}
+            </div>
+            <div class="inbox-item__meta">
+                <span class="inbox-item__time">{{ noti.creado_en|date:"d/m/Y H:i" }}</span>
+                {% if noti.actor %}
+                <span class="inbox-item__actor">Por {{ noti.actor.get_full_name|default:noti.actor.username }}</span>
+                {% endif %}
+            </div>
+            <h2 class="inbox-item__title" data-inbox-text>
+                {{ noti.titulo }}
+                {% if not entrada.leido %}
+                <span class="inbox-item__new">Nueva</span>
+                {% endif %}
+            </h2>
+            {% if noti.mensaje %}
+            <p class="inbox-item__message" data-inbox-text>{{ noti.mensaje }}</p>
+            {% endif %}
+            {% if noti.tramite or noti.caso %}
+            <div class="inbox-item__details" data-inbox-text>
+                <div class="inbox-item__detail">
+                    <span class="inbox-item__label">Tipo de trámite</span>
+                    <span class="inbox-item__value">
+                        {% if noti.tramite %}
+                        {{ noti.tramite.tipo.nombre|default:"-" }}
+                        {% elif noti.caso %}
+                        {{ noti.caso.tipo_inicial.nombre|default:"-" }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="inbox-item__detail">
+                    <span class="inbox-item__label">Número de expediente</span>
+                    <span class="inbox-item__value">
+                        {% if noti.tramite %}
+                        {{ noti.tramite.numero_oficio|default:"-" }}
+                        {% elif noti.caso %}
+                        {{ noti.caso.numero_oficio|default:"-" }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </span>
+                </div>
+                {% if noti.tramite %}
+                {% if noti.tramite.incidencia_afiliacion or noti.tramite.incidencia_fecha_inicio or noti.tramite.incidencia_fecha_termino or noti.tramite.incidencia_dias_otorgados or noti.tramite.incidencia_nombre_docente %}
+                <div class="inbox-item__detail">
+                    <span class="inbox-item__label">Incidencia</span>
+                    <span class="inbox-item__value">
+                        {{ noti.tramite.incidencia_nombre_docente|default:"-" }}
+                        {% if noti.tramite.incidencia_afiliacion %} · {{ noti.tramite.incidencia_afiliacion }}{% endif %}
+                        {% if noti.tramite.incidencia_fecha_inicio %} · {{ noti.tramite.incidencia_fecha_inicio|date:"d/m/Y" }}{% endif %}
+                        {% if noti.tramite.incidencia_fecha_termino %} → {{ noti.tramite.incidencia_fecha_termino|date:"d/m/Y" }}{% endif %}
+                        {% if noti.tramite.incidencia_dias_otorgados %} · {{ noti.tramite.incidencia_dias_otorgados }} días{% endif %}
+                    </span>
+                </div>
+                {% endif %}
+                {% elif noti.caso %}
+                {% if noti.caso.incidencia_afiliacion or noti.caso.incidencia_fecha_inicio or noti.caso.incidencia_fecha_termino or noti.caso.incidencia_dias_otorgados or noti.caso.incidencia_nombre_docente %}
+                <div class="inbox-item__detail">
+                    <span class="inbox-item__label">Incidencia</span>
+                    <span class="inbox-item__value">
+                        {{ noti.caso.incidencia_nombre_docente|default:"-" }}
+                        {% if noti.caso.incidencia_afiliacion %} · {{ noti.caso.incidencia_afiliacion }}{% endif %}
+                        {% if noti.caso.incidencia_fecha_inicio %} · {{ noti.caso.incidencia_fecha_inicio|date:"d/m/Y" }}{% endif %}
+                        {% if noti.caso.incidencia_fecha_termino %} → {{ noti.caso.incidencia_fecha_termino|date:"d/m/Y" }}{% endif %}
+                        {% if noti.caso.incidencia_dias_otorgados %} · {{ noti.caso.incidencia_dias_otorgados }} días{% endif %}
+                    </span>
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+            {% endif %}
+            <div class="inbox-item__actions">
+                {% if not entrada.leido %}
+                <form method="post" action="{% url 'tramites:bandeja-marcar' entrada.pk %}" data-mark-read-form>
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit" class="btn btn--ghost btn--sm">Marcar como leído</button>
+                </form>
+                {% endif %}
+                {% if noti.tramite %}
+                <a class="btn btn--ghost btn--sm" href="{% url 'tramites:tramite-caso-detail' noti.tramite.caso_id noti.tramite_id %}">
+                    Ver trámite
+                </a>
+                {% elif noti.caso %}
+                <a class="btn btn--ghost btn--sm" href="{% url 'tramites:casointerno-detail' noti.caso_id %}">
+                    Ver caso
+                </a>
+                {% else %}
+                <span class="inbox-item__hint">Sin enlace disponible</span>
+                {% endif %}
+            </div>
+        </article>
+        {% endwith %}
+        {% empty %}
+        <div class="empty-state">
+            <p>No hay notificaciones por ahora.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if is_paginated %}
+    <div class="pagination pagination--inset">
+        {% if page_obj.has_previous %}
+        <a class="pagination__button" href="?{% if inbox_query %}{{ inbox_query }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Página anterior">&larr;</a>
+        {% endif %}
+        <span class="pagination__page pagination__page--current">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a class="pagination__button" href="?{% if inbox_query %}{{ inbox_query }}&amp;{% endif %}page={{ page_obj.next_page_number }}" aria-label="Página siguiente">&rarr;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

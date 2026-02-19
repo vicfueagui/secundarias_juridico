@@ -1,0 +1,105 @@
+{% extends "tramites/base.html" %}
+
+{% block title %}Trabajadores | SEGEY Trámites{% endblock %}
+
+{% block content %}
+<section class="module-shell">
+    <div class="module-shell__header">
+        <div class="module-shell__intro module-shell__intro--spaced">
+            <p class="module-shell__eyebrow">Jurídico · Licencias</p>
+            <h1 class="module-shell__title">Trabajadores</h1>
+            <p class="module-shell__lead">Administra manualmente el catálogo de trabajadores.</p>
+        </div>
+        <div class="module-shell__actions module-shell__actions--stacked">
+            {% if perms.licencias.add_plantillaempleado %}
+            <a class="btn btn--primary btn--lg" href="{% url 'tramites:empleado-create' %}">Registrar trabajador</a>
+            {% endif %}
+            <a class="btn btn--ghost btn--lg" href="{% url 'tramites:licencia-list' %}">Volver a licencias</a>
+        </div>
+    </div>
+
+    <section class="filters module-panel" data-filters-panel>
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Filtrar información</h2>
+        </div>
+        <form method="get">
+            <div class="filter-grid">
+                {% for field in filter.form.visible_fields %}
+                <div class="filter-field">
+                    <label>{{ field.label }} {{ field }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="module-panel__footer">
+                <button type="submit" class="btn btn--primary btn--sm">Aplicar filtros</button>
+                <a href="{% url 'tramites:empleado-list' %}" class="btn btn--ghost btn--sm">Limpiar</a>
+            </div>
+        </form>
+    </section>
+
+    <div class="module-table-card module-table-card--fluid">
+        <div class="module-table-card__header">
+            <h2 class="module-table-card__title">Listado de trabajadores</h2>
+            <p class="module-table-card__meta">
+                {% if page_obj %}
+                Mostrando {{ page_obj.start_index }} – {{ page_obj.end_index }} de {{ page_obj.paginator.count }} registros.
+                {% else %}
+                Total de registros: {{ empleados|length }}
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="table-responsive table-responsive--wide table-responsive--mobile">
+            <table class="table table--interactive table--responsive table--auto table--stack-mobile">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>RFC</th>
+                        <th>CURP</th>
+                        <th>Correo</th>
+                        <th>Celular</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for empleado in empleados %}
+                    <tr>
+                        <td data-label="Nombre">{{ empleado.nombre }}</td>
+                        <td data-label="RFC">{{ empleado.rfc|default:"-" }}</td>
+                        <td data-label="CURP">{{ empleado.curp|default:"-" }}</td>
+                        <td data-label="Correo">{{ empleado.correo|default:"-" }}</td>
+                        <td data-label="Celular">{{ empleado.celular|default:"-" }}</td>
+                        <td data-label="Acciones">
+                            <div class="table-actions">
+                                {% if perms.licencias.change_plantillaempleado %}
+                                <a class="table-actions__link" href="{% url 'tramites:empleado-update' empleado.pk %}?from_list={{ request.get_full_path|urlencode }}">Editar</a>
+                                {% endif %}
+                                {% if perms.licencias.delete_plantillaempleado %}
+                                <a class="table-actions__link table-actions__link--danger" href="{% url 'tramites:empleado-delete' empleado.pk %}?from_list={{ request.get_full_path|urlencode }}">Eliminar</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="table__empty">No se encontraron trabajadores.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if is_paginated %}
+        <div class="pagination pagination--inset">
+            {% if page_obj.has_previous %}
+            <a class="pagination__button" href="?{% if request.GET %}{{ request.GET.urlencode }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Página anterior">&larr;</a>
+            {% endif %}
+            <span class="pagination__page pagination__page--current">Página {{ page_obj.number }} de {{ paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+            <a class="pagination__button" href="?{% if request.GET %}{{ request.GET.urlencode }}&amp;{% endif %}page={{ page_obj.next_page_number }}" aria-label="Página siguiente">&rarr;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

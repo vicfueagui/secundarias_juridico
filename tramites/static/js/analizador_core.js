@@ -205,3 +205,20 @@ export function buildLicenseStatus(startDate, endDate, ingresoDate) {
     detail: "El periodo completo ocurre después de la fecha de ingreso.",
   };
 }
+
+// Exponer en la ventana para ser reutilizado en formularios no basados en módulos.
+if (typeof window !== "undefined") {
+  window.AnalizadorCore = {
+    MS_PER_DAY,
+    parseISODate,
+    addYears,
+    addDays,
+    calculateInclusiveDays,
+    calculateValidDays,
+    evaluateYearsRequirement,
+    evaluateLicensesRequirement,
+    buildLicenseStatus,
+    daysBetween,
+    pluralize,
+  };
+}

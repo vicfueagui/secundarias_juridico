@@ -1,0 +1,546 @@
+{% extends "tramites/base.html" %}
+
+{% block title %}Reportes de trámites | SEGEY Trámites{% endblock %}
+
+{% block content %}
+<style>
+    .bi-report {
+        --bi-ink: #0f2a2e;
+        --bi-accent: #ffb300;
+        --bi-accent-dark: #d18a00;
+        --bi-sand: #f5f0e6;
+        --bi-deep: #0b4a53;
+        --bi-mist: rgba(15, 42, 46, 0.08);
+        position: relative;
+        margin-bottom: var(--space-6);
+    }
+
+    .bi-report__panel {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+        gap: var(--space-6);
+        padding: clamp(24px, 3vw, 36px);
+        border-radius: clamp(18px, 3vw, 28px);
+        background: linear-gradient(135deg, #fbf8f2 0%, #f0fbff 60%, #e9f1ff 100%);
+        border: 1px solid rgba(15, 42, 46, 0.08);
+        box-shadow: 0 22px 45px rgba(15, 42, 46, 0.12);
+        overflow: hidden;
+    }
+
+    .bi-report__panel::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 15% 15%, rgba(255, 179, 0, 0.2), transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(11, 74, 83, 0.18), transparent 45%),
+            radial-gradient(circle at 75% 85%, rgba(29, 102, 130, 0.16), transparent 50%);
+        pointer-events: none;
+    }
+
+    .bi-report__content,
+    .bi-report__media {
+        position: relative;
+        z-index: 1;
+    }
+
+    .bi-report__eyebrow {
+        font-size: 0.75rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--bi-deep);
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .bi-report__eyebrow span {
+        display: inline-flex;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--bi-accent);
+        box-shadow: 0 0 0 6px rgba(255, 179, 0, 0.18);
+    }
+
+    .bi-report__title {
+        margin-top: var(--space-3);
+        font-size: clamp(1.6rem, 3vw, 2.3rem);
+        font-weight: 700;
+        color: var(--bi-ink);
+    }
+
+    .bi-report__lead {
+        margin-top: var(--space-3);
+        color: rgba(15, 42, 46, 0.82);
+        font-size: 1.02rem;
+        max-width: 36ch;
+    }
+
+    .bi-report__points {
+        margin: var(--space-4) 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 12px;
+        color: rgba(15, 42, 46, 0.8);
+        font-weight: 600;
+    }
+
+    .bi-report__points li {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .bi-report__points li::before {
+        content: "";
+        width: 10px;
+        height: 10px;
+        margin-top: 6px;
+        border-radius: 3px;
+        background: var(--bi-deep);
+        box-shadow: 0 0 0 4px rgba(11, 74, 83, 0.2);
+    }
+
+    .bi-report__actions {
+        margin-top: var(--space-5);
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3);
+        align-items: center;
+    }
+
+    .bi-report__cta {
+        background: var(--bi-accent);
+        color: var(--bi-ink);
+        padding: 12px 20px;
+        border-radius: 999px;
+        font-weight: 700;
+        transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+        border: 1px solid rgba(209, 138, 0, 0.6);
+    }
+
+    .bi-report__cta:hover,
+    .bi-report__cta:focus-visible {
+        text-decoration: none;
+        transform: translateY(-1px);
+        box-shadow: 0 12px 24px rgba(209, 138, 0, 0.25);
+        color: var(--bi-ink);
+    }
+
+    .bi-report__cta--ghost {
+        background: transparent;
+        color: var(--bi-ink);
+        border: 1px solid rgba(15, 42, 46, 0.2);
+    }
+
+    .bi-report__hint {
+        font-size: 0.9rem;
+        color: rgba(15, 42, 46, 0.7);
+    }
+
+    .bi-report__media {
+        background: #0c2c33;
+        border-radius: 20px;
+        padding: clamp(18px, 2.4vw, 28px);
+        color: #fefaf2;
+        display: grid;
+        gap: var(--space-4);
+        min-height: 100%;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+    }
+
+    .bi-report__badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .bi-report__preview {
+        border-radius: 16px;
+        background: linear-gradient(140deg, rgba(255, 179, 0, 0.2), rgba(13, 91, 106, 0.6));
+        padding: 18px;
+        display: grid;
+        gap: 16px;
+    }
+
+    .bi-report__metric {
+        display: flex;
+        justify-content: space-between;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    .bi-report__bar {
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.18);
+        overflow: hidden;
+    }
+
+    .bi-report__bar span {
+        display: block;
+        height: 100%;
+        background: var(--bi-accent);
+    }
+
+    .bi-report__embed {
+        margin-top: var(--space-5);
+        display: none;
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid rgba(15, 42, 46, 0.12);
+        box-shadow: 0 16px 30px rgba(15, 42, 46, 0.12);
+        background: #fff;
+    }
+
+    .bi-report__embed.is-open {
+        display: block;
+    }
+
+    .bi-report__embed-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 18px;
+        background: var(--bi-sand);
+        border-bottom: 1px solid rgba(15, 42, 46, 0.08);
+        gap: var(--space-3);
+    }
+
+    .bi-report__embed-title {
+        font-weight: 700;
+        color: var(--bi-ink);
+        font-size: 0.95rem;
+    }
+
+    .bi-report__embed-close {
+        background: transparent;
+        border: 1px solid rgba(15, 42, 46, 0.2);
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .bi-report__frame {
+        width: 100%;
+        min-height: 820px;
+        border: 0;
+        display: block;
+    }
+
+    @media (max-width: 980px) {
+        .bi-report__panel {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<section class="module-shell">
+    <div class="module-shell__header">
+        <div class="module-shell__intro module-shell__intro--spaced">
+            <p class="module-shell__eyebrow">Jurídico · Reportes</p>
+            <h1 class="module-shell__title">Reporte de trámites</h1>
+            <p class="module-shell__lead">Filtra los trámites y genera un informe listo para impresión.</p>
+        </div>
+        <div class="module-shell__actions module-shell__actions--stacked">
+            <button type="button" class="btn btn--secondary btn--lg" data-filters-toggle>
+                Mostrar/ocultar filtros
+            </button>
+            {% with query_params=request.GET.urlencode %}
+            <a class="btn btn--ghost btn--lg" href="{% url 'tramites:reportes-csv' %}{% if query_params %}?{{ query_params }}{% endif %}">
+                Exportar CSV
+            </a>
+            <a class="btn btn--primary btn--lg" href="{% url 'tramites:reportes-print' %}{% if query_params %}?{{ query_params }}{% endif %}" target="_blank" rel="noopener">
+                Imprimir informe
+            </a>
+            {% endwith %}
+        </div>
+    </div>
+
+    <section class="bi-report" aria-labelledby="bi-report-title">
+        <div class="bi-report__panel">
+            <div class="bi-report__content">
+                <div class="bi-report__eyebrow"><span></span>Reportes BI</div>
+                <h2 id="bi-report-title" class="bi-report__title">Informe BI "Tipos de Violencia"</h2>
+                <p class="bi-report__lead">
+                    Direccion de Educacion Secundaria / Enlace de Asesores Especializados.
+                    Explora el tablero oficial en Power BI con filtros por Tipo de Violencia, Tramite, Asesor, Modalidad y Año.
+                </p>
+                <ul class="bi-report__points">
+                    <li>Filtra por Tipo de Violencia y Año para ver comparativos 2025/2026.</li>
+                    <li>Usa Asesor y Modalidad para segmentar por responsable y tipo de escuela.</li>
+                    <li>Pulsa Limpiar filtros para volver al total (Cantidad 102).</li>
+                </ul>
+                <div class="bi-report__actions">
+                    <a class="bi-report__cta" href="https://app.powerbi.com/view?r=eyJrIjoiMDUxYmJlMWEtMzMyYS00OWUzLTk3NjktNzhhOTMxY2UyYzA4IiwidCI6IjE5MTAzOGU0LWFhYzMtNDM2MS05OGViLWQ1ODBlMzY4YTZhZiJ9" target="_blank" rel="noopener">
+                        Abrir Informe BI
+                    </a>
+                    <button type="button" class="bi-report__cta bi-report__cta--ghost" data-bi-report-toggle>
+                        Ver incrustado aqui
+                    </button>
+                    <span class="bi-report__hint">Incluye KPI Cantidad (102) y boton Limpiar filtros.</span>
+                </div>
+            </div>
+            <div class="bi-report__media" aria-hidden="true">
+                <div class="bi-report__badge">Vista rápida</div>
+                <div class="bi-report__preview">
+                    <div class="bi-report__metric">
+                        <span>Cantidad (102)</span>
+                        <span>Panel activo</span>
+                    </div>
+                    <div class="bi-report__bar"><span style="width: 78%;"></span></div>
+                    <div class="bi-report__metric">
+                        <span>Cantidad por Tipo de Violencia y Año</span>
+                        <span>Comparativo</span>
+                    </div>
+                    <div class="bi-report__bar"><span style="width: 62%;"></span></div>
+                    <div class="bi-report__metric">
+                        <span>Mapa por localidad</span>
+                        <span>Latitud/Longitud</span>
+                    </div>
+                    <div class="bi-report__bar"><span style="width: 54%;"></span></div>
+                </div>
+                <div class="bi-report__hint" style="color: rgba(255, 255, 255, 0.7);">
+                    Incluye "Cantidad por Tipo Violencia y Modalidad" y "Cantidad por Tipo de Tramite".
+                </div>
+            </div>
+        </div>
+        <div class="bi-report__embed" id="bi-report-embed-violencia" role="region" aria-label="Informe BI Tipos de Violencia incrustado">
+            <div class="bi-report__embed-header">
+                <span class="bi-report__embed-title">Informe BI "Tipos de Violencia" incrustado</span>
+                <button type="button" class="bi-report__embed-close" data-bi-report-close>Cerrar</button>
+            </div>
+            <iframe
+                class="bi-report__frame"
+                title="Informe BI Tipos de Violencia - Power BI"
+                src="https://app.powerbi.com/view?r=eyJrIjoiMDUxYmJlMWEtMzMyYS00OWUzLTk3NjktNzhhOTMxY2UyYzA4IiwidCI6IjE5MTAzOGU0LWFhYzMtNDM2MS05OGViLWQ1ODBlMzY4YTZhZiJ9"
+                loading="lazy"
+                allowfullscreen>
+            </iframe>
+        </div>
+    </section>
+
+    <section class="bi-report" aria-labelledby="bi-report-licencias-title">
+        <div class="bi-report__panel">
+            <div class="bi-report__content">
+                <div class="bi-report__eyebrow"><span></span>Reportes BI</div>
+                <h2 id="bi-report-licencias-title" class="bi-report__title">Informe BI "Licencias Medicas"</h2>
+                <p class="bi-report__lead">
+                    Seguimiento administrativo de licencias medicas con validaciones por area, autorizaciones,
+                    plazos, incidencias, prorrogas y cambios de funcion (Licencia 754 y 70 Bis).
+                </p>
+                <ul class="bi-report__points">
+                    <li>Monitorea cada etapa del proceso de autorizacion y tiempos de atencion.</li>
+                    <li>Da seguimiento a incidencias, prorrogas y cambios de funcion por licencia.</li>
+                    <li>Consulta el detalle operativo conectado desde Google Sheets hacia Power BI.</li>
+                </ul>
+                <div class="bi-report__actions">
+                    <a class="bi-report__cta" href="https://app.powerbi.com/view?r=eyJrIjoiM2I5NjJmZjItNzA3NS00ODRmLWFiYjItMzhkNGM5ZGEzYmFlIiwidCI6IjE5MTAzOGU0LWFhYzMtNDM2MS05OGViLWQ1ODBlMzY4YTZhZiJ9" target="_blank" rel="noopener">
+                        Abrir Informe BI
+                    </a>
+                    <button type="button" class="bi-report__cta bi-report__cta--ghost" data-bi-report-toggle>
+                        Ver incrustado aqui
+                    </button>
+                    <span class="bi-report__hint">Incluye validaciones, autorizaciones, plazos e incidencias.</span>
+                </div>
+            </div>
+            <div class="bi-report__media" aria-hidden="true">
+                <div class="bi-report__badge">Vista rápida</div>
+                <div class="bi-report__preview">
+                    <div class="bi-report__metric">
+                        <span>Flujo por area</span>
+                        <span>Seguimiento</span>
+                    </div>
+                    <div class="bi-report__bar"><span style="width: 82%;"></span></div>
+                    <div class="bi-report__metric">
+                        <span>Plazos e incidencias</span>
+                        <span>Control</span>
+                    </div>
+                    <div class="bi-report__bar"><span style="width: 67%;"></span></div>
+                    <div class="bi-report__metric">
+                        <span>Prorrogas y 70 Bis</span>
+                        <span>Detalle</span>
+                    </div>
+                    <div class="bi-report__bar"><span style="width: 58%;"></span></div>
+                </div>
+                <div class="bi-report__hint" style="color: rgba(255, 255, 255, 0.7);">
+                    Diseñado para el seguimiento completo del tramite de licencias medicas.
+                </div>
+            </div>
+        </div>
+        <div class="bi-report__embed" id="bi-report-embed-licencias" role="region" aria-label="Informe BI Licencias Medicas incrustado">
+            <div class="bi-report__embed-header">
+                <span class="bi-report__embed-title">Informe BI "Licencias Medicas" incrustado</span>
+                <button type="button" class="bi-report__embed-close" data-bi-report-close>Cerrar</button>
+            </div>
+            <iframe
+                class="bi-report__frame"
+                title="Informe BI Licencias Medicas - Power BI"
+                src="https://app.powerbi.com/view?r=eyJrIjoiM2I5NjJmZjItNzA3NS00ODRmLWFiYjItMzhkNGM5ZGEzYmFlIiwidCI6IjE5MTAzOGU0LWFhYzMtNDM2MS05OGViLWQ1ODBlMzY4YTZhZiJ9"
+                loading="lazy"
+                allowfullscreen>
+            </iframe>
+        </div>
+    </section>
+    <script>
+        (() => {
+            const reports = document.querySelectorAll(".bi-report");
+            if (!reports.length) return;
+
+            reports.forEach((report, index) => {
+                const toggleBtn = report.querySelector("[data-bi-report-toggle]");
+                const closeBtn = report.querySelector("[data-bi-report-close]");
+                const embed = report.querySelector(".bi-report__embed");
+                if (!toggleBtn || !embed) return;
+
+                if (!embed.id) {
+                    embed.id = `bi-report-embed-${index + 1}`;
+                }
+
+                const openEmbed = () => {
+                    embed.classList.add("is-open");
+                    toggleBtn.setAttribute("aria-expanded", "true");
+                    embed.scrollIntoView({ behavior: "smooth", block: "start" });
+                    const focusTarget = embed.querySelector(".bi-report__embed-close");
+                    if (focusTarget) focusTarget.focus();
+                };
+
+                const closeEmbed = () => {
+                    embed.classList.remove("is-open");
+                    toggleBtn.setAttribute("aria-expanded", "false");
+                    toggleBtn.focus();
+                };
+
+                toggleBtn.setAttribute("aria-expanded", "false");
+                toggleBtn.setAttribute("aria-controls", embed.id);
+                toggleBtn.addEventListener("click", () => {
+                    if (embed.classList.contains("is-open")) {
+                        closeEmbed();
+                    } else {
+                        openEmbed();
+                    }
+                });
+
+                if (closeBtn) {
+                    closeBtn.addEventListener("click", closeEmbed);
+                }
+            });
+        })();
+    </script>
+
+    <section class="filters module-panel" data-filters-panel>
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Filtrar información</h2>
+            <p class="module-panel__subtitle">Aplica los filtros y genera el reporte de casos.</p>
+        </div>
+        <form method="get">
+            <div class="filter-grid">
+                {% for field in filter.form.visible_fields %}
+                <div class="filter-field">
+                    <label>{{ field.label }} {{ field }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="module-panel__footer">
+                <button type="submit" class="btn btn--primary btn--sm">Aplicar filtros</button>
+                <a href="{% url 'tramites:reportes-list' %}" class="btn btn--ghost btn--sm">Limpiar</a>
+            </div>
+        </form>
+    </section>
+
+    <div class="module-table-card module-table-card--fluid">
+        <div class="module-table-card__header">
+            <h2 class="module-table-card__title">Vista previa de casos</h2>
+            <p class="module-table-card__meta">
+                {% if page_obj %}
+                Mostrando {{ page_obj.start_index }} – {{ page_obj.end_index }} de {{ page_obj.paginator.count }} registros.
+                {% else %}
+                Total de registros: {{ casos|length }}
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="table-responsive table-responsive--wide table-responsive--mobile">
+            <table class="table table--interactive table--responsive table--auto table--stack-mobile">
+                <thead>
+                    <tr>
+                        <th>CCT</th>
+                        <th>Centros adicionales</th>
+                        <th>Trabajadores</th>
+                        <th>Fecha del trámite</th>
+                        <th>Tipo inicial</th>
+                        <th>Estatus</th>
+                        <th>Número de expediente</th>
+                        <th>Solicitante</th>
+                        <th>Dirigido a</th>
+                        <th>Asunto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for caso in casos %}
+                    <tr>
+                        <td data-label="CCT">
+                            <span class="table__primary">{{ caso.cct_id }}</span>
+                            <span class="table__secondary">{{ caso.cct_nombre }}</span>
+                        </td>
+                        <td data-label="Centros adicionales">
+                            {% with adicionales=caso.centros_trabajo_adicionales.all %}
+                            {% if adicionales %}
+                            <span class="table__primary">Total: {{ adicionales|length }}</span>
+                            <span class="table__secondary">
+                                {% for centro in adicionales %}
+                                    {{ centro.cct }}{% if not forloop.last %} · {% endif %}
+                                {% endfor %}
+                            </span>
+                            {% else %}
+                            -
+                            {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td data-label="Trabajadores">{{ caso.trabajador_listado|default:"-" }}</td>
+                        <td data-label="Fecha del trámite">{{ caso.fecha_apertura|date:"d/m/Y" }}</td>
+                        <td data-label="Tipo inicial">{{ caso.tipo_inicial.nombre }}</td>
+                        <td data-label="Estatus">
+                            {% if caso.estatus %}
+                            <span class="status-chip status-chip--{{ caso.estatus.nombre|slugify }}">{{ caso.estatus.nombre }}</span>
+                            {% else %}
+                            <span class="status-chip status-chip--default">Sin estatus</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Número de expediente">{{ caso.numero_oficio|default:"-" }}</td>
+                        <td data-label="Solicitante">{{ caso.solicitante.nombre|default:"-" }}</td>
+                        <td data-label="Dirigido a">{{ caso.dirigido_a.nombre|default:"-" }}</td>
+                        <td data-label="Asunto">{{ caso.asunto|default:"-" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="table__empty">No se encontraron trámites con los filtros actuales.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if is_paginated %}
+        <div class="pagination pagination--inset">
+            {% if page_obj.has_previous %}
+            <a class="pagination__button" href="?{% if request.GET %}{{ request.GET.urlencode }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Página anterior">&larr;</a>
+            {% endif %}
+            <span class="pagination__page pagination__page--current">Página {{ page_obj.number }} de {{ paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+            <a class="pagination__button" href="?{% if request.GET %}{{ request.GET.urlencode }}&amp;{% endif %}page={{ page_obj.next_page_number }}" aria-label="Página siguiente">&rarr;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

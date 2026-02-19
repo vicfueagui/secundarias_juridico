@@ -1,9 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./licencias/templates/**/*.html",
-    "./staticfiles/styleguide.html",
-    "./staticfiles/js/**/*.js",
+    "./tramites/templates/**/*.html",
+    "./tramites/static/**/*.html",
+    "./tramites/static/**/*.js",
+    "./**/templates/**/*.html",
   ],
   theme: {
     extend: {
@@ -79,6 +80,9 @@ module.exports = {
         container: "1200px",
       },
     },
+  },
+  corePlugins: {
+    preflight: false,
   },
   plugins: [],
 };

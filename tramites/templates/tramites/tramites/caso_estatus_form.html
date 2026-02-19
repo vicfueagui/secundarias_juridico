@@ -1,14 +1,14 @@
 {% extends "tramites/base.html" %}
 
-{% block title %}Editar estatus del trámite principal | SEGEY Trámites{% endblock %}
+{% block title %}Editar estatus del caso principal | SEGEY Trámites{% endblock %}
 
 {% block content %}
 <section class="module-shell module-shell--form">
     <div class="module-shell__header">
         <div class="module-shell__intro">
-            <p class="module-shell__eyebrow">Trámite principal</p>
+            <p class="module-shell__eyebrow">Caso principal</p>
             <div class="module-shell__headline-group">
-                <h1 class="module-shell__title">Editar estatus del trámite</h1>
+                <h1 class="module-shell__title">Editar estatus del caso</h1>
                 <p class="module-shell__lead">Solo puedes editar el último cambio de estatus registrado.</p>
             </div>
         </div>
@@ -18,9 +18,32 @@
         {% csrf_token %}
         {{ form.non_field_errors }}
         <div class="form-grid">
+            <div class="form-field status-management">
+                <label for="caso-estatus-edit-typeahead">{{ form.estatus_nuevo.label }}</label>
+                <input
+                    type="search"
+                    id="caso-estatus-edit-typeahead"
+                    name="caso_estatus_edicion_busqueda"
+                    class="form-input"
+                    placeholder="Escribe para buscar estatus..."
+                    data-select-typeahead
+                    data-typeahead-target="#{{ form.estatus_nuevo.id_for_label }}"
+                    data-typeahead-results="#estatus-caso-edit-suggestions"
+                >
+                <p class="help-text">Selecciona un estatus existente; no escribas uno nuevo aquí.</p>
+                <div class="cct-suggestions surface-subtle" id="estatus-caso-edit-suggestions" hidden></div>
+                <div class="select-hidden">
+                    {{ form.estatus_nuevo }}
+                </div>
+                <div class="field-actions" data-estatus-actions>
+                    <button type="button" class="btn btn--ghost btn--sm" data-crud-open="estatus-caso" data-crud-target="{{ form.estatus_nuevo.id_for_label }}">Agregar estatus</button>
+                    <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="estatus-caso" data-crud-target="{{ form.estatus_nuevo.id_for_label }}">Editar seleccionado</button>
+                    <button type="button" class="btn btn--danger btn--sm" data-crud-delete="estatus-caso" data-crud-target="{{ form.estatus_nuevo.id_for_label }}">Eliminar seleccionado</button>
+                </div>
+            </div>
             <div class="form-field">
-                <label for="{{ form.estatus_nuevo.id_for_label }}">{{ form.estatus_nuevo.label }}</label>
-                {{ form.estatus_nuevo }}
+                <label for="{{ form.fecha_estatus.id_for_label }}">{{ form.fecha_estatus.label }}</label>
+                {{ form.fecha_estatus }}
             </div>
             <div class="form-field form-field--full">
                 <label for="{{ form.comentario.id_for_label }}">{{ form.comentario.label }}</label>
@@ -33,4 +56,33 @@
         </div>
     </form>
 </section>
+
+<div class="modal" id="estatus-caso-modal" hidden role="dialog" aria-modal="true">
+    <div class="modal-overlay" data-modal-close></div>
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3 class="modal-title" data-modal-title>Agregar estatus de caso</h3>
+            <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="estatus-caso-form" class="modal-form">
+                <fieldset id="estatus-caso-fields">
+                    <div class="modal-field">
+                        <label for="estatus-caso-nombre">Nombre del estatus</label>
+                        <input type="text" id="estatus-caso-nombre" name="nombre" required maxlength="255">
+                    </div>
+                    <div class="modal-field">
+                        <label for="estatus-caso-orden">Orden (número para ordenamiento)</label>
+                        <input type="number" id="estatus-caso-orden" name="orden" value="1" min="1">
+                    </div>
+                </fieldset>
+                <div class="modal-message" data-modal-message role="alert"></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn--primary btn--md" data-estatus-caso-save>Guardar</button>
+                    <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

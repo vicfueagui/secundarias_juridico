@@ -36,9 +36,9 @@
     /* La tabla crece con el ancho disponible y mantiene columnas legibles en desktop */
     .table--auto {
         table-layout: auto;
-        min-width: 940px;
+        min-width: 860px;
         width: 100%;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         line-height: 1.35;
         border-collapse: collapse;
         border-spacing: 0;
@@ -50,11 +50,13 @@
 
     .table--auto th,
     .table--auto td {
-        padding: 0.4rem 0.55rem;
+        padding: 0.34rem 0.45rem;
         vertical-align: top;
         white-space: normal;
         border: none;
         text-align: center;
+        word-break: break-word;
+        hyphens: auto;
     }
 
     .table--auto th {
@@ -69,46 +71,569 @@
     .table--auto tbody tr:last-child td:last-child { border-bottom-right-radius: 14px; }
 
     /* Anchos mínimos para priorizar columnas clave */
-    .table--auto .col-cct { min-width: 110px; }
+    .table--auto .col-cct { min-width: 205px; }
+    .table--auto .col-docente { min-width: 180px; }
+    .table--auto .col-trabajador-registro { min-width: 245px; }
     .table--auto .col-expediente { min-width: 160px; }
     .table--auto .col-tipo { min-width: 130px; }
+    .table--auto .col-referencia { min-width: 220px; }
     .table--auto .col-fecha { min-width: 130px; white-space: nowrap; }
     .table--auto .col-fecha-registro { min-width: 150px; white-space: nowrap; }
     .table--auto .col-estatus { min-width: 130px; text-align: center; }
-    .table--auto .col-asesor { min-width: 150px; }
+    .table--auto .col-sla { min-width: 165px; }
+    .table--auto .col-seguimiento { min-width: 220px; }
+    .table--auto th.col-trabajador-registro,
+    .table--auto th.col-seguimiento,
+    .table--auto td.col-trabajador-registro,
+    .table--auto td.col-seguimiento {
+        text-align: left;
+    }
 
     /* Columna de acciones más amplia y con botones separados */
+    .table--auto .col-seleccion {
+        width: 36px;
+        min-width: 36px;
+    }
+
     .table--auto .col-acciones {
-        min-width: 230px;
+        min-width: 190px;
+    }
+
+    .tramites-list-table {
+        width: 100%;
+    }
+
+    .tramites-list-table--casos {
+        min-width: 960px;
+    }
+
+    .tramites-list-table--anexos {
+        min-width: 920px;
+    }
+
+    .tramites-list-table--casos .col-acciones {
+        min-width: 196px;
+    }
+
+    .tramites-list-table--casos .table-actions {
+        max-width: 172px;
+    }
+
+    .tramites-list-table .col-referencia {
+        text-align: left;
+    }
+
+    .referencia-compuesta {
+        display: grid;
+        gap: 0.28rem;
+    }
+
+    .referencia-compuesta__bloque {
+        border: 1px solid rgba(148, 163, 184, 0.32);
+        border-radius: 0.55rem;
+        background: #fff;
+        padding: 0.24rem 0.36rem;
+    }
+
+    .referencia-compuesta__etiqueta {
+        display: block;
+        margin-bottom: 0.1rem;
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: #64748b;
+    }
+
+    .detalle-compuesto {
+        display: grid;
+        gap: 0.28rem;
+    }
+
+    .detalle-compuesto__bloque {
+        border: 1px solid rgba(148, 163, 184, 0.32);
+        border-radius: 0.55rem;
+        background: #fff;
+        padding: 0.24rem 0.36rem;
+    }
+
+    .detalle-compuesto__etiqueta {
+        display: block;
+        margin-bottom: 0.1rem;
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: #64748b;
+    }
+
+    .detalle-compuesto .table__primary,
+    .detalle-compuesto .table__secondary,
+    .referencia-compuesta .table__primary,
+    .referencia-compuesta .table__secondary {
+        overflow-wrap: anywhere;
+    }
+
+    .composite-header {
+        display: grid;
+        gap: 0.24rem;
+    }
+
+    .composite-header__title {
+        display: block;
+    }
+
+    .composite-header__sorts {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.64rem;
+        line-height: 1.15;
+    }
+
+    .composite-header__divider {
+        opacity: 0.75;
+    }
+
+    .table-actions--compact {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(68px, 1fr));
+        gap: 0.28rem;
+        width: 100%;
+        max-width: 156px;
+        margin: 0 auto;
+    }
+
+    .table-actions--compact .table-actions__link {
+        width: 100%;
+        min-width: 0;
+        white-space: normal;
+        text-align: center;
+        padding: 0.24rem 0.38rem;
+    }
+
+    .table-actions-cell {
+        display: grid;
+        gap: 0.36rem;
+        justify-items: center;
+    }
+
+    .table-actions-meta {
+        width: 100%;
+        max-width: 172px;
+        display: grid;
+        gap: 0.24rem;
+    }
+
+    .table-actions-meta__item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0.32rem 0.5rem;
+        padding: 0.2rem 0.38rem;
+        border-radius: 0.52rem;
+        border: 1px solid rgba(148, 163, 184, 0.34);
+        background: #f8fafc;
+    }
+
+    .table-actions-meta__label {
+        font-size: 0.63rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: #64748b;
+        text-align: left;
+    }
+
+    .table-actions-meta__value {
+        font-size: 0.73rem;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1.15;
+        text-align: right;
+    }
+
+    .table-actions-meta__item.is-positive {
+        background: #ecfdf3;
+        border-color: #bbf7d0;
+    }
+
+    .table-actions-meta__item.is-positive .table-actions-meta__value {
+        color: #166534;
+    }
+
+    .table-actions-meta__item.is-muted {
+        background: #f8fafc;
+        border-color: rgba(148, 163, 184, 0.34);
+    }
+
+    .table-actions-meta__item.is-muted .table-actions-meta__value {
+        color: #475569;
+    }
+
+    .table-actions-meta__hint {
+        grid-column: 1 / -1;
+        font-size: 0.62rem;
+        color: #64748b;
+        text-align: right;
+    }
+
+    .participants-more {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 0.28rem;
+        padding: 0.04rem 0.32rem;
+        border-radius: 999px;
+        border: 1px solid #d1d9e6;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 0.66rem;
+        font-weight: 700;
+        line-height: 1.1;
+        vertical-align: middle;
+    }
+
+    .tramites-list-table td[data-label="Seguimiento"] .status-chip {
+        margin-bottom: 0.2rem;
+    }
+
+    .bulk-panel {
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(91, 15, 40, 0.08);
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .bulk-form {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .bulk-form__row {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .bulk-form__tramite,
+    .bulk-form__estatus {
+        display: none;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .bulk-field {
+        display: grid;
+        gap: 0.35rem;
+    }
+
+    .bulk-field label {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--neutral-700);
+    }
+
+    .bulk-form__actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .bulk-form__counter {
+        font-size: 0.9rem;
+        color: var(--neutral-700);
+    }
+    .filters-quickbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        margin-top: 0.5rem;
+    }
+    .tramites-header-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.45rem;
+    }
+    .tramites-header-actions .btn {
+        margin: 0;
+    }
+    .section-toggle-target[hidden] {
+        display: none !important;
+    }
+    .filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.35rem 0.6rem;
+        border-radius: 999px;
+        background: rgba(91, 15, 40, 0.08);
+        color: #5b0f28;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    .filter-chip span {
+        color: #0f172a;
+        font-weight: 600;
+    }
+    .filter-chip__remove {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        background: rgba(91, 15, 40, 0.15);
+        color: #5b0f28;
+        font-weight: 700;
+        font-size: 0.8rem;
+        text-decoration: none;
+    }
+    .filter-chip__remove:hover {
+        background: rgba(91, 15, 40, 0.25);
+    }
+    .filter-chip--clear {
+        background: rgba(176, 0, 32, 0.12);
+        color: #b00020;
+    }
+    .filter-chip--clear:hover {
+        background: rgba(176, 0, 32, 0.2);
+    }
+    .saved-filters-panel {
+        margin-bottom: 1rem;
+        border-radius: 14px;
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        background: #fff;
+    }
+    .saved-filters-form {
+        display: grid;
+        grid-template-columns: minmax(220px, 1fr) auto;
+        gap: 0.6rem;
+        align-items: end;
+    }
+    .saved-filters-list {
+        margin-top: 0.75rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+    }
+    .saved-filters-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.33rem 0.58rem;
+        border-radius: 999px;
+        border: 1px solid rgba(15, 23, 42, 0.16);
+        background: #fff;
+        font-size: 0.8rem;
+    }
+    .saved-filters-pill a {
+        color: #0f172a;
+        font-weight: 700;
+        text-decoration: none;
+    }
+    .saved-filters-pill a:hover {
+        text-decoration: underline;
+    }
+    .saved-filters-pill form {
+        margin: 0;
     }
 
     .table-actions {
         display: flex;
-        justify-content: flex-end;
-        gap: 0.5rem;
+        justify-content: center;
+        gap: 0.3rem;
         flex-wrap: wrap;
+        max-width: 220px;
+        margin: 0 auto;
     }
 
     .table-actions__link {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 0.35rem 0.65rem;
-        border-radius: 0.5rem;
+        padding: 0.24rem 0.52rem;
+        border-radius: 999px;
         font-weight: 600;
-        border: 1px solid var(--border-subtle, #e0e0e0);
+        font-size: 0.74rem;
+        line-height: 1.1;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+        border: 1px solid #d7dde7;
         background-color: #fff;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-        min-height: 32px;
+        color: #243041;
+        min-height: 26px;
+        box-shadow: none;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
     }
 
     .table-actions__link:hover {
-        background-color: #f6f6f6;
+        background-color: #f8fafc;
+        border-color: #b9c3d5;
+    }
+
+    .table-actions__link:focus-visible {
+        outline: 2px solid #2563eb;
+        outline-offset: 1px;
+    }
+
+    .table-actions__link--primary {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: #1d4ed8;
+    }
+
+    .table-actions__link--preview {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        color: #334155;
+    }
+
+    .table-actions__link--folio {
+        background: #fffbeb;
+        border-color: #f5d0a5;
+        color: #92400e;
+    }
+
+    .table-actions__link--edit {
+        background: #f5f3ff;
+        border-color: #ddd6fe;
+        color: #5b21b6;
     }
 
     .table-actions__link--danger {
-        border-color: #f3c2c2;
-        color: #b00020;
+        background: #fef2f2;
+        border-color: #fecaca;
+        color: #b91c1c;
+    }
+
+    .table-actions__link--disabled {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+
+    .doc-preview-panel-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.35);
+        z-index: 90;
+    }
+
+    .doc-preview-panel {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: min(760px, 96vw);
+        height: 100vh;
+        background: #fff;
+        box-shadow: -8px 0 24px rgba(15, 23, 42, 0.22);
+        z-index: 95;
+        transform: translateX(102%);
+        transition: transform 0.2s ease;
+        display: grid;
+        grid-template-rows: auto 1fr;
+    }
+
+    .doc-preview-panel.is-open {
+        transform: translateX(0);
+    }
+
+    .doc-preview-panel__header {
+        border-bottom: 1px solid #e5e7eb;
+        padding: 0.8rem 1rem;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem;
+    }
+
+    .doc-preview-panel__header-main {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .doc-preview-panel__header-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+    }
+
+    .doc-preview-nav-btn[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .doc-preview-panel__body {
+        padding: 0.9rem 1rem 1rem;
+        display: grid;
+        gap: 0.75rem;
+        overflow-y: auto;
+    }
+
+    .doc-preview-record {
+        display: grid;
+        gap: 0.35rem;
+        padding: 0.62rem 0.72rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.7rem;
+        background: #f8fafc;
+    }
+
+    .doc-preview-record__item {
+        margin: 0;
+        font-size: 0.82rem;
+        color: #334155;
+        line-height: 1.3;
+    }
+
+    .doc-preview-record__item strong {
+        color: #0f172a;
+    }
+
+    .doc-preview-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+    }
+
+    .doc-preview-list__item {
+        border: 1px solid #d6d9df;
+        background: #fff;
+        border-radius: 999px;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.82rem;
+        cursor: pointer;
+    }
+
+    .doc-preview-list__item.is-active {
+        border-color: #5b0f28;
+        background: rgba(91, 15, 40, 0.08);
+        color: #5b0f28;
+        font-weight: 600;
+    }
+
+    .doc-preview-frame {
+        width: 100%;
+        min-height: 60vh;
+        border: 1px solid #d6d9df;
+        border-radius: 0.75rem;
+        background: #f7f8fa;
+    }
+
+    .doc-preview-empty {
+        margin: 0;
+        color: #6b7280;
+    }
+
+    body.doc-preview-open {
+        overflow: hidden;
     }
 
     /* Redondeo del header del card */
@@ -128,6 +653,7 @@
         line-height: 1.2;
     }
 
+
     /* Ajustes para tablet/móvil */
     @media (max-width: 768px) {
         .module-table-card.module-table-card--fluid {
@@ -135,14 +661,70 @@
         }
         .table--auto {
             font-size: 0.82rem;
-            min-width: 900px;
+            min-width: 860px;
+        }
+        .tramites-list-table {
+            min-width: 100%;
+            width: 100%;
+        }
+        .tramites-list-table.table--stack-mobile tbody td {
+            grid-template-columns: minmax(98px, 108px) minmax(0, 1fr);
+        }
+        .tramites-list-table.table--stack-mobile td[data-label="Seleccionar"] {
+            display: flex;
+            align-items: center;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+        .tramites-list-table.table--stack-mobile td[data-label="Seleccionar"]::before {
+            display: none;
+        }
+        .tramites-list-table.table--stack-mobile td[data-label="Acciones"] .table-actions {
+            justify-content: flex-start;
+            max-width: 100%;
+            margin: 0;
+        }
+        .tramites-list-table.table--stack-mobile td[data-label="Acciones"] .table-actions-cell {
+            justify-items: stretch;
+        }
+        .tramites-list-table.table--stack-mobile td[data-label="Acciones"] .table-actions--compact {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(92px, 1fr));
+            gap: 0.35rem;
+        }
+        .tramites-list-table.table--stack-mobile td[data-label="Acciones"] .table-actions-meta {
+            max-width: 100%;
+        }
+        .tramites-list-table.table--stack-mobile td[data-label="Seguimiento"] .table__secondary {
+            margin-top: 0.2rem;
         }
         .table-actions {
             justify-content: flex-start;
-            gap: 0.35rem;
+            gap: 0.3rem;
+            max-width: 100%;
+            margin: 0;
         }
         .table-actions__link {
-            padding: 0.3rem 0.55rem;
+            padding: 0.22rem 0.5rem;
+            font-size: 0.72rem;
+            min-height: 24px;
+        }
+        .doc-preview-panel {
+            width: 100vw;
+        }
+        .doc-preview-panel__header-actions {
+            justify-content: flex-start;
+            width: 100%;
+        }
+        .doc-preview-frame {
+            min-height: 56vh;
+        }
+        .saved-filters-form {
+            grid-template-columns: 1fr;
+        }
+        .tramites-header-actions {
+            justify-content: flex-start;
+            width: 100%;
         }
     }
 </style>
@@ -152,17 +734,819 @@
             <p class="module-shell__eyebrow">Jurídico · Trámites</p>
             <h1 class="module-shell__title">Trámites registrados</h1>
             <p class="module-shell__lead">Consulta y da seguimiento a los trámites jurídicos asociados a cada CCT.</p>
+            <div class="filters-quickbar">
+                <a class="btn btn--ghost btn--sm" href="{{ clear_filters_url }}">Limpiar filtros</a>
+                {% if show_ids_enabled %}
+                <a class="btn btn--ghost btn--sm" href="{{ show_ids_disable_url }}">Ocultar IDs</a>
+                {% else %}
+                <a class="btn btn--ghost btn--sm" href="{{ show_ids_enable_url }}">Mostrar IDs</a>
+                {% endif %}
+                {% if active_filters %}
+                    {% for item in active_filters %}
+                    <span class="filter-chip">
+                        {{ item.label }}: <span>{{ item.value }}</span>
+                        <a class="filter-chip__remove" href="{{ item.remove_url }}" aria-label="Quitar filtro {{ item.label }}" title="Quitar filtro">×</a>
+                    </span>
+                    {% endfor %}
+                    <button class="filter-chip filter-chip--clear" type="button" aria-label="Limpiar todos los filtros" title="Limpiar todos los filtros" data-clear-filters-open>Limpiar todo ⚠️</button>
+                {% else %}
+                    <span class="text-muted">Sin filtros activos.</span>
+                {% endif %}
+            </div>
         </div>
-        {% if perms.licencias.add_casointerno %}
-        <div class="module-shell__actions module-shell__actions--stacked">
-            <button type="button" class="btn btn--secondary btn--lg" data-filters-toggle>
-                Mostrar/ocultar filtros
+        <div class="module-shell__actions tramites-header-actions">
+            <button type="button" class="btn btn--secondary btn--sm" data-filters-toggle>Mostrar filtros</button>
+            <button
+                type="button"
+                class="btn btn--ghost btn--sm"
+                data-toggle-section="#saved-filters-panel"
+                data-toggle-show-label="Mostrar filtros guardados"
+                data-toggle-hide-label="Ocultar filtros guardados"
+            >
+                Mostrar filtros guardados
             </button>
-            <a class="btn btn--primary btn--lg" href="{% url 'tramites:casointerno-create' %}">
-                Registrar trámite
-            </a>
+            <button
+                type="button"
+                class="btn btn--ghost btn--sm"
+                data-toggle-section="#bulk-panel"
+                data-toggle-show-label="Mostrar acción masiva"
+                data-toggle-hide-label="Ocultar acción masiva"
+            >
+                Mostrar acción masiva
+            </button>
+            {% if perms.licencias.add_casointerno %}
+            <a class="btn btn--primary btn--sm" href="{% url 'tramites:casointerno-create' %}">Registrar trámite</a>
+            {% endif %}
         </div>
-        {% endif %}
+    </div>
+
+    <section class="module-panel saved-filters-panel section-toggle-target" id="saved-filters-panel" data-toggle-default="hidden" data-toggle-count="{{ saved_filters_casos|length }}" hidden>
+        <div class="module-panel__header">
+            <h2 class="module-panel__title">Filtros guardados</h2>
+            <p class="module-panel__subtitle">Guarda la combinación actual para reusar filtros en 1 clic.</p>
+        </div>
+        <form method="post" action="{% url 'tramites:filtro-guardado' %}" class="saved-filters-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="save">
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <input type="hidden" name="alcance" value="{{ saved_filter_form_casos.initial.alcance|default:'casos_listado' }}">
+            <input type="hidden" name="querystring" value="{{ saved_filters_casos_querystring }}">
+            <div>
+                <label for="saved-filter-name">Nombre del filtro</label>
+                <input
+                    id="saved-filter-name"
+                    class="form-input"
+                    type="text"
+                    name="nombre"
+                    maxlength="120"
+                    placeholder="Ej. Pendientes por asesor"
+                    required
+                >
+            </div>
+            <div>
+                <button class="btn btn--secondary btn--sm" type="submit" {% if not saved_filters_casos_querystring %}disabled{% endif %}>
+                    Guardar filtro actual
+                </button>
+            </div>
+        </form>
+        <div class="saved-filters-list" aria-label="Filtros guardados del listado">
+            {% for filtro in saved_filters_casos %}
+            <span class="saved-filters-pill">
+                <a href="{{ filtro.apply_url }}">{{ filtro.nombre }}</a>
+                <form method="post" action="{% url 'tramites:filtro-guardado' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="filter_id" value="{{ filtro.id }}">
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button class="btn btn--danger btn--sm" type="submit">Quitar</button>
+                </form>
+            </span>
+            {% empty %}
+            <span class="text-muted">Sin filtros guardados por ahora.</span>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="module-panel bulk-panel section-toggle-target" id="bulk-panel" data-toggle-default="hidden" hidden>
+        <form method="post" action="{% url 'tramites:casointerno-bulk' %}" class="bulk-form" id="bulk-form" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <div class="bulk-form__row">
+                <label for="bulk-action">Acción masiva</label>
+                <select id="bulk-action" name="accion">
+                    <option value="">Selecciona una acción</option>
+                    <option value="agregar_tramite">Agregar trámite anexo</option>
+                    <option value="agregar_estatus">Agregar estatus a casos</option>
+                    <option value="convertir_anexo">Convertir casos en trámites anexos</option>
+                </select>
+            </div>
+            <div class="bulk-form__row bulk-form__tramite" data-bulk-tramite>
+                <button type="button" class="btn btn--secondary btn--sm" data-bulk-tramite-open>
+                    Completar datos del trámite anexo
+                </button>
+            </div>
+            <div class="bulk-form__row bulk-form__convert" data-bulk-convert>
+                <button type="button" class="btn btn--secondary btn--sm" data-bulk-convert-open>
+                    Seleccionar caso destino
+                </button>
+                <span class="text-muted">Convierte los casos seleccionados en trámites anexos de otro caso.</span>
+            </div>
+            <div class="bulk-form__row bulk-form__estatus" data-bulk-estatus>
+                <div class="bulk-field bulk-field--status">
+                    <label for="bulk-estatus-caso-typeahead">{{ bulk_estatus_form.estatus_nuevo.label }}</label>
+                    <input
+                        type="search"
+                        id="bulk-estatus-caso-typeahead"
+                        name="bulk_estatus_caso_busqueda"
+                        class="form-input"
+                        placeholder="Escribe para buscar estatus..."
+                        data-select-typeahead
+                        data-typeahead-target="#{{ bulk_estatus_form.estatus_nuevo.id_for_label }}"
+                        data-typeahead-results="#bulk-estatus-caso-suggestions"
+                    >
+                    <p class="help-text">Selecciona un estatus existente; no escribas uno nuevo aquí.</p>
+                    <div class="cct-suggestions surface-subtle" id="bulk-estatus-caso-suggestions" hidden></div>
+                    <div class="select-hidden">
+                        {{ bulk_estatus_form.estatus_nuevo }}
+                    </div>
+                    <div class="field-actions" data-estatus-actions>
+                        <button type="button" class="btn btn--ghost btn--sm" data-crud-open="estatus-caso" data-crud-target="{{ bulk_estatus_form.estatus_nuevo.id_for_label }}">Agregar estatus</button>
+                        <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="estatus-caso" data-crud-target="{{ bulk_estatus_form.estatus_nuevo.id_for_label }}">Editar seleccionado</button>
+                        <button type="button" class="btn btn--danger btn--sm" data-crud-delete="estatus-caso" data-crud-target="{{ bulk_estatus_form.estatus_nuevo.id_for_label }}">Eliminar seleccionado</button>
+                    </div>
+                </div>
+                <div class="bulk-field bulk-field--full">
+                    {{ bulk_estatus_form.comentario.label_tag }}
+                    {{ bulk_estatus_form.comentario }}
+                </div>
+            </div>
+            <div class="bulk-form__actions">
+                <span class="bulk-form__counter" data-bulk-count>0 seleccionados</span>
+                <button type="submit" class="btn btn--primary btn--md" disabled data-bulk-submit>Aplicar a seleccionados</button>
+            </div>
+        </form>
+        <p class="module-panel__subtitle">Selecciona los casos en la tabla para aplicar la acción masiva.</p>
+    </section>
+
+    <div class="modal" id="bulk-tramite-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title">Nuevo trámite anexo (masivo)</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body" data-duplicados-form data-duplicados-type="tramite">
+                <div class="form-subsection">
+                    <div class="duplicate-alert" data-duplicados-output-expediente hidden></div>
+                </div>
+                <div class="form-subsection">
+                    <h4 class="section-title">Datos del trámite</h4>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="{{ bulk_tramite_form.tipo.id_for_label }}">{{ bulk_tramite_form.tipo.label }}</label>
+                            {{ bulk_tramite_form.tipo }}
+                            <div class="field-actions">
+                                <button type="button" class="btn btn--ghost btn--sm" data-crud-open="tipo-proceso" data-crud-target="id_bulk_tramite-tipo">Agregar tipo</button>
+                                <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="tipo-proceso" data-crud-target="id_bulk_tramite-tipo">Editar seleccionado</button>
+                                <button type="button" class="btn btn--danger btn--sm" data-crud-delete="tipo-proceso" data-crud-target="id_bulk_tramite-tipo">Eliminar seleccionado</button>
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label for="{{ bulk_tramite_form.fecha.id_for_label }}">{{ bulk_tramite_form.fecha.label }}</label>
+                            {{ bulk_tramite_form.fecha }}
+                        </div>
+                        <div class="form-field">
+                            <label for="{{ bulk_tramite_form.fecha_termino.id_for_label }}">{{ bulk_tramite_form.fecha_termino.label }}</label>
+                            {{ bulk_tramite_form.fecha_termino }}
+                            <p class="help-text">Opcional. Define una fecha límite para calcular los días restantes.</p>
+                        </div>
+                        <div class="form-field">
+                            <label>Días restantes</label>
+                            <div class="termino-pill" data-termino-dias-tramite>—</div>
+                            <p class="help-text">Se actualizará al elegir la fecha de término.</p>
+                        </div>
+                        <div class="form-field form-field--full">
+                            <label for="{{ bulk_tramite_form.numero_oficio.id_for_label }}">{{ bulk_tramite_form.numero_oficio.label }}</label>
+                            {{ bulk_tramite_form.numero_oficio }}
+                            <p class="help-text">Opcional. Selecciona un prefijo del catálogo y edítalo si necesitas agregar caracteres adicionales.</p>
+                        </div>
+                        <div class="form-field form-field--full">
+                            <label for="prefijo-oficio-select-modal">Prefijos sugeridos</label>
+                            <select id="prefijo-oficio-select-modal" data-prefijo-oficio-select>
+                                <option value="">Selecciona un prefijo para usarlo o editarlo</option>
+                                {% for prefijo in prefijos_oficio %}
+                                <option value="{{ prefijo.id }}">{{ prefijo.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="field-actions">
+                                <button type="button" class="btn btn--ghost btn--sm" data-prefijo-oficio-modal-open="">Nuevo prefijo</button>
+                                <button type="button" class="btn btn--ghost btn--sm" data-prefijo-oficio-modal-edit="">Editar seleccionado</button>
+                                <button type="button" class="btn btn--danger btn--sm" data-prefijo-oficio-modal-delete="">Eliminar seleccionado</button>
+                            </div>
+                            <p class="help-text">Al seleccionar un prefijo se colocará en el campo de número de oficio y podrás modificarlo.</p>
+                            <datalist id="prefijo-oficio-options">
+                                {% for prefijo in prefijos_oficio %}
+                                <option value="{{ prefijo.nombre }}"></option>
+                                {% endfor %}
+                            </datalist>
+                        </div>
+                        <section class="form-subsection">
+                            <h4 class="section-title">Solicitante y destinatario</h4>
+                            <div class="form-grid">
+                                <div class="form-field">
+                                    <label for="{{ bulk_tramite_form.solicitante.id_for_label }}">{{ bulk_tramite_form.solicitante.label }}</label>
+                                    {{ bulk_tramite_form.solicitante }}
+                                    <div class="field-actions">
+                                        <button type="button" class="btn btn--ghost btn--sm" data-crud-open="solicitante" data-crud-target="id_bulk_tramite-solicitante">Nuevo</button>
+                                        <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="solicitante" data-crud-target="id_bulk_tramite-solicitante">Editar seleccionado</button>
+                                        <button type="button" class="btn btn--danger btn--sm" data-crud-delete="solicitante" data-crud-target="id_bulk_tramite-solicitante">Eliminar seleccionado</button>
+                                    </div>
+                                    <div class="label-stack" data-funcion-display data-target="id_bulk_tramite-solicitante">
+                                        <span class="label-stack__primary" data-funcion-nombre>-</span>
+                                        <span class="label-stack__secondary" data-funcion-detalle></span>
+                                    </div>
+                                </div>
+                                <div class="form-field">
+                                    <label for="{{ bulk_tramite_form.dirigido_a.id_for_label }}">{{ bulk_tramite_form.dirigido_a.label }}</label>
+                                    {{ bulk_tramite_form.dirigido_a }}
+                                    <div class="field-actions">
+                                        <button type="button" class="btn btn--ghost btn--sm" data-crud-open="destinatario" data-crud-target="id_bulk_tramite-dirigido_a">Nuevo</button>
+                                        <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="destinatario" data-crud-target="id_bulk_tramite-dirigido_a">Editar seleccionado</button>
+                                        <button type="button" class="btn btn--danger btn--sm" data-crud-delete="destinatario" data-crud-target="id_bulk_tramite-dirigido_a">Eliminar seleccionado</button>
+                                    </div>
+                                    <div class="label-stack" data-funcion-display data-target="id_bulk_tramite-dirigido_a">
+                                        <span class="label-stack__primary" data-funcion-nombre>-</span>
+                                        <span class="label-stack__secondary" data-funcion-detalle></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        <div class="form-field">
+                            <label for="{{ bulk_tramite_form.tipo_violencia.id_for_label }}">{{ bulk_tramite_form.tipo_violencia.label }}</label>
+                            {{ bulk_tramite_form.tipo_violencia }}
+                            <div class="field-actions">
+                                <button type="button" class="btn btn--ghost btn--sm" data-crud-open="tipo-violencia" data-crud-target="id_bulk_tramite-tipo_violencia">Nuevo</button>
+                                <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="tipo-violencia" data-crud-target="id_bulk_tramite-tipo_violencia">Editar seleccionado</button>
+                                <button type="button" class="btn btn--danger btn--sm" data-crud-delete="tipo-violencia" data-crud-target="id_bulk_tramite-tipo_violencia">Eliminar seleccionado</button>
+                            </div>
+                            <p class="help-text">Opcional. Selecciona un tipo y si no existe, créalo desde aquí.</p>
+                        </div>
+                        <div class="form-field form-field--full">
+                            <label for="{{ bulk_tramite_form.asunto.id_for_label }}">{{ bulk_tramite_form.asunto.label }}</label>
+                            {{ bulk_tramite_form.asunto }}
+                        </div>
+                        <div class="form-field form-field--full">
+                            <label for="{{ bulk_tramite_form.minuta.id_for_label }}">{{ bulk_tramite_form.minuta.label }}</label>
+                            {{ bulk_tramite_form.minuta }}
+                            {% if bulk_tramite_form.minuta.help_text %}
+                            <p class="help-text">{{ bulk_tramite_form.minuta.help_text }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="form-field form-field--full">
+                            <label for="{{ bulk_tramite_form.minutas.id_for_label }}">{{ bulk_tramite_form.minutas.label }}</label>
+                            {{ bulk_tramite_form.minutas }}
+                            {% if bulk_tramite_form.minutas.help_text %}
+                            <p class="help-text">{{ bulk_tramite_form.minutas.help_text }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="form-subsection" data-incidencias>
+                    <div class="incidencias-card">
+                        <div class="incidencias-header">
+                            <div>
+                                <h4 class="section-title">Rango de fechas</h4>
+                                <p class="module-panel__subtitle">Indica la fecha de inicio y término que aplican para este trámite.</p>
+                            </div>
+                            <div class="incidencias-actions">
+                                <button type="button" class="btn btn--ghost btn--sm" data-incidencias-toggle>Mostrar/Ocultar</button>
+                                <button type="button" class="btn btn--ghost btn--sm" data-incidencias-clear>Limpiar rango</button>
+                            </div>
+                        </div>
+                        <div class="incidencias-body" data-incidencias-body hidden>
+                            {{ bulk_tramite_form.incidencia_nombre_docente }}
+                            {{ bulk_tramite_form.rangos_fechas_adicionales }}
+                            <div class="form-grid incidencias-grid">
+                                <div class="form-field">
+                                    <label for="{{ bulk_tramite_form.incidencia_afiliacion.id_for_label }}">{{ bulk_tramite_form.incidencia_afiliacion.label }}</label>
+                                    {{ bulk_tramite_form.incidencia_afiliacion }}
+                                    <p class="help-text">IMSS calcula la fecha de término; ISSSTE calcula los días.</p>
+                                </div>
+                                <div class="form-field">
+                                    <label for="{{ bulk_tramite_form.incidencia_fecha_inicio.id_for_label }}">{{ bulk_tramite_form.incidencia_fecha_inicio.label }}</label>
+                                    {{ bulk_tramite_form.incidencia_fecha_inicio }}
+                                </div>
+                                <div class="form-field">
+                                    <label for="{{ bulk_tramite_form.incidencia_fecha_termino.id_for_label }}">{{ bulk_tramite_form.incidencia_fecha_termino.label }}</label>
+                                    {{ bulk_tramite_form.incidencia_fecha_termino }}
+                                    <p class="help-text">Se deshabilita cuando afiliación = IMSS.</p>
+                                </div>
+                                <div class="form-field">
+                                    <label for="{{ bulk_tramite_form.incidencia_dias_otorgados.id_for_label }}">{{ bulk_tramite_form.incidencia_dias_otorgados.label }}</label>
+                                    {{ bulk_tramite_form.incidencia_dias_otorgados }}
+                                    <p class="help-text">Para ISSSTE se llena automáticamente según las fechas.</p>
+                                </div>
+                            </div>
+                            <div class="incidencias-summary" data-incidencias-summary>
+                                Captura afiliación y fechas para calcular el rango principal.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-subsection">
+                    <div class="section-header">
+                        <h4 class="section-title">Participantes</h4>
+                        <button type="button" class="btn btn--ghost btn--sm" data-toggle-section="#participantes-bulk-body">Mostrar</button>
+                    </div>
+                    <div id="participantes-bulk-body" data-toggle-default="hidden" hidden>
+                    <div class="form-grid">
+                        <div class="form-field form-field--full card-participante">
+                            <h5 class="section-subtitle">Generador</h5>
+                            <div class="form-grid">
+                                <div class="form-field">
+                                    <label for="{{ bulk_tramite_form.generador_nombre.id_for_label }}">{{ bulk_tramite_form.generador_nombre.label }}</label>
+                                    {{ bulk_tramite_form.generador_nombre }}
+                                </div>
+                                <div class="form-field">
+                                    <label for="{{ bulk_tramite_form.generador_iniciales.id_for_label }}">{{ bulk_tramite_form.generador_iniciales.label }}</label>
+                                    {{ bulk_tramite_form.generador_iniciales }}
+                                    <p class="help-text">Ej. A.B.C.D.</p>
+                                </div>
+                                <div class="form-field">
+                                    <label for="{{ bulk_tramite_form.generador_sexo.id_for_label }}">{{ bulk_tramite_form.generador_sexo.label }}</label>
+                                    {{ bulk_tramite_form.generador_sexo }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-field form-field--full card-participante">
+                            <h5 class="section-subtitle">Receptor</h5>
+                            <div class="form-grid">
+                                <div class="form-field">
+                                    <label for="{{ bulk_tramite_form.receptor_nombre.id_for_label }}">{{ bulk_tramite_form.receptor_nombre.label }}</label>
+                                    {{ bulk_tramite_form.receptor_nombre }}
+                                </div>
+                                <div class="form-field">
+                                    <label for="{{ bulk_tramite_form.receptor_iniciales.id_for_label }}">{{ bulk_tramite_form.receptor_iniciales.label }}</label>
+                                    {{ bulk_tramite_form.receptor_iniciales }}
+                                    <p class="help-text">Ej. A.B.C.D.</p>
+                                </div>
+                                <div class="form-field">
+                                    <label for="{{ bulk_tramite_form.receptor_sexo.id_for_label }}">{{ bulk_tramite_form.receptor_sexo.label }}</label>
+                                    {{ bulk_tramite_form.receptor_sexo }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-field form-field--full card-participante">
+                            <h5 class="section-subtitle">Generadores adicionales</h5>
+                            <div class="field-actions">
+                                <button type="button" class="btn btn--ghost btn--sm" data-generador-adicional-add>Agregar generador</button>
+                            </div>
+                            <table class="table table--interactive">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Iniciales NNA</th>
+                                        <th>Sexo</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody data-generadores-rows>
+                                    <tr class="table__empty-row"><td colspan="4" class="table__empty">No hay generadores adicionales.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="form-field form-field--full card-participante">
+                            <h5 class="section-subtitle">Receptores adicionales</h5>
+                            <div class="field-actions">
+                                <button type="button" class="btn btn--ghost btn--sm" data-receptor-adicional-add>Agregar receptor</button>
+                            </div>
+                            <table class="table table--interactive">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Iniciales NNA</th>
+                                        <th>Sexo</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody data-receptores-rows>
+                                    <tr class="table__empty-row"><td colspan="4" class="table__empty">No hay receptores adicionales.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                <div class="form-field form-field--full" style="margin-top: 0.5rem;">
+                    <div class="duplicate-alert" data-duplicados-output-participantes hidden></div>
+                </div>
+                <div class="form-subsection status-management">
+                    <h4 class="section-title">Observaciones y estatus del trámite</h4>
+                    <div class="form-grid">
+                        <div class="form-field form-field--full">
+                            <label for="{{ bulk_tramite_form.observaciones.id_for_label }}">{{ bulk_tramite_form.observaciones.label }}</label>
+                            {{ bulk_tramite_form.observaciones }}
+                        </div>
+                        <div class="form-field">
+                            <label for="{{ bulk_tramite_form.estatus.id_for_label }}">{{ bulk_tramite_form.estatus.label }}</label>
+                            {{ bulk_tramite_form.estatus }}
+                            <div class="field-actions" data-estatus-actions>
+                                <button type="button" class="btn btn--ghost btn--sm" data-crud-open="estatus-tramite" data-crud-target="id_bulk_tramite-estatus">Agregar estatus</button>
+                                <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="estatus-tramite" data-crud-target="id_bulk_tramite-estatus">Editar seleccionado</button>
+                                <button type="button" class="btn btn--danger btn--sm" data-crud-delete="estatus-tramite" data-crud-target="id_bulk_tramite-estatus">Eliminar seleccionado</button>
+                            </div>
+                        </div>
+                        <div class="form-field form-field--full">
+                            <label for="bulk-comentario-estatus-modal">Comentario de estatus (opcional)</label>
+                            {{ bulk_tramite_form.comentario_estatus }}
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn--primary btn--md" form="bulk-form" data-bulk-tramite-submit>Guardar y aplicar</button>
+                </div>
+                <input type="hidden" id="id_generadores_adicionales" name="bulk_tramite-generadores_adicionales" value="[]">
+                <input type="hidden" id="id_receptores_adicionales" name="bulk_tramite-receptores_adicionales" value="[]">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn--ghost btn--md" data-modal-close>Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="bulk-convert-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title">Convertir casos en trámites anexos</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-grid">
+                    <div class="form-field form-field--full">
+                        <h4 class="section-title">Asignar a caso o trámite</h4>
+                        <p class="module-panel__subtitle">Busca el caso destino y selecciónalo para unificar el expediente.</p>
+                        <div class="form-grid" data-caso-destino-search data-buscar-url="{% url 'tramites:folio-buscar' %}">
+                            <div class="form-field form-field--full">
+                                <label for="caso-destino-buscar-masivo">Buscar caso o trámite</label>
+                                <input id="caso-destino-buscar-masivo" type="search" class="form-input" placeholder="CCT, expediente, asunto, generador o receptor" data-caso-destino-input>
+                                <p class="help-text">Se muestran hasta 25 resultados.</p>
+                                <p class="help-text" data-caso-destino-id-hint hidden>Buscando por ID</p>
+                            </div>
+                            <div class="form-field">
+                                <label for="caso-destino-id-masivo">Ir por ID exacto</label>
+                                <div class="field-actions">
+                                    <input id="caso-destino-id-masivo" type="number" class="form-input" min="1" placeholder="ID de caso" data-caso-destino-id>
+                                    <button type="button" class="btn btn--secondary btn--sm" data-caso-destino-go>Ir</button>
+                                </div>
+                                <p class="help-text">Busca y asigna directamente un caso por su ID.</p>
+                            </div>
+                            <div class="table-responsive table-responsive--mobile">
+                                <table class="table table--interactive table--auto table--stack-mobile" data-caso-destino-resultados>
+                                    <thead>
+                                        <tr>
+                                            <th>Tipo</th>
+                                            <th>Referencia</th>
+                                            <th>Expediente</th>
+                                            <th>Estatus</th>
+                                            <th>Asesor</th>
+                                            <th>CCT</th>
+                                            <th>Seleccionar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td colspan="7" class="table__empty">Busca para mostrar resultados.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="help-text" data-caso-destino-seleccion>Seleccionado: —</div>
+                            <div class="form-field" style="display: none;">
+                                <label for="{{ bulk_convertir_form.caso_destino.id_for_label }}">{{ bulk_convertir_form.caso_destino.label }}</label>
+                                {{ bulk_convertir_form.caso_destino }}
+                            </div>
+                        </div>
+                        <p class="help-text">Elige el expediente principal donde se unificará la historia.</p>
+                    </div>
+                    <div class="form-field form-field--checkbox">
+                        <label>{{ bulk_convertir_form.mover_tramites_relacionados }} {{ bulk_convertir_form.mover_tramites_relacionados.label }}</label>
+                    </div>
+                    <div class="form-field form-field--checkbox">
+                        <label>{{ bulk_convertir_form.eliminar_caso_origen }} {{ bulk_convertir_form.eliminar_caso_origen.label }}</label>
+                    </div>
+                    <div class="form-field form-field--checkbox" data-confirm-wrapper hidden>
+                        <label>{{ bulk_convertir_form.confirmar_eliminacion }} {{ bulk_convertir_form.confirmar_eliminacion.label }}</label>
+                        <p class="help-text">Confirmación obligatoria para eliminar los casos origen.</p>
+                    </div>
+                    <div class="form-field" data-confirm-text-wrapper hidden>
+                        <label for="{{ bulk_convertir_form.confirmacion_textual.id_for_label }}">{{ bulk_convertir_form.confirmacion_textual.label }}</label>
+                        {{ bulk_convertir_form.confirmacion_textual }}
+                        <p class="help-text">{{ bulk_convertir_form.confirmacion_textual.help_text }}</p>
+                    </div>
+                    <div class="form-field form-field--full">
+                        <div class="alert alert--warning">
+                            Esta acción eliminará los casos origen después de convertirlos en trámites anexos.
+                            Verifica la selección antes de continuar.
+                        </div>
+                    </div>
+                    <div class="form-field form-field--full">
+                        <label for="{{ bulk_convertir_form.motivo.id_for_label }}">{{ bulk_convertir_form.motivo.label }}</label>
+                        {{ bulk_convertir_form.motivo }}
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn--primary btn--md" data-bulk-convert-submit>Convertir seleccionados</button>
+                    <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                </div>
+                <p class="help-text" style="margin-top: 0.75rem;">Este proceso crea un trámite anexo por cada caso seleccionado. El consecutivo del caso destino no cambia.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="generador-adicional-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title" data-modal-title>Agregar generador adicional</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="generador-adicional-form" class="modal-form">
+                    <fieldset id="generador-adicional-fields">
+                        <div class="form-field">
+                            <label for="generador-adicional-nombre">Nombre</label>
+                            <input type="text" id="generador-adicional-nombre" name="nombre" maxlength="255">
+                        </div>
+                        <div class="form-field">
+                            <label for="generador-adicional-iniciales">Iniciales del NNA (Ej. A.B.C.D.)</label>
+                            <input type="text" id="generador-adicional-iniciales" name="iniciales" maxlength="50" placeholder="Ej. A.B.C.D.">
+                        </div>
+                        <div class="form-field">
+                            <label for="generador-adicional-sexo">Sexo del NNA</label>
+                            <select id="generador-adicional-sexo" name="sexo">
+                                <option value="">Selecciona</option>
+                                <option value="M">Mujer</option>
+                                <option value="H">Hombre</option>
+                            </select>
+                        </div>
+                    </fieldset>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn--ghost btn--md" data-modal-close>Cancelar</button>
+                        <button type="submit" class="btn btn--primary btn--md" data-generador-adicional-save>Guardar</button>
+                    </div>
+                </form>
+                <p class="modal-message" data-modal-message style="display: none;"></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="receptor-adicional-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title" data-modal-title>Agregar receptor adicional</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="receptor-adicional-form" class="modal-form">
+                    <fieldset id="receptor-adicional-fields">
+                        <div class="form-field">
+                            <label for="receptor-adicional-nombre">Nombre</label>
+                            <input type="text" id="receptor-adicional-nombre" name="nombre" maxlength="255">
+                        </div>
+                        <div class="form-field">
+                            <label for="receptor-adicional-iniciales">Iniciales del NNA (Ej. A.B.C.D.)</label>
+                            <input type="text" id="receptor-adicional-iniciales" name="iniciales" maxlength="50" placeholder="Ej. A.B.C.D.">
+                        </div>
+                        <div class="form-field">
+                            <label for="receptor-adicional-sexo">Sexo del NNA</label>
+                            <select id="receptor-adicional-sexo" name="sexo">
+                                <option value="">Selecciona</option>
+                                <option value="M">Mujer</option>
+                                <option value="H">Hombre</option>
+                            </select>
+                        </div>
+                    </fieldset>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn--ghost btn--md" data-modal-close>Cancelar</button>
+                        <button type="submit" class="btn btn--primary btn--md" data-receptor-adicional-save>Guardar</button>
+                    </div>
+                </form>
+                <p class="modal-message" data-modal-message style="display: none;"></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="tipo-proceso-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title" data-modal-title>Agregar tipo de trámite</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="tipo-proceso-form" class="modal-form">
+                    <fieldset id="tipo-proceso-fields">
+                        <div class="modal-field">
+                            <label for="tipo-proceso-nombre">Nombre del tipo</label>
+                            <input type="text" id="tipo-proceso-nombre" name="nombre" required maxlength="255">
+                        </div>
+                        <div class="modal-field">
+                            <label for="tipo-proceso-descripcion">Descripción (opcional)</label>
+                            <textarea id="tipo-proceso-descripcion" name="descripcion" maxlength="500" rows="3"></textarea>
+                        </div>
+                        <div class="modal-field">
+                            <label>
+                                <input type="checkbox" id="tipo-proceso-es-documento" name="es_documento">
+                                Requiere documentos adicionales
+                            </label>
+                        </div>
+                    </fieldset>
+                    <div class="modal-message" data-modal-message role="alert"></div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn--primary btn--md" data-tipo-proceso-save>Guardar</button>
+                        <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="estatus-tramite-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title" data-modal-title>Agregar estatus de trámite</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="estatus-tramite-form" class="modal-form">
+                    <fieldset id="estatus-tramite-fields">
+                        <div class="modal-field">
+                            <label for="estatus-tramite-nombre">Nombre del estatus</label>
+                            <input type="text" id="estatus-tramite-nombre" name="nombre" required maxlength="255">
+                        </div>
+                        <div class="modal-field">
+                            <label for="estatus-tramite-descripcion">Descripción (opcional)</label>
+                            <textarea id="estatus-tramite-descripcion" name="descripcion" maxlength="500" rows="3"></textarea>
+                        </div>
+                        <div class="modal-field">
+                            <label for="estatus-tramite-orden">Orden</label>
+                            <input type="number" id="estatus-tramite-orden" name="orden" min="1" step="1" value="1">
+                        </div>
+                    </fieldset>
+                    <div class="modal-message" data-modal-message role="alert"></div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn--primary btn--md" data-estatus-tramite-save>Guardar</button>
+                        <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="estatus-caso-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title" data-modal-title>Agregar estatus de caso</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="estatus-caso-form" class="modal-form">
+                    <fieldset id="estatus-caso-fields">
+                        <div class="modal-field">
+                            <label for="estatus-caso-nombre">Nombre del estatus</label>
+                            <input type="text" id="estatus-caso-nombre" name="nombre" required maxlength="255">
+                        </div>
+                        <div class="modal-field">
+                            <label for="estatus-caso-orden">Orden (número para ordenamiento)</label>
+                            <input type="number" id="estatus-caso-orden" name="orden" value="1" min="1">
+                        </div>
+                    </fieldset>
+                    <div class="modal-message" data-modal-message role="alert"></div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn--primary btn--md" data-estatus-caso-save>Guardar</button>
+                        <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="prefijo-oficio-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title" data-modal-title>Agregar prefijo de oficio</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="prefijo-oficio-form" class="modal-form">
+                    <fieldset id="prefijo-oficio-fields">
+                        <div class="modal-field">
+                            <label for="prefijo-oficio-nombre">Prefijo</label>
+                            <input type="text" id="prefijo-oficio-nombre" name="nombre" required maxlength="255" placeholder="Ej. SE/SEB/DES-EESP">
+                        </div>
+                        <div class="modal-field">
+                            <label for="prefijo-oficio-descripcion">Descripción (opcional)</label>
+                            <textarea id="prefijo-oficio-descripcion" name="descripcion" maxlength="500" rows="3" placeholder="Notas internas para identificar el prefijo."></textarea>
+                        </div>
+                    </fieldset>
+                    <div class="modal-message" data-modal-message role="alert"></div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn--primary btn--md" data-prefijo-oficio-save>Guardar</button>
+                        <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="tipo-violencia-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title" data-modal-title>Agregar tipo de violencia</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="tipo-violencia-form" class="modal-form">
+                    <fieldset id="tipo-violencia-fields">
+                        <div class="modal-field">
+                            <label for="tipo-violencia-nombre">Nombre</label>
+                            <input type="text" id="tipo-violencia-nombre" name="nombre" required maxlength="255" placeholder="Ej. Violencia laboral">
+                        </div>
+                        <div class="modal-field">
+                            <label for="tipo-violencia-descripcion">Descripción (opcional)</label>
+                            <textarea id="tipo-violencia-descripcion" name="descripcion" maxlength="500" rows="3" placeholder="Notas internas para identificar el tipo."></textarea>
+                        </div>
+                    </fieldset>
+                    <div class="modal-message" data-modal-message role="alert"></div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn--primary btn--md" data-tipo-violencia-save>Guardar</button>
+                        <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="solicitante-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title" data-modal-title>Agregar solicitante</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="solicitante-form" class="modal-form">
+                    <fieldset id="solicitante-fields">
+                        <div class="modal-field">
+                            <label for="solicitante-nombre">Nombre</label>
+                            <input type="text" id="solicitante-nombre" name="nombre" required maxlength="255" placeholder="Ej. Sindicato de Trabajadores">
+                        </div>
+                        <div class="modal-field">
+                            <label for="solicitante-descripcion">Función</label>
+                            <textarea id="solicitante-descripcion" name="descripcion" maxlength="500" rows="3" placeholder="Ej. Representante legal"></textarea>
+                        </div>
+                    </fieldset>
+                    <div class="modal-message" data-modal-message role="alert"></div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn--primary btn--md" data-solicitante-save>Guardar</button>
+                        <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="destinatario-modal" hidden role="dialog" aria-modal="true">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-dialog" role="document">
+            <div class="modal-header">
+                <h3 class="modal-title" data-modal-title>Agregar destinatario</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="destinatario-form" class="modal-form">
+                    <fieldset id="destinatario-fields">
+                        <div class="modal-field">
+                            <label for="destinatario-nombre">Nombre</label>
+                            <input type="text" id="destinatario-nombre" name="nombre" required maxlength="255" placeholder="Ej. Dirección Jurídica">
+                        </div>
+                        <div class="modal-field">
+                            <label for="destinatario-descripcion">Función</label>
+                            <textarea id="destinatario-descripcion" name="descripcion" maxlength="500" rows="3" placeholder="Ej. Director, Coordinador, etc."></textarea>
+                        </div>
+                    </fieldset>
+                    <div class="modal-message" data-modal-message role="alert"></div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn--primary btn--md" data-destinatario-save>Guardar</button>
+                        <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <section class="filters module-panel" data-filters-panel>
@@ -177,6 +1561,15 @@
                     <label>{{ field.label }} {{ field }}</label>
                 </div>
                 {% endfor %}
+                <div class="filter-field">
+                    <label>IDs en filtros
+                        {% if show_ids_enabled %}
+                        <a class="btn btn--ghost btn--sm" href="{{ show_ids_disable_url }}">Ocultar IDs</a>
+                        {% else %}
+                        <a class="btn btn--ghost btn--sm" href="{{ show_ids_enable_url }}">Mostrar IDs</a>
+                        {% endif %}
+                    </label>
+                </div>
             </div>
             <div class="module-panel__footer">
                 <button type="submit" class="btn btn--primary btn--sm">Aplicar filtros</button>
@@ -185,66 +1578,225 @@
         </form>
     </section>
 
+    <div id="tramites-listado">
     <div class="module-table-card module-table-card--fluid">
         <div class="module-table-card__header">
-            <h2 class="module-table-card__title">Listado de trámites</h2>
+            <h2 class="module-table-card__title">Listado de casos</h2>
             <p class="module-table-card__meta">
                 {% if page_obj %}
                 Mostrando {{ page_obj.start_index }} – {{ page_obj.end_index }} de {{ page_obj.paginator.count }} registros.
-                {% else %}
-                Total de registros: {{ casos|length }}
                 {% endif %}
             </p>
         </div>
 
         <div class="table-responsive table-responsive--wide table-responsive--mobile">
-        <table class="table table--interactive table--responsive table--auto table--stack-mobile" data-table-sortable="true">
+        <table class="table table--interactive table--responsive table--auto table--stack-mobile tramites-list-table tramites-list-table--casos">
             <thead>
                 <tr>
-                    <th class="col-cct" data-sort-key="cct">CCT</th>
-                    <th class="col-tipo" data-sort-key="tipo">Tipo inicial</th>
-                    <th class="col-expediente" data-sort-key="expediente">Número de expediente</th>
-                    <th class="col-fecha" data-sort-key="fecha">Fecha del trámite</th>
-                    <th class="col-fecha-registro" data-sort-key="fecha_registro">Fecha de registro</th>
-                    <th class="col-estatus" data-sort-key="estatus">Estatus</th>
-                    <th class="col-asesor" data-sort-key="asesor">Asesor CCT</th>
+                    <th class="col-seleccion">
+                        <input type="checkbox" id="select-all-casos" aria-label="Seleccionar todos">
+                    </th>
+                    <th class="col-cct">
+                        <a class="table__sort-link" href="?{{ orden_base_qs }}orden={% if orden_actual == 'cct' %}-cct{% else %}cct{% endif %}">
+                            CCT
+                            {% if orden_actual == 'cct' %}↑{% elif orden_actual == '-cct' %}↓{% endif %}
+                        </a>
+                    </th>
+                    <th class="col-trabajador-registro">
+                        <div class="composite-header">
+                            <span class="composite-header__title">Trabajador / Registro</span>
+                            <div class="composite-header__sorts">
+                                <span>Trabajador</span>
+                                <span class="composite-header__divider">|</span>
+                                <a class="table__sort-link" href="?{{ orden_base_qs }}orden={% if orden_actual == 'fecha_registro' %}-fecha_registro{% else %}fecha_registro{% endif %}">
+                                    Fecha de registro
+                                    {% if orden_actual == 'fecha_registro' %}↑{% elif orden_actual == '-fecha_registro' %}↓{% endif %}
+                                </a>
+                            </div>
+                        </div>
+                    </th>
+                    <th class="col-referencia">Tipo inicial / ID / Tipo / Número de expediente</th>
+                    <th class="col-seguimiento">
+                        <div class="composite-header">
+                            <span class="composite-header__title">Seguimiento</span>
+                            <div class="composite-header__sorts">
+                                <a class="table__sort-link" href="?{{ orden_base_qs }}orden={% if orden_actual == 'fecha' %}-fecha{% else %}fecha{% endif %}">
+                                    Fecha del trámite
+                                    {% if orden_actual == 'fecha' %}↑{% elif orden_actual == '-fecha' %}↓{% endif %}
+                                </a>
+                                <span class="composite-header__divider">|</span>
+                                <a class="table__sort-link" href="?{{ orden_base_qs }}orden={% if orden_actual == 'estatus' %}-estatus{% else %}estatus{% endif %}">
+                                    Estatus
+                                    {% if orden_actual == 'estatus' %}↑{% elif orden_actual == '-estatus' %}↓{% endif %}
+                                </a>
+                                <span class="composite-header__divider">|</span>
+                                <span>SLA</span>
+                            </div>
+                        </div>
+                    </th>
                     <th class="col-acciones">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for caso in casos %}
                 <tr>
-                    <td data-label="CCT" data-sort-value="{{ caso.cct_id }}">
-                        <span class="table__primary">{{ caso.cct_id }}</span>
-                        <span class="table__secondary">{{ caso.cct_nombre }}</span>
+                    <td data-label="Seleccionar" class="col-seleccion">
+                        <input type="checkbox" name="caso_ids" value="{{ caso.pk }}" form="bulk-form" class="select-caso">
                     </td>
-                    <td data-label="Tipo inicial" data-sort-value="{{ caso.tipo_inicial.nombre }}">{{ caso.tipo_inicial.nombre }}</td>
-                    <td data-label="Número de expediente" data-sort-value="{{ caso.numero_oficio|default_if_none:'' }}">{{ caso.numero_oficio|default:"-" }}</td>
-                    <td data-label="Fecha del trámite" data-sort-value="{{ caso.fecha_apertura|date:'Y-m-d' }}">{{ caso.fecha_apertura|date:"d/m/Y" }}</td>
-                    <td data-label="Fecha de registro" data-sort-value="{{ caso.fecha_registro|date:'Y-m-d H:i' }}">{{ caso.fecha_registro|date:"d/m/Y H:i" }}</td>
-                    <td data-label="Estatus" data-sort-value="{{ caso.estatus.nombre|default_if_none:'' }}">
-                        {% if caso.estatus %}
-                        <span class="status-chip status-chip--{{ caso.estatus.nombre|slugify }}">{{ caso.estatus.nombre }}</span>
-                        {% else %}
-                        <span class="status-chip status-chip--default">Sin estatus</span>
-                        {% endif %}
+                    <td class="col-cct" data-label="CCT" data-sort-value="{{ caso.cct_id }}">
+                        <div class="detalle-compuesto">
+                            <div class="detalle-compuesto__bloque">
+                                <span class="detalle-compuesto__etiqueta">CCT</span>
+                                <span class="table__primary" data-highlight-text>{{ caso.cct_id }}</span>
+                                <span class="table__secondary" data-highlight-text>{{ caso.cct_nombre }}</span>
+                            </div>
+                            <div class="detalle-compuesto__bloque">
+                                <span class="detalle-compuesto__etiqueta">Solicitante</span>
+                                <span class="table__primary" data-highlight-text>{{ caso.solicitante_listado|default:"-" }}</span>
+                            </div>
+                            <div class="detalle-compuesto__bloque">
+                                <span class="detalle-compuesto__etiqueta">Dirigido a</span>
+                                <span class="table__primary" data-highlight-text>{{ caso.dirigido_a_listado|default:"-" }}</span>
+                            </div>
+                        </div>
                     </td>
-                    <td data-label="Asesor CCT" data-sort-value="{{ caso.asesor_cct|default_if_none:'' }}">{{ caso.asesor_cct|default:"-" }}</td>
+                    <td class="col-trabajador-registro" data-label="Trabajador / Registro" data-sort-value="{{ caso.fecha_registro|date:'U' }}">
+                        <div class="detalle-compuesto">
+                            <div class="detalle-compuesto__bloque">
+                                <span class="detalle-compuesto__etiqueta">Trabajador</span>
+                                <span class="table__primary" data-highlight-text>{{ caso.trabajador_listado|default:"-" }}</span>
+                            </div>
+                            <div class="detalle-compuesto__bloque">
+                                <span class="detalle-compuesto__etiqueta">Fecha de registro</span>
+                                <span class="table__primary">{{ caso.fecha_registro|date:"d/m/Y" }}</span>
+                                <span class="table__secondary">
+                                    {% if caso.creado_por %}
+                                    Registró: {{ caso.creado_por.get_full_name|default:caso.creado_por.username }}
+                                    {% else %}
+                                    Registró: -
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="detalle-compuesto__bloque">
+                                <span class="detalle-compuesto__etiqueta">Generador</span>
+                                <span class="table__primary" data-highlight-text>
+                                    {{ caso.generador_listado|default:"-" }}
+                                    {% if caso.generador_extra_count %}
+                                    <span class="participants-more" title="Hay más generadores">+{{ caso.generador_extra_count }}</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="detalle-compuesto__bloque">
+                                <span class="detalle-compuesto__etiqueta">Receptor</span>
+                                <span class="table__primary" data-highlight-text>
+                                    {{ caso.receptor_listado|default:"-" }}
+                                    {% if caso.receptor_extra_count %}
+                                    <span class="participants-more" title="Hay más receptores">+{{ caso.receptor_extra_count }}</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="col-referencia" data-label="Referencia" data-sort-value="{{ caso.tipo_inicial.nombre }} {{ caso.numero_oficio|default_if_none:'' }}">
+                        <div class="referencia-compuesta">
+                            <div class="referencia-compuesta__bloque">
+                                <span class="referencia-compuesta__etiqueta">Tipo inicial</span>
+                                <span class="table__primary" data-highlight-text>{{ caso.tipo_inicial.nombre }}</span>
+                            </div>
+                            <div class="referencia-compuesta__bloque">
+                                <span class="referencia-compuesta__etiqueta">ID</span>
+                                <span class="table__primary" data-highlight-text>Caso #{{ caso.pk }}</span>
+                            </div>
+                            <div class="referencia-compuesta__bloque">
+                                <span class="referencia-compuesta__etiqueta">Tipo / Número de expediente</span>
+                                <span class="table__primary">Caso</span>
+                                <span class="table__secondary" data-highlight-text>{{ caso.numero_oficio|default:"-" }}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="col-seguimiento" data-label="Seguimiento" data-sort-value="{{ caso.fecha_apertura|date:'U' }} {{ caso.estatus.nombre|default_if_none:'' }}">
+                        <div class="detalle-compuesto">
+                            <div class="detalle-compuesto__bloque">
+                                <span class="detalle-compuesto__etiqueta">Fecha del trámite</span>
+                                <span class="table__primary">{{ caso.fecha_apertura|date:"d/m/Y" }}</span>
+                            </div>
+                            <div class="detalle-compuesto__bloque">
+                                <span class="detalle-compuesto__etiqueta">Estatus</span>
+                                {% if caso.estatus %}
+                                <span class="status-chip status-chip--{{ caso.estatus.nombre|slugify }}" data-highlight-text>{{ caso.estatus.nombre }}</span>
+                                {% else %}
+                                <span class="status-chip status-chip--default">Sin estatus</span>
+                                {% endif %}
+                            </div>
+                            <div class="detalle-compuesto__bloque">
+                                <span class="detalle-compuesto__etiqueta">SLA</span>
+                                {% if caso.sla_snapshot.fecha_vencimiento %}
+                                <span class="status-chip status-chip--sla-{{ caso.sla_snapshot.semaforo_class|default:'gris' }}">
+                                    {{ caso.sla_snapshot.semaforo_label|default:"Sin SLA" }}
+                                </span>
+                                <span class="table__secondary">{{ caso.sla_snapshot.fecha_vencimiento|date:"d/m/Y" }}</span>
+                                {% if caso.sla_snapshot.dias_restantes is not None %}
+                                    {% if caso.sla_snapshot.dias_restantes < 0 %}
+                                    <span class="table__secondary">{{ caso.sla_snapshot.dias_vencido }} día(s) de atraso</span>
+                                    {% else %}
+                                    <span class="table__secondary">{{ caso.sla_snapshot.dias_restantes }} día(s) restantes</span>
+                                    {% endif %}
+                                {% endif %}
+                                {% else %}
+                                <span class="status-chip status-chip--sla-gris">Sin SLA</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
                     <td class="col-acciones" data-label="Acciones">
-                        <div class="table-actions">
-                            <a class="table-actions__link" href="{% url 'tramites:casointerno-detail' caso.pk %}?from_list={{ request.get_full_path|urlencode }}" title="Ver trámite completo" aria-label="Ver trámite">Ver trámite</a>
-                            {% if perms.licencias.change_casointerno %}
-                            <a class="table-actions__link" href="{% url 'tramites:casointerno-update' caso.pk %}?from_list={{ request.get_full_path|urlencode }}" title="Editar trámite" aria-label="Editar trámite">Editar</a>
-                            {% endif %}
-                            {% if perms.licencias.delete_casointerno %}
-                            <a class="table-actions__link table-actions__link--danger" href="{% url 'tramites:casointerno-delete' caso.pk %}?from_list={{ request.get_full_path|urlencode }}" title="Eliminar trámite" aria-label="Eliminar trámite">Eliminar</a>
-                            {% endif %}
+                        <div class="table-actions-cell">
+                            <div class="table-actions table-actions--compact">
+                                <a class="table-actions__link table-actions__link--primary" href="{% url 'tramites:casointerno-detail' caso.pk %}?from_list={{ request.get_full_path|urlencode }}" title="Ver trámite completo" aria-label="Ver trámite completo">Ver</a>
+                                <button
+                                    type="button"
+                                    class="table-actions__link table-actions__link--preview"
+                                    data-doc-preview-open
+                                    data-doc-type="caso"
+                                    data-doc-id="{{ caso.pk }}"
+                                    data-doc-label="Caso #{{ caso.pk }} · {{ caso.cct_id|default:'Sin CCT' }}"
+                                    data-doc-tipo-inicial="{{ caso.tipo_inicial.nombre|default:'-' }}"
+                                    data-doc-expediente="{{ caso.numero_oficio|default:'-' }}"
+                                    data-doc-registrado-por="{% if caso.creado_por %}{{ caso.creado_por.get_full_name|default:caso.creado_por.username }}{% else %}-{% endif %}"
+                                    data-doc-preview-url="{% url 'tramites:documento-preview-data' %}"
+                                    title="Vista previa de adjuntos"
+                                    aria-label="Vista previa de documentos adjuntos"
+                                >
+                                    Vista
+                                </button>
+                                {% if perms.licencias.add_folioregistro %}
+                                    {% if not caso.numero_oficio or caso.numero_oficio|upper == "S/N" or caso.numero_oficio|upper == "SN" %}
+                                    <button type="button" class="table-actions__link table-actions__link--folio" data-folio-open data-tipo="caso" data-id="{{ caso.pk }}" data-next="{% url 'tramites:casointerno-detail' caso.pk %}" title="Generar folio">Folio</button>
+                                    {% endif %}
+                                {% endif %}
+                                {% if perms.licencias.change_casointerno %}
+                                <a class="table-actions__link table-actions__link--edit" href="{% url 'tramites:casointerno-update' caso.pk %}?from_list={{ request.get_full_path|urlencode }}" title="Editar trámite" aria-label="Editar trámite">Editar</a>
+                                {% endif %}
+                                {% if perms.licencias.delete_casointerno %}
+                                <a class="table-actions__link table-actions__link--danger" href="{% url 'tramites:casointerno-delete' caso.pk %}?from_list={{ request.get_full_path|urlencode }}" title="Eliminar trámite" aria-label="Eliminar trámite">Eliminar</a>
+                                {% endif %}
+                            </div>
+                            <div class="table-actions-meta" aria-label="Resumen rápido del caso">
+                                <div class="table-actions-meta__item">
+                                    <span class="table-actions-meta__label">Trámites anexos</span>
+                                    <span class="table-actions-meta__value">{{ caso.tramites_anexos_count|default:0 }}</span>
+                                </div>
+                                <div class="table-actions-meta__item {% if caso.tiene_documentos_adjuntos %}is-positive{% else %}is-muted{% endif %}">
+                                    <span class="table-actions-meta__label">Adjunto</span>
+                                    <span class="table-actions-meta__value">{% if caso.tiene_documentos_adjuntos %}Cargado{% else %}Sin adjunto{% endif %}</span>
+                                    <span class="table-actions-meta__hint">{{ caso.documentos_adjuntos_total|default:0 }} archivo(s)</span>
+                                </div>
+                            </div>
                         </div>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="8" class="table__empty">No se encontraron trámites con los filtros actuales.</td>
+                    <td colspan="6" class="table__empty">No se encontraron trámites con los filtros actuales.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -263,5 +1815,729 @@
         </div>
         {% endif %}
     </div>
+
+    {% if false %}{% endif %}
 </section>
+<div class="modal" id="folio-generar-modal" hidden role="dialog" aria-modal="true">
+    <div class="modal-overlay" data-modal-close></div>
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3 class="modal-title">Generar folio</h3>
+            <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form method="post" action="{% url 'tramites:folio-generar' %}" id="folio-generar-form" data-folio-preview-url="{% url 'tramites:folio-generar-preview' %}" data-folio-cancel-url="{% url 'tramites:folio-generar-cancelar' %}">
+                {% csrf_token %}
+                <input type="hidden" name="tipo" id="folio-tipo">
+                <input type="hidden" name="caso_id" id="folio-caso-id">
+                <input type="hidden" name="tramite_id" id="folio-tramite-id">
+                <input type="hidden" name="next" id="folio-next">
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label>Año</label>
+                        <input type="text" class="form-input" value="{% now 'Y' %}" readonly>
+                    </div>
+                    <div class="form-field form-field--full">
+                        <label for="folio-prefijo">Prefijo</label>
+                        <select id="folio-prefijo" name="prefijo_id" class="form-input">
+                            <option value="">Selecciona un prefijo</option>
+                            {% for prefijo in folio_prefijos %}
+                            <option value="{{ prefijo.id }}">{{ prefijo.nombre }}{% if prefijo.descripcion %} · {{ prefijo.descripcion }}{% endif %}</option>
+                            {% endfor %}
+                        </select>
+                        {% if not folio_prefijos %}
+                        <p class="help-text help-text--warning">No hay prefijos activos. Agrega uno con “Nuevo prefijo”.</p>
+                        {% endif %}
+                        <div class="field-actions">
+                            <button type="button" class="btn btn--ghost btn--sm" data-crud-open="prefijo-folio" data-crud-target="folio-prefijo">Nuevo prefijo</button>
+                            <button type="button" class="btn btn--ghost btn--sm" data-crud-edit="prefijo-folio" data-crud-target="folio-prefijo">Editar seleccionado</button>
+                            <button type="button" class="btn btn--danger btn--sm" data-crud-delete="prefijo-folio" data-crud-target="folio-prefijo">Eliminar seleccionado</button>
+                        </div>
+                        <p class="help-text">Se generará el consecutivo automáticamente.</p>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn--primary btn--md">Generar folio</button>
+                    <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="prefijo-folio-modal" hidden role="dialog" aria-modal="true">
+    <div class="modal-overlay" data-modal-close></div>
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3 class="modal-title" data-modal-title>Agregar prefijo de folio</h3>
+            <button type="button" class="modal-close" data-modal-close aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="prefijo-folio-form" class="modal-form">
+                <fieldset id="prefijo-folio-fields">
+                    <div class="modal-field">
+                        <label for="prefijo-folio-nombre">Prefijo</label>
+                        <input type="text" id="prefijo-folio-nombre" name="nombre" required maxlength="255">
+                    </div>
+                    <div class="modal-field">
+                        <label for="prefijo-folio-descripcion">Descripción</label>
+                        <textarea id="prefijo-folio-descripcion" name="descripcion" maxlength="500" rows="3"></textarea>
+                    </div>
+                    <div class="modal-field">
+                        <label>
+                            <input type="checkbox" id="prefijo-folio-activo" name="esta_activo" checked>
+                            Activo
+                        </label>
+                    </div>
+                </fieldset>
+                <div class="modal-message" data-modal-message role="alert"></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn--primary btn--md" data-prefijo-folio-save>Guardar</button>
+                    <button type="button" class="btn btn--secondary btn--md" data-modal-close>Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    </div>
+
+    <div id="tramites-anexos">
+    {% if tramites_busqueda %}
+    <div class="module-table-card module-table-card--fluid" style="margin-top: 1.75rem;">
+        <div class="module-table-card__header">
+            <h2 class="module-table-card__title">Trámites anexos encontrados</h2>
+            {% if buscar_q %}
+            <p class="module-table-card__meta">Resultados relacionados con “{{ buscar_q }}”.</p>
+            {% else %}
+            <p class="module-table-card__meta">Trámites anexos recientes.</p>
+            {% endif %}
+        </div>
+        <div class="table-responsive table-responsive--wide table-responsive--mobile">
+            <table class="table table--interactive table--responsive table--auto table--stack-mobile tramites-list-table tramites-list-table--anexos">
+                <thead>
+                    <tr>
+                        <th>CCT</th>
+                        <th class="col-trabajador-registro">Trabajador / Registro</th>
+                        <th class="col-referencia">Tipo inicial / ID / Tipo / Número de expediente</th>
+                        <th class="col-seguimiento">Seguimiento</th>
+                        <th class="col-acciones">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tramite in tramites_busqueda %}
+                    <tr>
+                        <td class="col-cct" data-label="CCT">
+                            <div class="detalle-compuesto">
+                                <div class="detalle-compuesto__bloque">
+                                    <span class="detalle-compuesto__etiqueta">CCT</span>
+                                    <span class="table__primary" data-highlight-text>{{ tramite.caso.cct_id|default:"-" }}</span>
+                                    <span class="table__secondary" data-highlight-text>{{ tramite.caso.cct_nombre|default:"-" }}</span>
+                                </div>
+                                <div class="detalle-compuesto__bloque">
+                                    <span class="detalle-compuesto__etiqueta">Solicitante</span>
+                                    <span class="table__primary" data-highlight-text>{{ tramite.solicitante_listado|default:"-" }}</span>
+                                </div>
+                                <div class="detalle-compuesto__bloque">
+                                    <span class="detalle-compuesto__etiqueta">Dirigido a</span>
+                                    <span class="table__primary" data-highlight-text>{{ tramite.dirigido_a_listado|default:"-" }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="col-trabajador-registro" data-label="Trabajador / Registro">
+                            <div class="detalle-compuesto">
+                                <div class="detalle-compuesto__bloque">
+                                    <span class="detalle-compuesto__etiqueta">Trabajador</span>
+                                    <span class="table__primary" data-highlight-text>{{ tramite.trabajador_listado|default:"-" }}</span>
+                                </div>
+                                <div class="detalle-compuesto__bloque">
+                                    <span class="detalle-compuesto__etiqueta">Fecha de registro</span>
+                                    <span class="table__primary">{{ tramite.caso.fecha_registro|date:"d/m/Y" }}</span>
+                                    <span class="table__secondary">
+                                        {% with historial=tramite.historial_estatus_creacion %}
+                                        {% if historial and historial.0.usuario %}
+                                        Registró: {{ historial.0.usuario.get_full_name|default:historial.0.usuario.username }}
+                                        {% else %}
+                                        Registró: -
+                                        {% endif %}
+                                        {% endwith %}
+                                    </span>
+                                </div>
+                                <div class="detalle-compuesto__bloque">
+                                    <span class="detalle-compuesto__etiqueta">Generador</span>
+                                    <span class="table__primary" data-highlight-text>
+                                        {{ tramite.generador_listado|default:"-" }}
+                                        {% if tramite.generador_extra_count %}
+                                        <span class="participants-more" title="Hay más generadores">+{{ tramite.generador_extra_count }}</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="detalle-compuesto__bloque">
+                                    <span class="detalle-compuesto__etiqueta">Receptor</span>
+                                    <span class="table__primary" data-highlight-text>
+                                        {{ tramite.receptor_listado|default:"-" }}
+                                        {% if tramite.receptor_extra_count %}
+                                        <span class="participants-more" title="Hay más receptores">+{{ tramite.receptor_extra_count }}</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="col-referencia" data-label="Referencia">
+                            <div class="referencia-compuesta">
+                                <div class="referencia-compuesta__bloque">
+                                    <span class="referencia-compuesta__etiqueta">Tipo inicial</span>
+                                    <span class="table__primary" data-highlight-text>{{ tramite.caso.tipo_inicial.nombre|default:"-" }}</span>
+                                </div>
+                                <div class="referencia-compuesta__bloque">
+                                    <span class="referencia-compuesta__etiqueta">ID</span>
+                                    <span class="table__primary" data-highlight-text>Caso #{{ tramite.caso_id }}</span>
+                                    <span class="table__secondary" data-highlight-text>Trámite #{{ tramite.pk }}</span>
+                                </div>
+                                <div class="referencia-compuesta__bloque">
+                                    <span class="referencia-compuesta__etiqueta">Tipo / Número de expediente</span>
+                                    <span class="table__primary" data-highlight-text>{{ tramite.tipo.nombre|default:"-" }}</span>
+                                    <span class="table__secondary" data-highlight-text>{{ tramite.numero_oficio|default:"-" }}</span>
+                                    <span class="status-pill status-pill--highlight">{% if tramite.es_iniciador %}Iniciador{% else %}Anexo{% endif %}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="col-seguimiento" data-label="Seguimiento">
+                            <div class="detalle-compuesto">
+                                <div class="detalle-compuesto__bloque">
+                                    <span class="detalle-compuesto__etiqueta">Fecha del trámite</span>
+                                    <span class="table__primary">{{ tramite.fecha|date:"d/m/Y" }}</span>
+                                </div>
+                                <div class="detalle-compuesto__bloque">
+                                    <span class="detalle-compuesto__etiqueta">Estatus</span>
+                                    {% if tramite.estatus %}
+                                    <span class="status-chip status-chip--{{ tramite.estatus.nombre|slugify }}" data-highlight-text>{{ tramite.estatus.nombre }}</span>
+                                    {% else %}
+                                    <span class="status-chip status-chip--default">Sin estatus</span>
+                                    {% endif %}
+                                </div>
+                                <div class="detalle-compuesto__bloque">
+                                    <span class="detalle-compuesto__etiqueta">SLA</span>
+                                    {% if tramite.sla_snapshot.fecha_vencimiento %}
+                                    <span class="status-chip status-chip--sla-{{ tramite.sla_snapshot.semaforo_class|default:'gris' }}">
+                                        {{ tramite.sla_snapshot.semaforo_label|default:"Sin SLA" }}
+                                    </span>
+                                    <span class="table__secondary">{{ tramite.sla_snapshot.fecha_vencimiento|date:"d/m/Y" }}</span>
+                                    {% if tramite.sla_snapshot.dias_restantes is not None %}
+                                        {% if tramite.sla_snapshot.dias_restantes < 0 %}
+                                        <span class="table__secondary">{{ tramite.sla_snapshot.dias_vencido }} día(s) de atraso</span>
+                                        {% else %}
+                                        <span class="table__secondary">{{ tramite.sla_snapshot.dias_restantes }} día(s) restantes</span>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="status-chip status-chip--sla-gris">Sin SLA</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="col-acciones" data-label="Acciones">
+                            <div class="table-actions-cell">
+                                <div class="table-actions table-actions--compact">
+                                    <a class="table-actions__link table-actions__link--primary" href="{% url 'tramites:tramite-caso-detail' tramite.caso_id tramite.pk %}?from_list={{ request.get_full_path|urlencode }}" title="Ver trámite anexo" aria-label="Ver trámite anexo">Ver</a>
+                                    {% with historial=tramite.historial_estatus_creacion %}
+                                    <button
+                                        type="button"
+                                        class="table-actions__link table-actions__link--preview"
+                                        data-doc-preview-open
+                                        data-doc-type="tramite"
+                                        data-doc-id="{{ tramite.pk }}"
+                                        data-doc-caso-id="{{ tramite.caso_id }}"
+                                        data-doc-label="Trámite #{{ tramite.pk }} · Caso #{{ tramite.caso_id }} · {{ tramite.caso.cct_id|default:'Sin CCT' }}"
+                                        data-doc-tipo-inicial="{{ tramite.caso.tipo_inicial.nombre|default:'-' }}"
+                                        data-doc-expediente="{{ tramite.numero_oficio|default:'-' }}"
+                                        data-doc-registrado-por="{% if historial and historial.0.usuario %}{{ historial.0.usuario.get_full_name|default:historial.0.usuario.username }}{% else %}-{% endif %}"
+                                        data-doc-preview-url="{% url 'tramites:documento-preview-data' %}"
+                                        title="Vista previa de adjuntos del trámite"
+                                        aria-label="Vista previa de documentos adjuntos del trámite"
+                                    >
+                                        Vista
+                                    </button>
+                                    {% endwith %}
+                                    {% if perms.licencias.add_folioregistro %}
+                                        {% if not tramite.numero_oficio or tramite.numero_oficio|upper == "S/N" or tramite.numero_oficio|upper == "SN" %}
+                                        <button type="button" class="table-actions__link table-actions__link--folio" data-folio-open data-tipo="tramite" data-id="{{ tramite.pk }}" data-next="{% url 'tramites:tramite-caso-detail' tramite.caso_id tramite.pk %}" title="Generar folio">Folio</button>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                                <div class="table-actions-meta" aria-label="Resumen rápido del trámite">
+                                    <div class="table-actions-meta__item">
+                                        <span class="table-actions-meta__label">Trámites del caso</span>
+                                        <span class="table-actions-meta__value">{{ tramite.tramites_anexos_count|default:0 }}</span>
+                                    </div>
+                                    <div class="table-actions-meta__item {% if tramite.tiene_documentos_adjuntos %}is-positive{% else %}is-muted{% endif %}">
+                                        <span class="table-actions-meta__label">Adjunto</span>
+                                        <span class="table-actions-meta__value">{% if tramite.tiene_documentos_adjuntos %}Cargado{% else %}Sin adjunto{% endif %}</span>
+                                        <span class="table-actions-meta__hint">{{ tramite.documentos_adjuntos_total|default:0 }} archivo(s)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if tramites_is_paginated %}
+        <div class="pagination pagination--inset">
+            {% if tramites_page_obj.has_previous %}
+            <a class="pagination__button" href="?{% if request.GET %}{{ request.GET.urlencode }}&amp;{% endif %}anexos_page={{ tramites_page_obj.previous_page_number }}" aria-label="Página anterior">&larr;</a>
+            {% endif %}
+            <span class="pagination__page pagination__page--current">Página {{ tramites_page_obj.number }} de {{ tramites_paginator.num_pages }}</span>
+            {% if tramites_page_obj.has_next %}
+            <a class="pagination__button" href="?{% if request.GET %}{{ request.GET.urlencode }}&amp;{% endif %}anexos_page={{ tramites_page_obj.next_page_number }}" aria-label="Página siguiente">&rarr;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    </div>
+    <div class="doc-preview-panel-backdrop" id="doc-preview-panel-backdrop" data-doc-preview-close hidden></div>
+    <aside class="doc-preview-panel" id="doc-preview-panel" hidden role="dialog" aria-modal="true" aria-labelledby="doc-preview-title">
+        <div class="doc-preview-panel__header">
+            <div class="doc-preview-panel__header-main">
+                <h3 class="modal-title" id="doc-preview-title" data-doc-preview-title>Vista previa de documentos</h3>
+            </div>
+            <div class="doc-preview-panel__header-actions">
+                <button type="button" class="btn btn--ghost btn--sm doc-preview-nav-btn" data-doc-preview-prev aria-label="Ver registro anterior">Anterior</button>
+                <button type="button" class="btn btn--ghost btn--sm doc-preview-nav-btn" data-doc-preview-next aria-label="Ver registro siguiente">Siguiente</button>
+                <button type="button" class="modal-close" data-doc-preview-close aria-label="Cerrar">&times;</button>
+            </div>
+        </div>
+        <div class="doc-preview-panel__body">
+            <div class="doc-preview-record">
+                <p class="doc-preview-record__item"><strong>Tipo inicial:</strong> <span data-doc-preview-tipo-inicial>-</span></p>
+                <p class="doc-preview-record__item"><strong>Número de expediente:</strong> <span data-doc-preview-expediente>-</span></p>
+                <p class="doc-preview-record__item"><strong>Registró:</strong> <span data-doc-preview-registrado>-</span></p>
+            </div>
+            <div class="doc-preview-list" data-doc-preview-list></div>
+            <p class="doc-preview-empty" data-doc-preview-empty hidden>No hay documentos adjuntos para este registro.</p>
+            <iframe class="doc-preview-frame" data-doc-preview-frame title="Vista previa de documento"></iframe>
+            <a class="btn btn--ghost btn--sm" data-doc-preview-open-tab href="#" target="_blank" rel="noopener" hidden>Abrir documento en otra pestaña</a>
+        </div>
+    </aside>
+<script>
+  (function () {
+    const input = document.querySelector("#navbar-search");
+    if (!input) return;
+    const searchForm = input.closest('form[role="search"]');
+
+    const escapeRegExp = (value) => String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const highlight = (el, t) => {
+      const original = el.dataset.originalText || el.textContent;
+      el.dataset.originalText = original;
+      if (!t) {
+        el.textContent = original;
+        return;
+      }
+      const re = new RegExp(`(${escapeRegExp(t)})`, "ig");
+      el.innerHTML = original.replace(re, '<mark class="inbox-highlight">$1</mark>');
+    };
+    const applyHighlight = (term) => {
+      document.querySelectorAll("[data-highlight-text]").forEach((el) => highlight(el, term));
+    };
+
+    const initBulkSelection = () => {
+      const bulkForm = document.querySelector("#bulk-form");
+      if (!bulkForm) return;
+      const selectAll = document.querySelector("#select-all-casos");
+      const counter = bulkForm.querySelector("[data-bulk-count]");
+      const submitBtn = bulkForm.querySelector("[data-bulk-submit]");
+      const caseChecks = Array.from(document.querySelectorAll(".select-caso"));
+
+      const updateCounter = () => {
+        const selected = caseChecks.filter((check) => check.checked).length;
+        if (counter) {
+          counter.textContent = `${selected} seleccionados`;
+        }
+        if (submitBtn) {
+          submitBtn.disabled = selected === 0;
+        }
+      };
+
+      caseChecks.forEach((check) => {
+        check.addEventListener("change", updateCounter);
+      });
+      if (selectAll) {
+        selectAll.addEventListener("change", () => {
+          caseChecks.forEach((check) => {
+            check.checked = selectAll.checked;
+          });
+          updateCounter();
+        });
+      }
+      updateCounter();
+    };
+
+    const initFolioModal = () => {
+      const modal = document.getElementById("folio-generar-modal");
+      if (!modal) return;
+      const tipoInput = modal.querySelector("#folio-tipo");
+      const casoInput = modal.querySelector("#folio-caso-id");
+      const tramiteInput = modal.querySelector("#folio-tramite-id");
+      const nextInput = modal.querySelector("#folio-next");
+
+      const openModal = (btn) => {
+        const tipo = btn.dataset.tipo || "";
+        const id = btn.dataset.id || "";
+        const next = btn.dataset.next || "";
+        if (tipoInput) tipoInput.value = tipo;
+        if (casoInput) casoInput.value = tipo === "caso" ? id : "";
+        if (tramiteInput) tramiteInput.value = tipo === "tramite" ? id : "";
+        if (nextInput) nextInput.value = next;
+        modal.hidden = false;
+      };
+
+      document.addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-folio-open]");
+        if (!btn) return;
+        openModal(btn);
+      });
+    };
+
+    const initDocumentPreviewPanel = () => {
+      const panel = document.getElementById("doc-preview-panel");
+      const backdrop = document.getElementById("doc-preview-panel-backdrop");
+      if (!panel) return;
+      const titleEl = panel.querySelector("[data-doc-preview-title]");
+      const tipoInicialEl = panel.querySelector("[data-doc-preview-tipo-inicial]");
+      const expedienteEl = panel.querySelector("[data-doc-preview-expediente]");
+      const registradoEl = panel.querySelector("[data-doc-preview-registrado]");
+      const prevBtn = panel.querySelector("[data-doc-preview-prev]");
+      const nextBtn = panel.querySelector("[data-doc-preview-next]");
+      const listEl = panel.querySelector("[data-doc-preview-list]");
+      const frameEl = panel.querySelector("[data-doc-preview-frame]");
+      const emptyEl = panel.querySelector("[data-doc-preview-empty]");
+      const openTabEl = panel.querySelector("[data-doc-preview-open-tab]");
+      const closeEls = document.querySelectorAll("[data-doc-preview-close]");
+      let documentos = [];
+      let currentPreviewKey = "";
+      let prevTarget = null;
+      let nextTarget = null;
+
+      const getPreviewKey = (btn) => {
+        if (!btn) return "";
+        const tipo = btn.dataset.docType || "";
+        const id = btn.dataset.docId || "";
+        const casoId = btn.dataset.docCasoId || "";
+        return `${tipo}:${casoId}:${id}`;
+      };
+
+      const listPreviewButtons = () =>
+        Array.from(document.querySelectorAll("[data-doc-preview-open]")).filter((btn) => {
+          const tipo = btn.dataset.docType || "";
+          const id = btn.dataset.docId || "";
+          const endpoint = btn.dataset.docPreviewUrl || "";
+          return Boolean(tipo && id && endpoint);
+        });
+
+      const updateRecordMeta = (btn) => {
+        if (tipoInicialEl) {
+          tipoInicialEl.textContent = btn?.dataset.docTipoInicial || "-";
+        }
+        if (expedienteEl) {
+          expedienteEl.textContent = btn?.dataset.docExpediente || "-";
+        }
+        if (registradoEl) {
+          registradoEl.textContent = btn?.dataset.docRegistradoPor || "-";
+        }
+      };
+
+      const updateNavState = () => {
+        const buttons = listPreviewButtons();
+        const currentIndex = buttons.findIndex(
+          (candidate) => getPreviewKey(candidate) === currentPreviewKey
+        );
+        prevTarget = currentIndex > 0 ? buttons[currentIndex - 1] : null;
+        nextTarget = currentIndex >= 0 && currentIndex < buttons.length - 1 ? buttons[currentIndex + 1] : null;
+        if (prevBtn) {
+          prevBtn.disabled = !prevTarget;
+          prevBtn.setAttribute("aria-disabled", String(!prevTarget));
+        }
+        if (nextBtn) {
+          nextBtn.disabled = !nextTarget;
+          nextBtn.setAttribute("aria-disabled", String(!nextTarget));
+        }
+      };
+
+      const closePanel = () => {
+        panel.classList.remove("is-open");
+        document.body.classList.remove("doc-preview-open");
+        if (backdrop) backdrop.hidden = true;
+        window.setTimeout(() => {
+          if (!panel.classList.contains("is-open")) {
+            panel.hidden = true;
+            if (frameEl) frameEl.removeAttribute("src");
+          }
+        }, 220);
+        currentPreviewKey = "";
+        prevTarget = null;
+        nextTarget = null;
+        updateNavState();
+      };
+
+      const applyDocumento = (index) => {
+        if (!frameEl || !openTabEl || !listEl) return;
+        const doc = documentos[index];
+        if (!doc) return;
+        listEl.querySelectorAll("[data-doc-preview-item]").forEach((btn, idx) => {
+          btn.classList.toggle("is-active", idx === index);
+        });
+        frameEl.src = `${doc.url}#toolbar=1&navpanes=0`;
+        openTabEl.href = doc.url;
+        openTabEl.hidden = false;
+      };
+
+      const renderDocumentos = () => {
+        if (!listEl || !frameEl || !emptyEl || !openTabEl) return;
+        listEl.innerHTML = "";
+        openTabEl.hidden = true;
+        frameEl.removeAttribute("src");
+        if (!documentos.length) {
+          emptyEl.hidden = false;
+          return;
+        }
+        emptyEl.hidden = true;
+        documentos.forEach((doc, idx) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "doc-preview-list__item";
+          button.dataset.docPreviewItem = String(idx);
+          button.textContent = doc.nombre || `Documento ${idx + 1}`;
+          listEl.appendChild(button);
+        });
+        applyDocumento(0);
+      };
+
+      const openPanel = async (btn) => {
+        const tipo = btn.dataset.docType || "";
+        const id = btn.dataset.docId || "";
+        const casoId = btn.dataset.docCasoId || "";
+        const endpoint = btn.dataset.docPreviewUrl || "";
+        const label = btn.dataset.docLabel || "Vista previa de documentos";
+        if (!tipo || !id || !endpoint) return;
+        currentPreviewKey = getPreviewKey(btn);
+        if (titleEl) titleEl.textContent = label;
+        updateRecordMeta(btn);
+        updateNavState();
+        documentos = [];
+        if (emptyEl) {
+          emptyEl.hidden = true;
+          emptyEl.textContent = "Cargando documentos...";
+        }
+        if (listEl) listEl.innerHTML = "";
+        if (frameEl) frameEl.removeAttribute("src");
+        if (openTabEl) openTabEl.hidden = true;
+        panel.hidden = false;
+        if (backdrop) backdrop.hidden = false;
+        requestAnimationFrame(() => panel.classList.add("is-open"));
+        document.body.classList.add("doc-preview-open");
+        try {
+          const url = new URL(endpoint, window.location.origin);
+          url.searchParams.set("tipo", tipo);
+          url.searchParams.set("id", id);
+          if (casoId) url.searchParams.set("caso_id", casoId);
+          const response = await fetch(url.toString(), {
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+          });
+          const payload = await response.json();
+          if (!response.ok) {
+            throw new Error(payload.detail || "No se pudieron cargar los documentos.");
+          }
+          documentos = Array.isArray(payload.documentos) ? payload.documentos : [];
+          renderDocumentos();
+          if (!documentos.length && emptyEl) {
+            emptyEl.textContent = "No hay documentos adjuntos para este registro.";
+          }
+        } catch (error) {
+          documentos = [];
+          renderDocumentos();
+          if (emptyEl) {
+            emptyEl.hidden = false;
+            emptyEl.textContent = error.message || "No se pudieron cargar los documentos.";
+          }
+        }
+      };
+
+      if (prevBtn) {
+        prevBtn.addEventListener("click", () => {
+          updateNavState();
+          if (prevTarget) {
+            openPanel(prevTarget);
+          }
+        });
+      }
+
+      if (nextBtn) {
+        nextBtn.addEventListener("click", () => {
+          updateNavState();
+          if (nextTarget) {
+            openPanel(nextTarget);
+          }
+        });
+      }
+
+      closeEls.forEach((el) => {
+        el.addEventListener("click", closePanel);
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (panel.hidden) return;
+        if (event.key === "Escape") {
+          closePanel();
+          return;
+        }
+        if (event.key === "ArrowLeft") {
+          updateNavState();
+          if (prevTarget) {
+            event.preventDefault();
+            openPanel(prevTarget);
+          }
+          return;
+        }
+        if (event.key === "ArrowRight") {
+          updateNavState();
+          if (nextTarget) {
+            event.preventDefault();
+            openPanel(nextTarget);
+          }
+        }
+      });
+
+      document.addEventListener("click", (event) => {
+        const openBtn = event.target.closest("[data-doc-preview-open]");
+        if (openBtn) {
+          event.preventDefault();
+          openPanel(openBtn);
+          return;
+        }
+        const itemBtn = event.target.closest("[data-doc-preview-item]");
+        if (!itemBtn || !listEl || !listEl.contains(itemBtn)) return;
+        const idx = Number(itemBtn.dataset.docPreviewItem || "0");
+        applyDocumento(idx);
+      });
+      updateNavState();
+    };
+
+    const refreshBindings = (term) => {
+      applyHighlight(term);
+      initBulkSelection();
+    };
+
+    let searchTimeout = null;
+    let controller = null;
+    const performSearch = (term) => {
+      if (controller) {
+        controller.abort();
+      }
+      controller = new AbortController();
+      const url = new URL(window.location.href);
+      url.searchParams.set("buscar", term);
+      url.searchParams.delete("page");
+      url.searchParams.delete("anexos_page");
+      fetch(url.toString(), {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+        signal: controller.signal,
+      })
+        .then((response) => response.text())
+        .then((html) => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+          const newListado = doc.querySelector("#tramites-listado");
+          const newAnexos = doc.querySelector("#tramites-anexos");
+          const listado = document.querySelector("#tramites-listado");
+          const anexos = document.querySelector("#tramites-anexos");
+          if (newListado && listado) {
+            listado.innerHTML = newListado.innerHTML;
+          }
+          if (newAnexos && anexos) {
+            anexos.innerHTML = newAnexos.innerHTML;
+          }
+          refreshBindings(term);
+          const newUrl = new URL(window.location.href);
+          if (term) {
+            newUrl.searchParams.set("buscar", term);
+          } else {
+            newUrl.searchParams.delete("buscar");
+          }
+          history.replaceState({}, "", newUrl.toString());
+        })
+        .catch((err) => {
+          if (err.name === "AbortError") return;
+          console.error("Error al buscar trámites", err);
+          window.location.href = url.toString();
+        });
+    };
+
+    const scheduleSearch = () => {
+      if (searchTimeout) clearTimeout(searchTimeout);
+      const term = (input.value || "").trim();
+      searchTimeout = setTimeout(() => performSearch(term), 300);
+    };
+
+    input.addEventListener("input", scheduleSearch);
+    input.addEventListener("search", scheduleSearch);
+    if (searchForm) {
+      searchForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (searchTimeout) clearTimeout(searchTimeout);
+        const term = (input.value || "").trim();
+        performSearch(term);
+      });
+    }
+
+    initFolioModal();
+    initDocumentPreviewPanel();
+    refreshBindings((input.value || "").trim());
+    const clearModal = document.getElementById("clear-filters-modal");
+    const clearOpenBtn = document.querySelector("[data-clear-filters-open]");
+    const clearCloseBtns = clearModal ? clearModal.querySelectorAll("[data-clear-filters-close]") : [];
+    if (clearModal && clearOpenBtn) {
+      clearOpenBtn.addEventListener("click", () => {
+        clearModal.hidden = false;
+        clearModal.classList.add("is-open");
+      });
+      clearCloseBtns.forEach((btn) =>
+        btn.addEventListener("click", () => {
+          clearModal.hidden = true;
+          clearModal.classList.remove("is-open");
+        })
+      );
+      clearModal.addEventListener("click", (event) => {
+        if (event.target && event.target.classList.contains("modal-overlay")) {
+          clearModal.hidden = true;
+          clearModal.classList.remove("is-open");
+        }
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !clearModal.hidden) {
+          clearModal.hidden = true;
+          clearModal.classList.remove("is-open");
+        }
+      });
+    }
+  })();
+</script>
+</div>
+
 {% endblock %}
+
+<div class="modal" id="clear-filters-modal" hidden role="dialog" aria-modal="true" aria-labelledby="clear-filters-title">
+  <div class="modal-overlay" data-clear-filters-close></div>
+  <div class="modal-dialog" role="document">
+    <div class="modal-header">
+      <h3 class="modal-title" id="clear-filters-title">Limpiar filtros</h3>
+      <button type="button" class="modal-close" data-clear-filters-close aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="text-muted">Se eliminarán todos los filtros activos y se mostrará el listado completo.</p>
+    </div>
+    <div class="modal-actions">
+      <a class="btn btn--danger btn--md" href="{{ clear_filters_url }}">Limpiar filtros</a>
+      <button type="button" class="btn btn--secondary btn--md" data-clear-filters-close>Cancelar</button>
+    </div>
+  </div>
+</div>
