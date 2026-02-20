@@ -43,7 +43,7 @@
                     </svg>
                 </button>
                 <label class="visually-hidden" for="navbar-search">Buscar trámites</label>
-                <input id="navbar-search" class="sg-search__input" type="search" name="buscar" placeholder="Buscar trámite, folio o CCT" value="{{ request.GET.buscar|default:'' }}">
+                <input id="navbar-search" class="sg-search__input" type="search" name="buscar" placeholder="Buscar trámite, folio, CCT o participante" value="{{ request.GET.buscar|default:'' }}">
             </form>
             <div class="sg-navbar__nav sg-navbar__nav--secondary" aria-label="Acciones de cuenta">
                 {% if user.is_authenticated %}
