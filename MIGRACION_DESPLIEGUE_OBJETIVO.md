@@ -16,7 +16,9 @@ Servicios:
 ## Volúmenes persistentes
 
 - `postgres_data` -> `/var/lib/postgresql/data` (servicio `db`)
-- `media_data` -> `/app/media` (`web`/`worker`) y `/var/www/media` (`nginx`)
+- `MEDIA_MOUNT_SOURCE` (default `../media`) -> `/app/media` (`web`/`worker`) y `/var/www/media` (`nginx`)
+  - transición segura: evita 404 en adjuntos históricos existentes en host.
+  - objetivo final: `MEDIA_MOUNT_SOURCE=media_data` para operar solo con volumen Docker.
 - `static_data` -> `/app/staticfiles` (`web`/`worker`) y `/var/www/static` (`nginx`)
 
 ## Healthchecks mínimos (requisito)
@@ -37,4 +39,5 @@ Servicios:
 - `worker` usa comandos propios del proyecto:
   - `schedule_async_jobs`
   - `run_async_jobs`
-- `nginx` sirve `/static/` y `/media/` desde volúmenes persistentes y proxea app a `web:8000`.
+- `nginx` sirve `/static/` y `/media/` desde montajes persistentes y proxea app a `web:8000`.
+- `scripts/docker_up.sh` fuerza `MEDIA_MOUNT_SOURCE` para asegurar consistencia entre `web`, `worker` y `nginx`.

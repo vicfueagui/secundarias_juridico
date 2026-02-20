@@ -21,6 +21,7 @@ port_in_use() {
 
 PRIMARY_NGINX_PORT="${NGINX_PORT:-8080}"
 LEGACY_NGINX_PORT="${NGINX_PORT_LEGACY:-8000}"
+MEDIA_SOURCE="${MEDIA_MOUNT_SOURCE:-../media}"
 
 if [[ "${PRIMARY_NGINX_PORT}" == "${LEGACY_NGINX_PORT}" ]]; then
   echo ">> Error: NGINX_PORT y NGINX_PORT_LEGACY no pueden ser iguales."
@@ -35,6 +36,8 @@ if port_in_use "${LEGACY_NGINX_PORT}"; then
   echo ">> Aviso: el puerto ${LEGACY_NGINX_PORT} ya está en uso. Si no es este stack, el arranque puede fallar."
 fi
 
+echo ">> Montaje de media activo: ${MEDIA_SOURCE}"
+
 if [[ "${1:-}" == "--initdb" ]]; then
   echo ">> Levantando servicios base para inicialización (db + redis)..."
   docker compose -f "${COMPOSE_FILE}" up -d db redis
@@ -43,7 +46,7 @@ if [[ "${1:-}" == "--initdb" ]]; then
 fi
 
 echo ">> Levantando stack Docker objetivo (db + redis + web + worker + nginx)..."
-NGINX_PORT="${PRIMARY_NGINX_PORT}" NGINX_PORT_LEGACY="${LEGACY_NGINX_PORT}" \
+NGINX_PORT="${PRIMARY_NGINX_PORT}" NGINX_PORT_LEGACY="${LEGACY_NGINX_PORT}" MEDIA_MOUNT_SOURCE="${MEDIA_SOURCE}" \
   docker compose -f "${COMPOSE_FILE}" up -d --build db redis web worker nginx
 
 echo ">> Servicios activos:"
