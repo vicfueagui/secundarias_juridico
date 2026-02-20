@@ -18,6 +18,8 @@ node_modules
 staticfiles
 logs
 media
+backups
+smoke_test_reports
 django_server.log
 *.log
 *.dump

@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COMPOSE_FILE="${COMPOSE_FILE:-${ROOT_DIR}/docker/docker-compose.yml}"
 BACKUP_DIR="${BACKUP_DIR:-${ROOT_DIR}/backups}"
+DB_SERVICE="${DB_SERVICE:-db}"
 TS="${TS:-$(date +%Y%m%d_%H%M%S)}"
 
 DUMP_FILE="${1:-}"
@@ -31,7 +32,7 @@ REPORT_FILE="${BACKUP_DIR}/restore_validation_${TS}.md"
 
 cleanup() {
   rm -rf "${RESTORE_MEDIA_DIR}" >/dev/null 2>&1 || true
-  docker compose -f "${COMPOSE_FILE}" exec -T postgres sh -lc \
+  docker compose -f "${COMPOSE_FILE}" exec -T "${DB_SERVICE}" sh -lc \
     "export PGPASSWORD=\"\${POSTGRES_PASSWORD}\"; dropdb -U \"\${POSTGRES_USER}\" --if-exists \"${TEST_DB}\"" \
     >/dev/null 2>&1 || true
 }
@@ -43,34 +44,34 @@ echo "   - media: ${MEDIA_ARCHIVE}"
 echo "   - test_db: ${TEST_DB}"
 
 SOURCE_DB_TABLES="$(
-  docker compose -f "${COMPOSE_FILE}" exec -T postgres sh -lc \
+  docker compose -f "${COMPOSE_FILE}" exec -T "${DB_SERVICE}" sh -lc \
     'export PGPASSWORD="${POSTGRES_PASSWORD}"; psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='\''public'\'';"' \
     | tr -d ' \r'
 )"
 
 SOURCE_DB_MIGRATIONS="$(
-  docker compose -f "${COMPOSE_FILE}" exec -T postgres sh -lc \
+  docker compose -f "${COMPOSE_FILE}" exec -T "${DB_SERVICE}" sh -lc \
     'export PGPASSWORD="${POSTGRES_PASSWORD}"; psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -tAc "SELECT count(*) FROM django_migrations;"' \
     | tr -d ' \r'
 )"
 
 echo ">> Creando base de prueba ${TEST_DB}"
-docker compose -f "${COMPOSE_FILE}" exec -T postgres sh -lc \
+docker compose -f "${COMPOSE_FILE}" exec -T "${DB_SERVICE}" sh -lc \
   "export PGPASSWORD=\"\${POSTGRES_PASSWORD}\"; createdb -U \"\${POSTGRES_USER}\" \"${TEST_DB}\""
 
 echo ">> Restaurando dump en base de prueba"
-docker compose -f "${COMPOSE_FILE}" exec -T postgres sh -lc \
+docker compose -f "${COMPOSE_FILE}" exec -T "${DB_SERVICE}" sh -lc \
   "export PGPASSWORD=\"\${POSTGRES_PASSWORD}\"; pg_restore -U \"\${POSTGRES_USER}\" -d \"${TEST_DB}\" --no-owner --no-privileges" \
   < "${DUMP_FILE}"
 
 RESTORED_DB_TABLES="$(
-  docker compose -f "${COMPOSE_FILE}" exec -T postgres sh -lc \
+  docker compose -f "${COMPOSE_FILE}" exec -T "${DB_SERVICE}" sh -lc \
     "export PGPASSWORD=\"\${POSTGRES_PASSWORD}\"; psql -U \"\${POSTGRES_USER}\" -d \"${TEST_DB}\" -tAc \"SELECT count(*) FROM information_schema.tables WHERE table_schema='public';\"" \
     | tr -d ' \r'
 )"
 
 RESTORED_DB_MIGRATIONS="$(
-  docker compose -f "${COMPOSE_FILE}" exec -T postgres sh -lc \
+  docker compose -f "${COMPOSE_FILE}" exec -T "${DB_SERVICE}" sh -lc \
     "export PGPASSWORD=\"\${POSTGRES_PASSWORD}\"; psql -U \"\${POSTGRES_USER}\" -d \"${TEST_DB}\" -tAc \"SELECT count(*) FROM django_migrations;\"" \
     | tr -d ' \r'
 )"

@@ -4,7 +4,7 @@ set -uo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_FILE="${COMPOSE_FILE:-${ROOT_DIR}/docker/docker-compose.yml}"
-BASE_URL="${SMOKE_BASE_URL:-http://127.0.0.1:8000}"
+BASE_URL="${SMOKE_BASE_URL:-http://127.0.0.1:8080}"
 LOGIN_URL="${SMOKE_LOGIN_URL:-/accounts/login/}"
 CRUD_LIST_URL="${SMOKE_CRUD_LIST_URL:-/tramites/}"
 STATIC_PROBE_URL="${SMOKE_STATIC_PROBE_URL:-/static/img/segey-logo.png}"

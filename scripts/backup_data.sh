@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COMPOSE_FILE="${COMPOSE_FILE:-${ROOT_DIR}/docker/docker-compose.yml}"
 BACKUP_DIR="${BACKUP_DIR:-${ROOT_DIR}/backups}"
+DB_SERVICE="${DB_SERVICE:-db}"
 TS="${TS:-$(date +%Y%m%d_%H%M%S)}"
 
 mkdir -p "${BACKUP_DIR}"
@@ -22,7 +23,7 @@ hash_file() {
 }
 
 echo ">> Generando backup de BD en ${DB_BACKUP}"
-docker compose -f "${COMPOSE_FILE}" exec -T postgres sh -lc \
+docker compose -f "${COMPOSE_FILE}" exec -T "${DB_SERVICE}" sh -lc \
   'export PGPASSWORD="${POSTGRES_PASSWORD}"; pg_dump -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -Fc' \
   > "${DB_BACKUP}"
 

@@ -2,6 +2,7 @@
 set -euo pipefail
 
 cd /app
+mkdir -p /app/logs
 
 echo ">> Esperando PostgreSQL en ${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}..."
 python - <<'PY'
@@ -28,6 +29,11 @@ PY
 
 echo ">> Ejecutando migraciones..."
 python manage.py migrate --noinput
+
+if [[ "${DJANGO_COLLECTSTATIC:-true}" == "true" ]]; then
+  echo ">> Ejecutando collectstatic..."
+  python manage.py collectstatic --noinput
+fi
 
 if [[ "${DJANGO_BOOTSTRAP_CCTS:-false}" == "true" ]]; then
   CCTS_PATH="${DJANGO_CCTS_PATH:-cct_secundarias.csv}"
@@ -56,5 +62,10 @@ else:
 "
 fi
 
-echo ">> Iniciando Django en 0.0.0.0:8000..."
-exec python manage.py runserver 0.0.0.0:8000
+echo ">> Iniciando Gunicorn en 0.0.0.0:8000..."
+exec gunicorn asesores_especializados.wsgi:application \
+  --bind 0.0.0.0:8000 \
+  --workers "${GUNICORN_WORKERS:-3}" \
+  --timeout "${GUNICORN_TIMEOUT:-120}" \
+  --access-logfile - \
+  --error-logfile -

@@ -25,6 +25,7 @@ media/
 *.sql
 *.tar.gz
 .restore_points/
+backups/
 
 # Build artifacts
 staticfiles/
