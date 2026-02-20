@@ -9,6 +9,7 @@ from tramites import models
 
 AMBITO_CASO = models.PlantillaCapturaTipo.AMBITO_CASO
 AMBITO_TRAMITE = models.PlantillaCapturaTipo.AMBITO_TRAMITE
+NON_BLOCKING_REQUIRED_FIELDS = {"asunto"}
 
 ALLOWED_FIELDS_BY_AMBITO: dict[str, set[str]] = {
     AMBITO_CASO: {
@@ -92,6 +93,11 @@ def _clean_field_list(values: Any, *, ambito: str) -> list[str]:
         if field_name and field_name in allowed:
             result.append(field_name)
     return _dedupe_strings(result)
+
+
+def _clean_required_field_list(values: Any, *, ambito: str) -> list[str]:
+    cleaned = _clean_field_list(values, ambito=ambito)
+    return [field_name for field_name in cleaned if field_name not in NON_BLOCKING_REQUIRED_FIELDS]
 
 
 def _as_bool(value: Any, default: bool = False) -> bool:
@@ -199,7 +205,7 @@ def _default_template(ambito: str, tipo_nombre: str = "") -> dict[str, Any]:
     template = {
         "managed_fields": managed_fields,
         "default_visible_fields": _dedupe_strings(base_visible),
-        "default_required_fields": ["asunto"],
+        "default_required_fields": [],
         "status_rules": [
             {
                 "id": "prevencion",
@@ -233,7 +239,7 @@ def _default_template(ambito: str, tipo_nombre: str = "") -> dict[str, Any]:
                 "incidencia_dias_otorgados",
             ]
         )
-        template["default_required_fields"] = ["asunto", "tipo_prorroga"]
+        template["default_required_fields"] = ["tipo_prorroga"]
         template["checklist_etapas"] = _default_checklist_licencia()
     elif "violenc" in tipo_norm:
         template["default_visible_fields"] = _dedupe_strings(
@@ -248,7 +254,7 @@ def _default_template(ambito: str, tipo_nombre: str = "") -> dict[str, Any]:
                 "receptor_sexo",
             ]
         )
-        template["default_required_fields"] = ["asunto", "tipo_violencia"]
+        template["default_required_fields"] = ["tipo_violencia"]
     return template
 
 
@@ -270,7 +276,7 @@ def _normalize_status_rules(raw_rules: Any, *, ambito: str) -> list[dict[str, An
                 "match_any": _dedupe_strings([_normalize_text(v) for v in item.get("match_any", [])]),
                 "match_estatus_ids": _dedupe_strings([str(v).strip() for v in item.get("match_estatus_ids", [])]),
                 "visible_fields": _clean_field_list(item.get("visible_fields"), ambito=ambito),
-                "required_fields": _clean_field_list(item.get("required_fields"), ambito=ambito),
+                "required_fields": _clean_required_field_list(item.get("required_fields"), ambito=ambito),
                 "checklist_stage": str(item.get("checklist_stage") or "").strip(),
             }
         )
@@ -330,7 +336,7 @@ def normalize_template_payload(raw_template: dict[str, Any] | None, *, ambito: s
     default_visible = _clean_field_list(raw_template.get("default_visible_fields"), ambito=ambito)
     if default_visible:
         merged["default_visible_fields"] = default_visible
-    default_required = _clean_field_list(raw_template.get("default_required_fields"), ambito=ambito)
+    default_required = _clean_required_field_list(raw_template.get("default_required_fields"), ambito=ambito)
     if default_required:
         merged["default_required_fields"] = default_required
     status_rules = _normalize_status_rules(raw_template.get("status_rules"), ambito=ambito)
@@ -556,6 +562,8 @@ def validate_form_payload(
     if status_rule:
         required_fields.extend(status_rule.get("required_fields") or [])
     for field_name in _dedupe_strings(required_fields):
+        if field_name in NON_BLOCKING_REQUIRED_FIELDS:
+            continue
         if field_name not in getattr(form, "fields", {}):
             continue
         if _is_empty(cleaned_data.get(field_name)):
