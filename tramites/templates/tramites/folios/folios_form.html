@@ -39,8 +39,8 @@
                     </div>
                 </div>
                 <div class="form-field">
-                    <label>Año</label>
-                    <input type="text" class="form-input" value="{% now 'Y' %}" readonly>
+                    <label for="folio-anio-display-form">Año</label>
+                    <input type="text" id="folio-anio-display-form" name="anio_display" class="form-input" value="{% now 'Y' %}" readonly>
                 </div>
                 <div class="form-field" style="display: none;">
                     <label for="{{ form.casos.id_for_label }}">{{ form.casos.label }}</label>

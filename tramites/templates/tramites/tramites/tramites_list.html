@@ -1157,7 +1157,7 @@
                             </div>
                         </div>
                         <div class="form-field form-field--full">
-                            <label for="bulk-comentario-estatus-modal">Comentario de estatus (opcional)</label>
+                            <label for="{{ bulk_tramite_form.comentario_estatus.id_for_label }}">Comentario de estatus (opcional)</label>
                             {{ bulk_tramite_form.comentario_estatus }}
                         </div>
                     </div>
@@ -1834,8 +1834,8 @@
                 <input type="hidden" name="next" id="folio-next">
                 <div class="form-grid">
                     <div class="form-field">
-                        <label>Año</label>
-                        <input type="text" class="form-input" value="{% now 'Y' %}" readonly>
+                        <label for="folio-anio-display-list">Año</label>
+                        <input type="text" id="folio-anio-display-list" name="anio_display" class="form-input" value="{% now 'Y' %}" readonly>
                     </div>
                     <div class="form-field form-field--full">
                         <label for="folio-prefijo">Prefijo</label>
