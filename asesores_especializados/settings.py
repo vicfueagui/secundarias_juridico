@@ -48,31 +48,18 @@ if IS_PRODUCTION and DEBUG:
     raise ImproperlyConfigured("DJANGO_DEBUG debe ser false en producción.")
 
 # Dominios permitidos
-DEFAULT_ALLOWED_HOSTS = [
-    '.ngrok-free.app',  # Cubre cualquier subdominio generado por ngrok
-    'ngrok-free.app',
-    '127.0.0.1',
-    'localhost',
-    '192.168.184.175',
-    'admins-macbook-pro.local',
-]
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", DEFAULT_ALLOWED_HOSTS)
+DEFAULT_ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", [] if IS_PRODUCTION else DEFAULT_ALLOWED_HOSTS)
 if IS_PRODUCTION and not ALLOWED_HOSTS:
     raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS no puede estar vacío en producción.")
 
 # Configuración para CSRF
-CSRF_TRUSTED_ORIGINS = [
-    'https://*.ngrok-free.app',
-    'http://192.168.184.175:8000',
-    'http://admins-macbook-pro.local:8000',
-]
+CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS", [])
+if IS_PRODUCTION and not CSRF_TRUSTED_ORIGINS:
+    raise ImproperlyConfigured("DJANGO_CSRF_TRUSTED_ORIGINS no puede estar vacío en producción.")
 
 # Configuración CORS si usas API REST
-CORS_ALLOWED_ORIGINS = [
-    'https://*.ngrok-free.app',
-    'http://192.168.184.175:8000',
-    'http://admins-macbook-pro.local:8000',
-]
+CORS_ALLOWED_ORIGINS = env_list("DJANGO_CORS_ALLOWED_ORIGINS", [])
 
 # Aplicaciones
 INSTALLED_APPS = [
@@ -150,6 +137,8 @@ DATABASES = {
     }
 }
 
+REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
+
 # Zona y lenguaje
 LANGUAGE_CODE = "es-mx"
 TIME_ZONE = "America/Merida"
@@ -158,11 +147,11 @@ USE_TZ = True
 
 # Archivos estáticos y media
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = Path(os.environ.get("DJANGO_STATIC_ROOT", "/app/staticfiles"))
 STATICFILES_DIRS = [BASE_DIR / "tramites" / "static"]
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = Path(os.environ.get("DJANGO_MEDIA_ROOT", "/app/media"))
 
 # Logging con usuario y ruta
 LOGGING = {
