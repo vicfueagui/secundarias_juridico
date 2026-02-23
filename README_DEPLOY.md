@@ -12,7 +12,6 @@
 - Puertos disponibles:
   - `8080` (principal)
   - `8000` (compatibilidad temporal)
-  - `5532` (acceso host a PostgreSQL, opcional)
 
 ## 3) Estructura de despliegue
 - `Dockerfile`
