@@ -354,6 +354,9 @@
             </div>
             {% endif %}
 
+            {% if not form.instance.pk and submission_uid %}
+            <input type="hidden" name="submission_uid" value="{{ submission_uid }}">
+            {% endif %}
             <section class="form-subsection trabajadores-section" data-trabajadores>
                 <div class="trabajadores-card">
                     <div class="trabajadores-header">
@@ -1195,7 +1198,14 @@
             </section>
 
             <div class="form-actions">
-                <button type="submit" class="btn btn--primary btn--md">Guardar trámite</button>
+                <button
+                    type="submit"
+                    class="btn btn--primary btn--md"
+                    {% if not form.instance.pk %}
+                    data-caso-submit-primary
+                    data-submitting-text="Guardando..."
+                    {% endif %}
+                >Guardar trámite</button>
             {% if request.GET.from_list %}
             <a class="btn btn--secondary btn--md" href="{{ request.GET.from_list }}">Cancelar</a>
             {% else %}

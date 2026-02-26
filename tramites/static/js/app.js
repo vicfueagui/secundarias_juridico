@@ -3507,11 +3507,36 @@
     });
   }
 
+  function initPrimarySubmitLock(form) {
+    if (!form || form.dataset.primarySubmitLockInitialized === "true") {
+      return;
+    }
+    const primaryButton = form.querySelector("[data-caso-submit-primary]");
+    if (!(primaryButton instanceof HTMLButtonElement)) {
+      return;
+    }
+    form.dataset.primarySubmitLockInitialized = "true";
+    form.addEventListener("submit", (event) => {
+      const submitter = event.submitter;
+      if (submitter && submitter !== primaryButton) {
+        return;
+      }
+      if (form.dataset.submitting === "true") {
+        event.preventDefault();
+        return;
+      }
+      form.dataset.submitting = "true";
+      primaryButton.disabled = true;
+      primaryButton.textContent = primaryButton.dataset.submittingText || "Guardando...";
+    });
+  }
+
   function initCasoInternoForm() {
     const form = document.querySelector("[data-caso-interno-form]");
     if (!form) {
       return;
     }
+    initPrimarySubmitLock(form);
     setupCCTForm({
       form,
       lookupUrl: form.dataset.lookupUrl || "",

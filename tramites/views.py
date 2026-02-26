@@ -4,6 +4,7 @@ from __future__ import annotations
 import csv
 import json
 import logging
+import secrets
 import urllib.parse
 from types import SimpleNamespace
 from typing import Any, Dict
@@ -3747,10 +3748,41 @@ class CasoInternoCreateView(
     form_class = forms.CasoInternoForm
     template_name = "tramites/tramites/tramites_form.html"
     success_url = reverse_lazy("tramites:casointerno-list")
+    submission_uid_field = "submission_uid"
+    submission_uid_session_key = "caso_create_submission_uid"
+
+    def _build_submission_uid(self) -> str:
+        return secrets.token_hex(24)
+
+    def _resolve_submission_uid(self, form=None) -> str:
+        token = ""
+        if form is not None and getattr(form, "is_bound", False):
+            token = (form.data.get(self.submission_uid_field) or "").strip()
+        if not token and self.request.method == "POST":
+            token = (self.request.POST.get(self.submission_uid_field) or "").strip()
+        if not token:
+            token = (self.request.session.get(self.submission_uid_session_key) or "").strip()
+        if not token:
+            token = self._build_submission_uid()
+        self.request.session[self.submission_uid_session_key] = token
+        return token
+
+    def _clear_submission_uid(self) -> None:
+        self.request.session.pop(self.submission_uid_session_key, None)
+
+    def _redirect_existing_submission(self, existing_caso: models.CasoInterno) -> HttpResponse:
+        self.object = existing_caso
+        self._clear_submission_uid()
+        messages.info(
+            self.request,
+            _("El trámite ya estaba guardado. Se evitó registrar un duplicado."),
+        )
+        return redirect(self.get_success_url())
 
     def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
         ctx = super().get_context_data(**kwargs)
         form = ctx.get("form")
+        ctx["submission_uid"] = self._resolve_submission_uid(form=form)
         if form:
             ctx["captura_guiada_config"] = _build_captura_guiada_context(
                 form,
@@ -3759,8 +3791,21 @@ class CasoInternoCreateView(
         return ctx
 
     def form_valid(self, form) -> HttpResponse:
+        submission_uid = self._resolve_submission_uid(form=form)
+        if submission_uid:
+            form.instance.request_uid = submission_uid
+            existing_caso = models.CasoInterno.objects.filter(request_uid=submission_uid).first()
+            if existing_caso:
+                return self._redirect_existing_submission(existing_caso)
         form.instance.creado_por = self.request.user if self.request.user.is_authenticated else None
-        response = super().form_valid(form)
+        try:
+            response = super().form_valid(form)
+        except IntegrityError:
+            if submission_uid:
+                existing_caso = models.CasoInterno.objects.filter(request_uid=submission_uid).first()
+                if existing_caso:
+                    return self._redirect_existing_submission(existing_caso)
+            raise
         form.save_trabajadores(self.object)
         form.save_centros_trabajo_adicionales(self.object)
         _asignar_folio_generado(
@@ -3802,6 +3847,7 @@ class CasoInternoCreateView(
             casos=casos_part,
             tramites=tramites_part,
         )
+        self._clear_submission_uid()
         messages.success(self.request, _("Trámite registrado correctamente."))
         return response
 

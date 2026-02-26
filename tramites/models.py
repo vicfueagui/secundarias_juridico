@@ -516,6 +516,14 @@ class CasoInterno(models.Model):
         blank=True,
         null=True,
     )
+    request_uid = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+        unique=True,
+        editable=False,
+        verbose_name="Identificador de envío",
+    )
     usuarios_involucrados = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         related_name="casos_involucrados",

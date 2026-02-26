@@ -82,6 +82,47 @@ class TramitesFlowTests(TestCase):
         self.assertEqual(caso.estatus, self.estatus_abierto)
         self.assertEqual(models.HistorialEstatusCaso.objects.filter(caso=caso).count(), 1)
 
+    def test_crear_tramite_doble_post_con_mismo_submission_uid_no_duplica(self):
+        get_response = self.client.get(reverse("tramites:casointerno-create"))
+        self.assertEqual(get_response.status_code, 200)
+        submission_uid = ""
+        if get_response.context:
+            contexts = (
+                get_response.context if isinstance(get_response.context, list) else [get_response.context]
+            )
+            for ctx in contexts:
+                token = (ctx or {}).get("submission_uid")
+                if token:
+                    submission_uid = token
+                    break
+        self.assertTrue(submission_uid)
+
+        payload = {
+            "cct": self.cct.cct,
+            "cct_codigo": self.cct.cct,
+            "cct_nombre": self.cct.nombre,
+            "cct_sistema": self.cct.sostenimiento,
+            "cct_modalidad": self.cct.subnivel,
+            "asesor_cct": self.cct.asesor,
+            "fecha_apertura": date.today(),
+            "estatus": self.estatus_abierto.pk,
+            "tipo_inicial": self.tipo_inicial.pk,
+            "asunto": "Registro idempotente",
+            "numero_oficio": "SE/002",
+            "submission_uid": submission_uid,
+        }
+
+        first_response = self.client.post(reverse("tramites:casointerno-create"), payload, follow=True)
+        self.assertEqual(first_response.status_code, 200)
+        self.assertEqual(models.CasoInterno.objects.count(), 1)
+        caso = models.CasoInterno.objects.get()
+        self.assertEqual(caso.request_uid, submission_uid)
+
+        second_response = self.client.post(reverse("tramites:casointerno-create"), payload, follow=True)
+        self.assertEqual(second_response.status_code, 200)
+        self.assertEqual(models.CasoInterno.objects.count(), 1)
+        self.assertContains(second_response, "Se evitó registrar un duplicado.")
+
     def test_editar_tramite_cambia_estatus_y_bitacora(self):
         caso = models.CasoInterno.objects.create(
             cct=self.cct,
