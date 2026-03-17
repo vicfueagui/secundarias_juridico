@@ -118,7 +118,7 @@ services:
       - ${MEDIA_MOUNT_SOURCE:-../media}:/var/www/media:ro
       - static_data:/var/www/static:ro
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/nginx-health"]
+      test: ["CMD-SHELL", "nginx -t -q || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 6
