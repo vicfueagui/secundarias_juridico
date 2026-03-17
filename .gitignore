@@ -25,7 +25,8 @@ media/
 *.sql
 *.tar.gz
 .restore_points/
-backups/
+backups/*
+!backups/.gitkeep
 
 # Build artifacts
 staticfiles/
