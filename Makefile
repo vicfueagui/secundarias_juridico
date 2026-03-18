@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: backup-db backup-media backup-code backup-env backup-full verify-backup clone-worktree prepare-clone restore-code restore-env
+.PHONY: backup-db backup-media backup-code backup-env backup-full verify-backup clone-worktree prepare-clone restore-code restore-env sync-dev-clone
 
 backup-db:
 	./scripts/backups/backup_db.sh
@@ -31,3 +31,6 @@ restore-code:
 
 restore-env:
 	./scripts/backups/restore_env.sh
+
+sync-dev-clone:
+	./scripts/dev/sync_to_parallel_clone.sh
