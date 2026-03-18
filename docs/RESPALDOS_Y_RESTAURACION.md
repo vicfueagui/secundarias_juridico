@@ -2,6 +2,10 @@
 
 Documento operativo para blindar `project_secu_juridi` sin tocar la lógica de negocio ni romper la compatibilidad histórica de `tramites` con `app_label = "licencias"`.
 
+Si esta práctica la vas a repetir, usa también el tablero de seguimiento:
+
+- [KANBAN_PERSONAL_BLINDAJE_OPERATIVO.md](/Users/admin/Documents/project_secu_juridi/docs/KANBAN_PERSONAL_BLINDAJE_OPERATIVO.md)
+
 ## 1. Qué deja resuelto esta capa
 
 - respaldo formal de base de datos PostgreSQL
