@@ -5,6 +5,10 @@ Guía simple para trabajar sin enredarte entre:
 - la carpeta con Git
 - la carpeta que usas para correr el sistema
 
+Si ya trabajas con tres espacios separados, usa también:
+
+- [FLUJO_TRES_ENTORNOS.md](/Users/admin/Documents/project_secu_juridi/docs/FLUJO_TRES_ENTORNOS.md)
+
 ## 1. Idea base
 
 Piensa así:
